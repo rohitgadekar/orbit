@@ -411,8 +411,8 @@ export function FullscreenPlayer({
               </button>
             </div>
 
-            {/* Volume Control */}
-            <div className="mt-8 flex items-center justify-center gap-3">
+            {/* Volume Control (hidden on mobile as mobile devices use hardware buttons) */}
+            <div className="mt-8 hidden md:flex items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
@@ -480,8 +480,8 @@ export function FullscreenPlayer({
         </div>
       ) : null}
 
-      {/* Bottom Footer Details */}
-      <footer className="relative z-10 flex items-center justify-between px-6 pb-[max(16px,var(--safe-bottom))] text-[11px] text-zinc-400 md:px-12">
+      {/* Bottom Footer Details (hidden on mobile for cleaner interface) */}
+      <footer className="relative z-10 hidden md:flex items-center justify-between px-6 pb-[max(16px,var(--safe-bottom))] text-[11px] text-zinc-400 md:px-12">
         <span>Orbit Audio Master • Studio Quality</span>
         <button
           type="button"
