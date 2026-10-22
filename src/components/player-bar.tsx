@@ -5,7 +5,7 @@ import { EditTrackModal } from "@/components/edit-track-modal";
 import { FullscreenPlayer } from "@/components/fullscreen-player";
 import { usePlayer } from "@/context/player-context";
 import type { Song } from "@/lib/types";
-import { Maximize2, Pause, Play } from "lucide-react";
+import { Pause, Play, SkipForward } from "lucide-react";
 import { useState } from "react";
 
 export function PlayerBar() {
@@ -40,49 +40,70 @@ export function PlayerBar() {
 
   return (
     <>
-      {/* Bottom Mini Player Bar (visible on mobile / tablet or bottom dock) */}
-      <div className="z-30 border-t border-black/5 bg-[#ffffff]/90 px-4 py-2.5 backdrop-blur-md md:hidden">
-        <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          >
-            <Cover src={cover} title={current.title} className="h-11 w-11 rounded-xl shadow-xs" playing={isPlaying} />
-            <div className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-bold text-zinc-900">{current.title}</span>
-              <span className="block truncate text-[11px] text-zinc-500">{current.artist?.name}</span>
-            </div>
-          </button>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggle}
-              className="grid h-10 w-10 place-items-center rounded-full bg-zinc-900 text-white shadow-sm"
-              aria-label={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 translate-x-0.5 fill-current" />}
-            </button>
+      {/* Floating Bottom Mini Player Bar above the Mobile Tab Bar */}
+      <div className="fixed bottom-[74px] left-3 right-3 z-40 mx-auto max-w-md md:hidden pointer-events-auto">
+        <div className="relative overflow-hidden rounded-[26px] border border-white/15 bg-[#19181b]/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl text-white">
+          <div className="flex items-center justify-between gap-3 px-1">
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="rounded-full p-2 text-zinc-600"
-              title="Full screen"
+              className="flex min-w-0 flex-1 items-center gap-3 text-left focus:outline-none"
             >
-              <Maximize2 className="h-4 w-4" />
+              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl ring-1 ring-white/10 shadow-sm">
+                <Cover
+                  src={cover}
+                  title={current.title}
+                  className="h-full w-full object-cover"
+                  playing={isPlaying}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-bold text-white tracking-tight">
+                  {current.title}
+                </span>
+                <span className="block truncate text-[11px] font-medium text-zinc-400">
+                  {current.artist?.name || "Unknown Artist"}
+                </span>
+              </div>
             </button>
-          </div>
-        </div>
 
-        {/* Mini progress line */}
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-zinc-200">
-          <div
-            className="h-full bg-zinc-900 transition-all duration-150"
-            style={{
-              width: `${Math.min(100, ((progress || 0) / (duration || current.duration_seconds || 1)) * 100)}%`,
-            }}
-          />
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={toggle}
+                className="grid h-9 w-9 place-items-center rounded-full bg-[#dbe878] text-zinc-950 shadow-md transition active:scale-90 hover:bg-[#e4ef8f]"
+                aria-label={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? (
+                  <Pause className="h-4 w-4 fill-current" />
+                ) : (
+                  <Play className="h-4 w-4 translate-x-0.5 fill-current" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={next}
+                className="grid h-9 w-9 place-items-center rounded-full text-zinc-400 hover:text-white transition active:scale-90"
+                aria-label="Next track"
+                title="Next"
+              >
+                <SkipForward className="h-4 w-4 fill-current" />
+              </button>
+            </div>
+          </div>
+
+          {/* Mini progress line along bottom of pill */}
+          <div className="mt-2 h-[2.5px] w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full bg-[#dbe878] transition-all duration-200"
+              style={{
+                width: `${Math.min(
+                  100,
+                  ((progress || 0) / (duration || current.duration_seconds || 1)) * 100,
+                )}%`,
+              }}
+            />
+          </div>
         </div>
       </div>
 

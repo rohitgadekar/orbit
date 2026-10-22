@@ -138,6 +138,164 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     void recordPlay(current.id);
   }, [current, progress, recordPlay]);
 
+  // Media Session API for iOS and Android lock screen controls & artwork
+  useEffect(() => {
+    if (typeof window === "undefined" || !("mediaSession" in navigator)) return;
+
+    if (!current) {
+      navigator.mediaSession.metadata = null;
+      return;
+    }
+
+    const cover = current.cover_url || current.album?.cover_url || current.artist?.image_url;
+    const artwork: MediaImage[] = [];
+
+    if (cover) {
+      // iOS Safari and Android require absolute URLs
+      const fullUrl = cover.startsWith("http")
+        ? cover
+        : `${window.location.origin}${cover.startsWith("/") ? "" : "/"}${cover}`;
+
+      artwork.push(
+        { src: fullUrl, sizes: "96x96", type: "image/jpeg" },
+        { src: fullUrl, sizes: "128x128", type: "image/jpeg" },
+        { src: fullUrl, sizes: "192x192", type: "image/jpeg" },
+        { src: fullUrl, sizes: "256x256", type: "image/jpeg" },
+        { src: fullUrl, sizes: "384x384", type: "image/jpeg" },
+        { src: fullUrl, sizes: "512x512", type: "image/jpeg" },
+      );
+    }
+
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: current.title,
+        artist: current.artist?.name || "Unknown Artist",
+        album: current.album?.title || "Orbit Music",
+        artwork,
+      });
+    } catch {
+      // Ignore browsers with strict metadata constructors
+    }
+  }, [current]);
+
+  // Sync playback state with lock screen
+  useEffect(() => {
+    if (typeof window === "undefined" || !("mediaSession" in navigator)) return;
+    try {
+      navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+    } catch {
+      // Ignore
+    }
+  }, [isPlaying]);
+
+  // Sync position state (progress scrubber) with iOS & Android lock screen
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !("mediaSession" in navigator) ||
+      !("setPositionState" in navigator.mediaSession) ||
+      !duration ||
+      duration <= 0
+    ) {
+      return;
+    }
+
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: duration,
+        playbackRate: audioRef.current?.playbackRate || 1,
+        position: Math.min(progress, duration),
+      });
+    } catch {
+      // Ignore invalid state updates during track transitions
+    }
+  }, [progress, duration]);
+
+  // Lock screen media key actions (play, pause, next, prev, seek)
+  useEffect(() => {
+    if (typeof window === "undefined" || !("mediaSession" in navigator)) return;
+
+    const handlers: [MediaSessionAction, MediaSessionActionHandler][] = [
+      [
+        "play",
+        () => {
+          const audio = audioRef.current;
+          if (audio) void audio.play();
+        },
+      ],
+      [
+        "pause",
+        () => {
+          const audio = audioRef.current;
+          if (audio) audio.pause();
+        },
+      ],
+      ["previoustrack", () => prev()],
+      ["nexttrack", () => next()],
+      [
+        "seekto",
+        (details) => {
+          if (details.seekTime != null) {
+            const audio = audioRef.current;
+            if (audio) {
+              audio.currentTime = details.seekTime;
+              setProgress(details.seekTime);
+            }
+          }
+        },
+      ],
+      [
+        "seekbackward",
+        (details) => {
+          const skipTime = details.seekOffset || 10;
+          const audio = audioRef.current;
+          if (audio) {
+            const target = Math.max(audio.currentTime - skipTime, 0);
+            audio.currentTime = target;
+            setProgress(target);
+          }
+        },
+      ],
+      [
+        "seekforward",
+        (details) => {
+          const skipTime = details.seekOffset || 10;
+          const audio = audioRef.current;
+          if (audio) {
+            const target = Math.min(audio.currentTime + skipTime, audio.duration || 0);
+            audio.currentTime = target;
+            setProgress(target);
+          }
+        },
+      ],
+      [
+        "stop",
+        () => {
+          const audio = audioRef.current;
+          if (audio) audio.pause();
+        },
+      ],
+    ];
+
+    for (const [action, handler] of handlers) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch {
+        // Not all actions are supported by every platform/browser
+      }
+    }
+
+    return () => {
+      for (const [action] of handlers) {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch {
+          // Ignore
+        }
+      }
+    };
+  }, [next, prev]);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const tag = (event.target as HTMLElement | null)?.tagName;
