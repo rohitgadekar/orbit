@@ -21,7 +21,6 @@ import {
   SkipForward,
   Volume2,
   VolumeX,
-  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -146,10 +145,10 @@ export function FullscreenPlayer({
   // Handle native browser full-screen toggle
   function toggleBrowserFullscreen() {
     if (!document.fullscreenElement) {
-      void containerRef.current?.requestFullscreen().catch(() => {});
+      void containerRef.current?.requestFullscreen().catch(() => { });
       setIsNativeFullscreen(true);
     } else {
-      void document.exitFullscreen().catch(() => {});
+      void document.exitFullscreen().catch(() => { });
       setIsNativeFullscreen(false);
     }
   }
@@ -209,7 +208,7 @@ export function FullscreenPlayer({
           <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-400/80">ORBIT</span>
         </div>
 
-        <div className="flex flex-col items-center text-center">
+        <div className="hidden md:inline flex flex-col items-center text-center">
           <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#dbe878]">
             Now Playing
           </span>
@@ -217,12 +216,12 @@ export function FullscreenPlayer({
             <Link
               href={`/albums/${encodeURIComponent(current.album.title)}`}
               onClick={onClose}
-              className="hidden md:inline text-xs font-medium text-zinc-300 hover:text-[#dbe878] hover:underline transition max-w-[200px] truncate"
+              className="text-xs font-medium text-zinc-300 hover:text-[#dbe878] hover:underline transition"
             >
               {current.album.title}
             </Link>
           ) : (
-            <span className="hidden md:inline text-xs font-medium text-zinc-400">Orbit Studio Catalog</span>
+            <span className="text-xs font-medium text-zinc-400">Orbit Studio Catalog</span>
           )}
         </div>
 
@@ -241,9 +240,8 @@ export function FullscreenPlayer({
           <button
             type="button"
             onClick={() => setShowQueue(!showQueue)}
-            className={`rounded-full border border-white/10 p-2.5 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white ${
-              showQueue ? "bg-[#dbe878] text-zinc-950 font-bold" : "bg-black/20 text-zinc-300"
-            }`}
+            className={`rounded-full border border-white/10 p-2.5 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white ${showQueue ? "bg-[#dbe878] text-zinc-950 font-bold" : "bg-black/20 text-zinc-300"
+              }`}
             title="Playing Queue"
           >
             <ListMusic className="h-4 w-4" />
@@ -309,20 +307,14 @@ export function FullscreenPlayer({
           <div className="flex flex-col justify-center md:col-span-6 lg:col-span-6">
             {/* Title & Artist */}
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0">
                 <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
                   Hi-Res Audio • Lossless
                 </span>
-                <h1
-                  className="mt-3 font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl truncate"
-                  title={current.title}
-                >
+                <h1 className="mt-3 font-serif text-xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
                   {current.title}
                 </h1>
-                <p
-                  className="mt-2 text-base font-medium text-zinc-300 sm:text-lg truncate"
-                  title={current.artist?.name || "Unknown Artist"}
-                >
+                <p className="mt-2 text-base font-medium text-zinc-300 sm:text-md">
                   {current.artist?.name || "Unknown Artist"}
                 </p>
               </div>
@@ -330,11 +322,10 @@ export function FullscreenPlayer({
               <button
                 type="button"
                 onClick={() => void toggleFavourite(current.id)}
-                className={`flex-shrink-0 rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${
-                  isFav
-                    ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
-                    : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
-                }`}
+                className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isFav
+                  ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
+                  : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
+                  }`}
                 aria-label={isFav ? "Favorited" : "Add to favorites"}
               >
                 <Heart className={`h-5 w-5 ${isFav ? "fill-rose-400" : ""}`} />
@@ -363,9 +354,8 @@ export function FullscreenPlayer({
               <button
                 type="button"
                 onClick={toggleShuffle}
-                className={`rounded-full p-2.5 transition ${
-                  shuffle ? "text-[#dbe878]" : "text-zinc-400 hover:text-white"
-                }`}
+                className={`rounded-full p-2.5 transition ${shuffle ? "text-[#dbe878]" : "text-zinc-400 hover:text-white"
+                  }`}
                 title="Shuffle"
               >
                 <Shuffle className="h-5 w-5" />
@@ -409,9 +399,8 @@ export function FullscreenPlayer({
               <button
                 type="button"
                 onClick={cycleRepeat}
-                className={`rounded-full p-2.5 transition ${
-                  repeat !== "off" ? "text-[#dbe878]" : "text-zinc-400 hover:text-white"
-                }`}
+                className={`rounded-full p-2.5 transition ${repeat !== "off" ? "text-[#dbe878]" : "text-zinc-400 hover:text-white"
+                  }`}
                 title="Repeat"
               >
                 {repeat === "one" ? <Repeat1 className="h-5 w-5" /> : <Repeat className="h-5 w-5" />}
@@ -443,37 +432,15 @@ export function FullscreenPlayer({
         </div>
       </main>
 
-      {/* Dedicated Queue / Playlist Modal Overlay */}
+      {/* Floating Queue Drawer */}
       {showQueue ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-md animate-in fade-in"
-          onClick={() => setShowQueue(false)}
-        >
-          <div
-            className="flex max-h-[82vh] w-full max-w-lg flex-col rounded-t-[28px] sm:rounded-[28px] border border-white/15 bg-[#141316] p-5 shadow-2xl animate-in slide-in-from-bottom-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Mobile drag handle */}
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
-
+        <div className="relative z-20 mx-auto mb-6 w-full max-w-2xl px-6">
+          <div className="rounded-[28px] border border-white/15 bg-black/60 p-5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div>
-                <h3 className="font-serif text-lg font-bold text-white">Playing Queue</h3>
-                <p className="text-xs text-zinc-400">{queue.length} track{queue.length === 1 ? "" : "s"} in queue</p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowQueue(false)}
-                className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-300 transition hover:bg-white/15 hover:text-white"
-                title="Close queue"
-                aria-label="Close queue"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <h3 className="font-serif text-lg font-bold text-white">Next in Queue</h3>
+              <span className="text-xs text-zinc-400">{queue.length} songs</span>
             </div>
-
-            <div className="mt-3 flex-1 min-h-0 space-y-1 overflow-y-auto pr-1">
+            <div className="mt-3 max-h-56 space-y-1 overflow-y-auto pr-1">
               {queue.map((item, idx) => {
                 const isActive = item.id === current.id;
                 return (
@@ -483,20 +450,19 @@ export function FullscreenPlayer({
                     onClick={() => {
                       if (onPlaySong) onPlaySong(item);
                     }}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
-                      isActive ? "bg-white/15 text-[#dbe878]" : "text-zinc-300 hover:bg-white/5"
-                    }`}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${isActive ? "bg-white/15 text-[#dbe878]" : "text-zinc-300 hover:bg-white/5"
+                      }`}
                   >
                     <span className="w-5 text-xs text-zinc-500">{idx + 1}</span>
                     <Cover
                       src={item.cover_url || item.album?.cover_url}
                       title={item.title}
-                      className="h-10 w-10 rounded-lg flex-shrink-0"
+                      className="h-9 w-9 rounded-lg"
                       playing={isActive && isPlaying}
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-semibold">{item.title}</p>
-                      <p className="truncate text-[11px] text-zinc-400">{item.artist?.name || "Unknown Artist"}</p>
+                      <p className="truncate text-[11px] text-zinc-400">{item.artist?.name}</p>
                     </div>
                     <span className="text-xs font-mono text-zinc-500">
                       {item.duration_seconds ? formatTime(item.duration_seconds) : ""}

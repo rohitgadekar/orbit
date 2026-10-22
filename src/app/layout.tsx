@@ -47,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${plusJakarta.variable} ${playfair.variable} ${syne.variable} ${outfit.variable} h-full antialiased`}
     >
-      <body className="h-full min-h-dvh bg-[#f7f6f3] md:bg-[#18171a] font-sans text-ink selection:bg-[#dbe878]/30">
+      <body className="h-full min-h-dvh bg-[#18171a] font-sans text-ink selection:bg-[#dbe878]/30">
         <Providers>{children}</Providers>
       </body>
     </html>
