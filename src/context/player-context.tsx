@@ -54,6 +54,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const audio = new Audio();
     audio.preload = "metadata";
     audioRef.current = audio;
+    audio.setAttribute("referrerpolicy", "no-referrer");
+
 
     const onTime = () => setProgress(audio.currentTime);
     const onMeta = () => setDuration(audio.duration || 0);
