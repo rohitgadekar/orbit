@@ -308,10 +308,10 @@ export function FullscreenPlayer({
             {/* Title & Artist */}
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
+                <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
                   Hi-Res Audio • Lossless
                 </span>
-                <h1 className="mt-3 font-serif text-xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+                <h1 className="mt-3  text-xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
                   {current.title}
                 </h1>
                 <p className="mt-2 text-base font-medium text-zinc-300 sm:text-md">
