@@ -39,11 +39,7 @@ export function SongRow({
       )}
     >
       <div className="flex min-w-0 flex-1 items-center gap-3.5">
-        {index != null ? (
-          <span className="w-5 text-center font-mono text-xs text-zinc-400 group-hover:text-zinc-600">
-            {index + 1}
-          </span>
-        ) : null}
+
 
         {/* Artwork Thumbnail */}
         <div className="relative shrink-0">
@@ -93,7 +89,7 @@ export function SongRow({
       </div>
 
       {/* Meta & Actions matching screenshot */}
-      <div className="flex items-center gap-2.5 sm:gap-4">
+      <div className="flex items-center justify-end gap-2.5 sm:gap-4">
         {song.album?.title ? (
           <Link
             href={`/albums/${encodeURIComponent(song.album.title)}`}
@@ -104,7 +100,7 @@ export function SongRow({
           </Link>
         ) : null}
 
-        <span className="font-mono text-xs font-medium text-zinc-500">
+        <span className="font-mono hidden md:block text-xs font-medium text-zinc-500">
           {song.duration_seconds ? formatTime(song.duration_seconds) : "2:40"}
         </span>
 
@@ -112,7 +108,7 @@ export function SongRow({
         <button
           type="button"
           onClick={() => void toggleFavourite(song.id)}
-          className="rounded-full p-1.5 text-zinc-400 transition hover:bg-black/5 hover:text-rose-500"
+          className="hidden md:block rounded-full p-1.5 text-zinc-400 transition hover:bg-black/5 hover:text-rose-500"
           aria-label={fav ? "Remove favorite" : "Add to favorites"}
         >
           <Heart
@@ -125,7 +121,7 @@ export function SongRow({
           <button
             type="button"
             onClick={onMore}
-            className="rounded-full p-1.5 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900"
+            className="hidden md:block rounded-full p-1.5 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900"
             title="Add to folder"
           >
             <Plus className="h-4 w-4" />
@@ -137,7 +133,7 @@ export function SongRow({
           <button
             type="button"
             onClick={() => onEdit(song)}
-            className="opacity-0 rounded-full p-1.5 text-zinc-400 transition group-hover:opacity-100 hover:bg-black/5 hover:text-zinc-900"
+            className="hidden md:block rounded-full p-1.5 text-zinc-400 transition group-hover:opacity-100 hover:bg-black/5 hover:text-zinc-900"
             title="Edit track"
           >
             <MoreHorizontal className="h-4 w-4" />
