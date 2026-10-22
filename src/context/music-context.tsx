@@ -74,10 +74,7 @@ function normalizeSong(row: Record<string, unknown>): Song {
 }
 
 /**
- * Resolves a single individual artist name to a DB row.
- * If `name` is compound (e.g. "Calvin Harris, Ayah Marar"), only the
- * first individual name is used — callers are responsible for creating
- * rows for the remaining artists separately.
+ * Resolves or creates an artist row in the database.
  */
 async function resolveOneArtist(
   supabase: ReturnType<typeof createClient>,
@@ -103,33 +100,57 @@ async function resolveOneArtist(
 
   const { data, error: artistError } = await supabase
     .from("artists")
-    .insert({
-      name: artistName,
-      image_url: imageUrl || null,
-    })
+    .upsert(
+      {
+        name: artistName,
+        image_url: imageUrl || null,
+      },
+      { onConflict: "name" },
+    )
     .select("*")
     .single();
-  if (artistError) throw artistError;
+
+  if (artistError) {
+    const { data: retry } = await supabase
+      .from("artists")
+      .select("*")
+      .ilike("name", artistName)
+      .maybeSingle();
+    if (retry) return retry as Artist;
+    throw artistError;
+  }
   return data as Artist;
 }
 
 /**
- * Given a raw artist credit string (possibly compound, e.g. "Calvin Harris, Ayah Marar"),
- * ensures every individual artist has their own DB row and returns the PRIMARY (first) artist.
- * The primary artist gets the provided imageUrl; secondary artists are created with no image.
+ * Given a raw artist credit string (e.g. "Major Lazer, Nicki Minaj"):
+ * 1. Ensures an individual artist row exists in `artists` for each individual artist
+ *    (e.g. "Major Lazer" and "Nicki Minaj") so each artist can have their own profile
+ *    picture, biography, and dedicated artist page.
+ * 2. If it's a multi-artist track, also resolves the full credit row (e.g. "Major Lazer, Nicki Minaj")
+ *    and links the song to it. This preserves the complete collaboration credit on the song record
+ *    so all artists appear on the track and the song is indexed under each artist's discography.
  */
 async function resolveArtist(
   supabase: ReturnType<typeof createClient>,
   name: string,
   imageUrl?: string,
 ): Promise<Artist> {
-  const individualNames = splitArtistNames(name);
-  // Create rows for all secondary artists (no image)
-  for (const secondary of individualNames.slice(1)) {
-    await resolveOneArtist(supabase, secondary);
+  const trimmed = name.trim();
+  const individualNames = splitArtistNames(trimmed);
+
+  // 1. Ensure each individual artist has their own row in the database for their profile/bio
+  for (const indName of individualNames) {
+    await resolveOneArtist(supabase, indName);
   }
-  // The primary artist is what we return and store as artist_id on the song
-  return resolveOneArtist(supabase, individualNames[0] ?? name.trim(), imageUrl);
+
+  // 2. If multiple artists are credited, save the full collaboration credit on the song
+  if (individualNames.length > 1) {
+    return resolveOneArtist(supabase, trimmed);
+  }
+
+  // 3. For single artist, return that individual artist's row
+  return resolveOneArtist(supabase, individualNames[0] ?? trimmed, imageUrl);
 }
 
 export function MusicProvider({ children }: { children: ReactNode }) {
