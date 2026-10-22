@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <IconRail />
 
         {/* Center Main White/Ivory Canvas */}
-        <div className="m-1 flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl bg-[#f7f6f3] shadow-2xl">
+        <div className="md:m-1 flex min-w-0 flex-1 flex-col overflow-hidden md:rounded-3xl bg-[#f7f6f3] shadow-2xl">
           {/* Top Bar Header */}
           <TopHeader />
 
