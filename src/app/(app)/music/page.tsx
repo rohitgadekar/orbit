@@ -2,13 +2,16 @@
 
 import { AddToPlaylistModal } from "@/components/add-to-playlist-modal";
 import { useTrackEditor } from "@/components/app-shell";
+import { ArtistAvatar } from "@/components/artist-avatar";
 import { Cover } from "@/components/cover";
+import { EditArtistModal } from "@/components/edit-artist-modal";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
+import { getIndividualArtists, splitArtistNames, type ParsedArtist } from "@/lib/artists";
 import type { Song } from "@/lib/types";
-import { Disc3, Music2, Play, Plus, Search, Users2 } from "lucide-react";
+import { Disc3, Music2, Pencil, Play, Plus, Search, Users2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -24,6 +27,7 @@ export default function MusicPage() {
 
   const [query, setQuery] = useState(initialQuery);
   const [selectedForFolder, setSelectedForFolder] = useState<Song | null>(null);
+  const [editingArtist, setEditingArtist] = useState<ParsedArtist | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -32,6 +36,9 @@ export default function MusicPage() {
       (song) =>
         song.title.toLowerCase().includes(q) ||
         song.artist?.name.toLowerCase().includes(q) ||
+        splitArtistNames(song.artist?.name).some((name) =>
+          name.toLowerCase().includes(q),
+        ) ||
         song.album?.title.toLowerCase().includes(q),
     );
   }, [query, songs]);
@@ -54,6 +61,22 @@ export default function MusicPage() {
     return Array.from(map.values());
   }, [songs]);
 
+  // Group by individual artist if view === 'artists'
+  // Ensures multi-artist tracks (e.g. "Calvin Harris, Ayah Marar") are split into individual artists
+  const individualArtists = useMemo(() => {
+    return getIndividualArtists(songs, artists);
+  }, [songs, artists]);
+
+  const filteredArtists = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      return [...individualArtists].sort((a, b) => b.songs.length - a.songs.length || a.name.localeCompare(b.name));
+    }
+    return individualArtists
+      .filter((a) => a.name.toLowerCase().includes(q))
+      .sort((a, b) => b.songs.length - a.songs.length || a.name.localeCompare(b.name));
+  }, [query, individualArtists]);
+
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
@@ -66,15 +89,25 @@ export default function MusicPage() {
             {view === "albums" ? "Albums" : view === "artists" ? "Artists" : "Music Library"}
           </h1>
           <p className="text-xs text-zinc-500 mt-1">
-            {filtered.length} track{filtered.length === 1 ? "" : "s"} in library
+            {view === "artists"
+              ? `${filteredArtists.length} individual artist${filteredArtists.length === 1 ? "" : "s"} • ${songs.length} tracks in catalog`
+              : view === "albums"
+                ? `${albums.length} album${albums.length === 1 ? "" : "s"} • ${songs.length} tracks in catalog`
+                : `${filtered.length} track${filtered.length === 1 ? "" : "s"} in library`}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {filtered.length > 0 ? (
+          {songs.length > 0 ? (
             <button
               type="button"
-              onClick={() => playSong(filtered[0], filtered)}
+              onClick={() => {
+                if (view === "artists" && filteredArtists[0]?.songs[0]) {
+                  playSong(filteredArtists[0].songs[0], songs);
+                } else if (filtered[0]) {
+                  playSong(filtered[0], filtered);
+                }
+              }}
               className="inline-flex items-center gap-2 rounded-full bg-[#19181b] px-5 py-2.5 text-xs font-bold text-[#dbe878] shadow-md transition hover:scale-105 active:scale-95"
             >
               <Play className="h-3.5 w-3.5 fill-current" />
@@ -177,26 +210,77 @@ export default function MusicPage() {
           ))}
         </div>
       ) : view === "artists" ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {artists.map((artist) => {
-            const artistSongs = songs.filter((s) => s.artist_id === artist.id);
-            return (
-              <div
-                key={artist.id}
-                onClick={() => {
-                  if (artistSongs[0]) playSong(artistSongs[0], artistSongs);
-                }}
-                className="group flex cursor-pointer flex-col items-center rounded-[24px] border border-black/5 bg-white p-4 text-center shadow-xs transition hover:shadow-md"
-              >
-                <div className="relative aspect-square w-24 overflow-hidden rounded-full ring-2 ring-zinc-100 transition duration-300 group-hover:scale-105 group-hover:ring-zinc-900">
-                  <Cover src={artist.image_url} title={artist.name} className="h-full w-full object-cover" />
+        filteredArtists.length === 0 ? (
+          <EmptyState
+            title="No artists found"
+            body={query ? `No artists matching "${query}".` : "No artists found in your catalog yet."}
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {filteredArtists.map((artist) => {
+              return (
+                <div
+                  key={artist.name}
+                  className="group relative flex flex-col items-center rounded-[24px] border border-black/5 bg-white p-4 text-center shadow-xs transition hover:border-black/15 hover:shadow-md"
+                >
+                  {/* Edit Artist Profile Picture Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setEditingArtist(artist);
+                    }}
+                    className="absolute right-3 top-3 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/5 text-zinc-500 opacity-0 transition hover:bg-black/10 hover:text-zinc-900 group-hover:opacity-100"
+                    title={`Edit profile picture and bio for ${artist.name}`}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+
+                  {/* Circular Avatar with Play overlay */}
+                  <div className="relative">
+                    <Link href={`/artists/${encodeURIComponent(artist.name)}`}>
+                      <ArtistAvatar
+                        name={artist.name}
+                        imageUrl={artist.image_url}
+                        sizeClassName="w-24 h-24"
+                      />
+                    </Link>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (artist.songs[0]) playSong(artist.songs[0], artist.songs);
+                      }}
+                      className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 opacity-0 transition group-hover:opacity-100 cursor-pointer"
+                      title={`Play ${artist.name}`}
+                    >
+                      <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-zinc-950 shadow-lg">
+                        <Play className="h-4 w-4 translate-x-0.5 fill-current" />
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Artist Name & Track count linking to dedicated artist page */}
+                  <Link
+                    href={`/artists/${encodeURIComponent(artist.name)}`}
+                    className="mt-3 w-full max-w-full text-center focus:outline-none"
+                  >
+                    <p
+                      className="w-full truncate px-1 text-xs font-bold text-zinc-900 transition hover:text-black group-hover:text-black"
+                      title={artist.name}
+                    >
+                      {artist.name}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-zinc-500">
+                      {artist.songs.length} track{artist.songs.length === 1 ? "" : "s"}
+                    </p>
+                  </Link>
                 </div>
-                <p className="mt-3 truncate text-xs font-bold text-zinc-900">{artist.name}</p>
-                <p className="text-[11px] text-zinc-500">{artistSongs.length} track{artistSongs.length === 1 ? "" : "s"}</p>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )
       ) : (
         <div className="rounded-2xl border border-black/5 bg-white p-2 shadow-xs space-y-1">
           {filtered.map((song, index) => (
@@ -217,6 +301,13 @@ export default function MusicPage() {
         song={selectedForFolder}
         isOpen={Boolean(selectedForFolder)}
         onClose={() => setSelectedForFolder(null)}
+      />
+
+      {/* Edit Artist Profile Picture Modal */}
+      <EditArtistModal
+        artist={editingArtist}
+        isOpen={Boolean(editingArtist)}
+        onClose={() => setEditingArtist(null)}
       />
     </div>
   );

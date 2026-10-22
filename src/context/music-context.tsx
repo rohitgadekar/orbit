@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { splitArtistNames } from "@/lib/artists";
 import type { Album, Artist, Playlist, Song } from "@/lib/types";
 import {
   createContext,
@@ -43,6 +44,11 @@ type MusicContextValue = {
   deleteTrack: (songId: string) => Promise<void>;
   recordPlay: (songId: string) => Promise<void>;
   updateProfile: (displayName: string, avatarUrl?: string) => Promise<void>;
+  updateArtistProfile: (
+    artistNameOrId: string,
+    imageUrl?: string | null,
+    bio?: string | null,
+  ) => Promise<void>;
 };
 
 const MusicContext = createContext<MusicContextValue | null>(null);
@@ -66,12 +72,19 @@ function normalizeSong(row: Record<string, unknown>): Song {
   };
 }
 
-async function resolveArtist(
+/**
+ * Resolves a single individual artist name to a DB row.
+ * If `name` is compound (e.g. "Calvin Harris, Ayah Marar"), only the
+ * first individual name is used — callers are responsible for creating
+ * rows for the remaining artists separately.
+ */
+async function resolveOneArtist(
   supabase: ReturnType<typeof createClient>,
   name: string,
   imageUrl?: string,
-) {
+): Promise<Artist> {
   const artistName = name.trim();
+
   const { data: existingArtist } = await supabase
     .from("artists")
     .select("*")
@@ -97,6 +110,25 @@ async function resolveArtist(
     .single();
   if (artistError) throw artistError;
   return data as Artist;
+}
+
+/**
+ * Given a raw artist credit string (possibly compound, e.g. "Calvin Harris, Ayah Marar"),
+ * ensures every individual artist has their own DB row and returns the PRIMARY (first) artist.
+ * The primary artist gets the provided imageUrl; secondary artists are created with no image.
+ */
+async function resolveArtist(
+  supabase: ReturnType<typeof createClient>,
+  name: string,
+  imageUrl?: string,
+): Promise<Artist> {
+  const individualNames = splitArtistNames(name);
+  // Create rows for all secondary artists (no image)
+  for (const secondary of individualNames.slice(1)) {
+    await resolveOneArtist(supabase, secondary);
+  }
+  // The primary artist is what we return and store as artist_id on the song
+  return resolveOneArtist(supabase, individualNames[0] ?? name.trim(), imageUrl);
 }
 
 export function MusicProvider({ children }: { children: ReactNode }) {
@@ -276,10 +308,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     async (input: TrackInput) => {
       if (!user) return;
       const supabase = createClient();
+      // resolveArtist now splits compound names and returns the primary artist
       const artist = await resolveArtist(
         supabase,
         input.artistName,
-        input.artistImageUrl || input.coverUrl,
+        input.artistImageUrl,
       );
 
       let albumId: string | null = null;
@@ -317,10 +350,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       if (!user) return;
       const supabase = createClient();
       const song = songs.find((item) => item.id === songId);
+      // resolveArtist now splits compound names and returns the primary artist
       const artist = await resolveArtist(
         supabase,
         input.artistName,
-        input.artistImageUrl || input.coverUrl,
+        input.artistImageUrl,
       );
 
       let albumId = song?.album_id ?? null;
@@ -368,6 +402,39 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       await refresh();
     },
     [refresh, songs, user],
+  );
+
+  const updateArtistProfile = useCallback(
+    async (artistNameOrId: string, imageUrl?: string | null, bio?: string | null) => {
+      const supabase = createClient();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        artistNameOrId,
+      );
+
+      const updateData: Record<string, unknown> = {};
+      if (imageUrl !== undefined) updateData.image_url = imageUrl;
+      if (bio !== undefined) updateData.bio = bio;
+
+      let query = supabase.from("artists").update(updateData);
+      if (isUuid) {
+        query = query.eq("id", artistNameOrId);
+      } else {
+        query = query.ilike("name", artistNameOrId.trim());
+      }
+
+      const { data, error } = await query.select();
+      if (error || !data || data.length === 0) {
+        if (!isUuid) {
+          await supabase.from("artists").insert({
+            name: artistNameOrId.trim(),
+            image_url: imageUrl || null,
+            bio: bio || null,
+          });
+        }
+      }
+      await refresh();
+    },
+    [refresh],
   );
 
   const recordPlay = useCallback(
@@ -432,6 +499,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       deleteTrack,
       recordPlay,
       updateProfile,
+      updateArtistProfile,
     }),
     [
       loading,
@@ -454,6 +522,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       deleteTrack,
       recordPlay,
       updateProfile,
+      updateArtistProfile,
     ],
   );
 

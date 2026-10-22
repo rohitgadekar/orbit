@@ -29,7 +29,8 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthPage = path === "/login" || path === "/signup";
-  const isPublic = isAuthPage || path === "/";
+  const isApi = path.startsWith("/api");
+  const isPublic = isAuthPage || path === "/" || isApi;
 
   if (!user && !isPublic) {
     const redirect = request.nextUrl.clone();

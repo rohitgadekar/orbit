@@ -1,9 +1,12 @@
 "use client";
 
+import { ArtistAvatar } from "@/components/artist-avatar";
+import { EditArtistModal } from "@/components/edit-artist-modal";
 import { useTrackEditor } from "@/components/app-shell";
 import { Cover } from "@/components/cover";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
+import { getIndividualArtists, type ParsedArtist } from "@/lib/artists";
 import { initials } from "@/lib/utils";
 import {
   Check,
@@ -12,19 +15,31 @@ import {
   LogOut,
   Pencil,
   PlusCircle,
+  Search,
   Sparkles,
   User,
+  Users2,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { profile, user, updateProfile, signOut } = useAuth();
-  const { songs, addTrack } = useMusic();
+  const { songs, artists, addTrack } = useMusic();
   const { editSong } = useTrackEditor();
 
-  const [activeTab, setActiveTab] = useState<"account" | "add-track" | "catalog">("account");
+  const [activeTab, setActiveTab] = useState<"account" | "add-track" | "catalog" | "artists">("account");
+  const [artistSearch, setArtistSearch] = useState("");
+  const [editingArtist, setEditingArtist] = useState<ParsedArtist | null>(null);
+
+  const individualArtists = useMemo(() => getIndividualArtists(songs, artists), [songs, artists]);
+  const filteredArtists = useMemo(() => {
+    const q = artistSearch.trim().toLowerCase();
+    if (!q) return individualArtists;
+    return individualArtists.filter((a) => a.name.toLowerCase().includes(q));
+  }, [artistSearch, individualArtists]);
 
   // Profile Form state
   const [prevProfile, setPrevProfile] = useState(profile);
@@ -147,6 +162,19 @@ export default function SettingsPage() {
         >
           <Disc3 className="h-3.5 w-3.5" />
           <span>Manage Tracks ({songs.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("artists")}
+          className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${
+            activeTab === "artists"
+              ? "bg-[#19181b] text-[#dbe878] shadow-sm"
+              : "text-zinc-600 hover:bg-black/5 hover:text-zinc-900"
+          }`}
+        >
+          <Users2 className="h-3.5 w-3.5" />
+          <span>Artist Profiles ({individualArtists.length})</span>
         </button>
       </div>
 
@@ -298,14 +326,17 @@ export default function SettingsPage() {
             </label>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
-              Artist Name *
+              Artist Name(s) *
               <input
                 required
                 value={artistName}
                 onChange={(e) => setArtistName(e.target.value)}
-                placeholder="e.g. The Weeknd"
+                placeholder="e.g. Calvin Harris, Ayah Marar"
                 className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
               />
+              <span className="mt-1 block text-[11px] normal-case font-normal text-zinc-500">
+                Multiple artists can be comma-separated (e.g. &ldquo;Calvin Harris, Ayah Marar&rdquo;)
+              </span>
             </label>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
@@ -428,6 +459,85 @@ export default function SettingsPage() {
           </div>
         </div>
       ) : null}
+
+      {/* Tab 4: Artist Profiles */}
+      {activeTab === "artists" ? (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-serif text-xl font-bold text-zinc-900">Artist Profiles & Photos</h2>
+              <p className="text-xs text-zinc-500">
+                Manage profile pictures for all individual artists in your catalog ({individualArtists.length} artists).
+              </p>
+            </div>
+
+            <div className="relative w-full sm:max-w-xs">
+              <input
+                value={artistSearch}
+                onChange={(e) => setArtistSearch(e.target.value)}
+                placeholder="Search artists..."
+                className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2 pl-9 text-xs font-medium text-zinc-900 outline-none transition focus:border-zinc-900"
+              />
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+            </div>
+          </div>
+
+          <div className="rounded-[32px] border border-black/5 bg-white p-6 shadow-sm">
+            {filteredArtists.length === 0 ? (
+              <p className="py-8 text-center text-xs text-zinc-500">
+                {artistSearch ? `No artists matching "${artistSearch}".` : "No artists in catalog yet."}
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {filteredArtists.map((artist) => (
+                  <div
+                    key={artist.name}
+                    className="group relative flex flex-col items-center rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-center transition hover:border-zinc-300 hover:bg-white hover:shadow-sm"
+                  >
+                    <ArtistAvatar
+                      name={artist.name}
+                      imageUrl={artist.image_url}
+                      sizeClassName="w-20 h-20"
+                    />
+                    <p
+                      className="mt-3 w-full truncate px-1 text-xs font-bold text-zinc-900"
+                      title={artist.name}
+                    >
+                      {artist.name}
+                    </p>
+                    <p className="text-[11px] text-zinc-500">
+                      {artist.songs.length} track{artist.songs.length === 1 ? "" : "s"}
+                    </p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <Link
+                        href={`/artists/${encodeURIComponent(artist.name)}`}
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 shadow-xs transition hover:border-zinc-900 hover:text-zinc-900"
+                      >
+                        <span>View</span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setEditingArtist(artist)}
+                        className="inline-flex items-center gap-1 rounded-full bg-[#19181b] px-3 py-1 text-[11px] font-semibold text-[#dbe878] shadow-xs transition hover:scale-105"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        <span>Edit</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Edit Artist Profile Picture Modal */}
+      <EditArtistModal
+        artist={editingArtist}
+        isOpen={Boolean(editingArtist)}
+        onClose={() => setEditingArtist(null)}
+      />
     </div>
   );
 }

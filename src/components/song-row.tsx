@@ -4,8 +4,10 @@ import { Cover } from "@/components/cover";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import type { Song } from "@/lib/types";
+import { splitArtistNames } from "@/lib/artists";
 import { cn, formatTime } from "@/lib/utils";
 import { Heart, MoreHorizontal, Pause, Play, Plus } from "lucide-react";
+import Link from "next/link";
 
 export function SongRow({
   song,
@@ -66,23 +68,28 @@ export function SongRow({
         </div>
 
         {/* Title and Artist */}
-        <button
-          type="button"
-          onClick={() => (active ? toggle() : playSong(song, queue))}
-          className="min-w-0 flex-1 text-left"
-        >
-          <span
-            className={cn(
-              "block truncate text-sm font-bold tracking-tight text-zinc-900 transition",
-              active && "text-[#bf5b30]",
-            )}
+        <div className="min-w-0 flex-1 text-left">
+          <button
+            type="button"
+            onClick={() => (active ? toggle() : playSong(song, queue))}
+            className="block w-full truncate text-left text-sm font-bold tracking-tight text-zinc-900 transition focus:outline-none"
           >
-            {song.title}
-          </span>
-          <span className="block truncate text-xs font-medium text-zinc-500">
-            {song.artist?.name || "Unknown Artist"}
-          </span>
-        </button>
+            <span className={cn(active && "text-[#bf5b30]")}>{song.title}</span>
+          </button>
+          <div className="truncate text-xs font-medium text-zinc-500">
+            {splitArtistNames(song.artist?.name).map((name, i, arr) => (
+              <span key={name}>
+                <Link
+                  href={`/artists/${encodeURIComponent(name)}`}
+                  className="hover:text-zinc-950 hover:underline transition"
+                >
+                  {name}
+                </Link>
+                {i < arr.length - 1 ? ", " : ""}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Meta & Actions matching screenshot */}

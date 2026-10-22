@@ -2,11 +2,13 @@
 
 import { AddToPlaylistModal } from "@/components/add-to-playlist-modal";
 import { useTrackEditor } from "@/components/app-shell";
+import { ArtistAvatar } from "@/components/artist-avatar";
 import { Cover } from "@/components/cover";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
+import { getIndividualArtists } from "@/lib/artists";
 import type { Song } from "@/lib/types";
 import { Heart, Play, User } from "lucide-react";
 import Link from "next/link";
@@ -21,47 +23,18 @@ export default function HomePage() {
   const heroSong = [...songs].sort((a, b) => b.play_count - a.play_count)[0] ?? songs[0];
   const recentTracks = recentlyPlayed.length > 0 ? recentlyPlayed.slice(0, 8) : songs.slice(0, 8);
 
-  // Compute popular artists strictly from the most played songs in the library
+  // Compute popular artists strictly from individual artists ranked by total plays in library
+  const individualArtists = useMemo(
+    () => getIndividualArtists(songs, artists),
+    [songs, artists],
+  );
+
   const popularArtists = useMemo(() => {
-    const artistPlayMap = new Map<
-      string,
-      { id: string; name: string; image_url?: string | null; plays: number }
-    >();
-
-    for (const song of songs) {
-      const artist = song.artist;
-      if (!artist) continue;
-
-      const current = artistPlayMap.get(artist.id) || {
-        id: artist.id,
-        name: artist.name,
-        image_url: artist.image_url || song.cover_url || song.album?.cover_url || null,
-        plays: 0,
-      };
-
-      current.plays += song.play_count || 0;
-      if (!current.image_url && (song.cover_url || song.album?.cover_url)) {
-        current.image_url = song.cover_url || song.album?.cover_url;
-      }
-      artistPlayMap.set(artist.id, current);
-    }
-
-    // Also include any other artists in catalog
-    for (const a of artists) {
-      if (!artistPlayMap.has(a.id)) {
-        artistPlayMap.set(a.id, {
-          id: a.id,
-          name: a.name,
-          image_url: a.image_url || null,
-          plays: 0,
-        });
-      }
-    }
-
-    return Array.from(artistPlayMap.values())
-      .sort((a, b) => b.plays - a.plays)
-      .slice(0, 8);
-  }, [songs, artists]);
+    return individualArtists
+      .filter((a) => a.trackCount > 0)
+      .sort((a, b) => b.plays - a.plays || b.trackCount - a.trackCount)
+      .slice(0, 10);
+  }, [individualArtists]);
 
   if (loading && songs.length === 0) {
     return (
@@ -189,32 +162,41 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
             {popularArtists.map((artist) => (
-              <button
-                key={artist.id}
-                type="button"
-                onClick={() => {
-                  const artistSongs = songs.filter(
-                    (s) => s.artist_id === artist.id || s.artist?.name.toLowerCase() === artist.name.toLowerCase(),
-                  );
-                  if (artistSongs[0]) playSong(artistSongs[0], artistSongs);
-                  else playSong(songs[0], songs);
-                }}
+              <Link
+                key={artist.name}
+                href={`/artists/${encodeURIComponent(artist.name)}`}
                 className="group flex flex-col items-center text-center focus:outline-none"
               >
-                <div className="relative aspect-square w-20 sm:w-24 overflow-hidden rounded-full ring-2 ring-black/5 shadow-sm transition duration-300 group-hover:scale-105 group-hover:ring-zinc-900">
-                  <Cover
-                    src={artist.image_url}
-                    title={artist.name}
-                    className="h-full w-full object-cover"
+                <div className="relative">
+                  <ArtistAvatar
+                    name={artist.name}
+                    imageUrl={artist.image_url}
+                    sizeClassName="w-20 h-20 sm:w-24 sm:h-24"
                   />
+                  <div
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (artist.songs[0]) playSong(artist.songs[0], artist.songs);
+                    }}
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 opacity-0 transition group-hover:opacity-100"
+                    title={`Play ${artist.name}`}
+                  >
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-zinc-950 shadow-md">
+                      <Play className="h-3.5 w-3.5 translate-x-0.5 fill-current" />
+                    </span>
+                  </div>
                 </div>
-                <p className="mt-2.5 truncate text-xs font-bold text-zinc-800 transition group-hover:text-zinc-950">
+                <p
+                  className="mt-2.5 w-full max-w-full truncate px-1 text-xs font-bold text-zinc-800 transition group-hover:text-zinc-950"
+                  title={artist.name}
+                >
                   {artist.name}
                 </p>
                 <p className="text-[10px] text-zinc-400 font-medium">
                   {artist.plays} play{artist.plays === 1 ? "" : "s"}
                 </p>
-              </button>
+              </Link>
             ))}
           </div>
         )}

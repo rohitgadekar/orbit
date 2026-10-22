@@ -120,13 +120,17 @@ function EditTrackForm({
             />
           </label>
           <label className="block text-xs font-medium uppercase tracking-wider text-zinc-400">
-            Artist
+            Artist(s)
             <input
               required
               value={artistName}
               onChange={(e) => setArtistName(e.target.value)}
+              placeholder="e.g. Calvin Harris, Ayah Marar"
               className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm normal-case tracking-normal text-white placeholder-zinc-500 outline-none transition focus:border-[#dbe878] focus:bg-white/10"
             />
+            <span className="mt-1 block text-[10px] normal-case text-zinc-400">
+              Multiple artists can be separated with commas (e.g. &ldquo;Calvin Harris, Ayah Marar&rdquo;)
+            </span>
           </label>
         </div>
 

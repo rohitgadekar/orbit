@@ -4,7 +4,9 @@ import { Cover } from "@/components/cover";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import type { Song } from "@/lib/types";
+import { splitArtistNames } from "@/lib/artists";
 import { formatTime } from "@/lib/utils";
+import Link from "next/link";
 import {
   Heart,
   Maximize2,
@@ -136,9 +138,19 @@ export function NowPlayingPanel({
             <h3 className="truncate font-sans text-base font-bold text-zinc-900">
               {activeSong.title}
             </h3>
-            <p className="truncate text-xs font-medium text-zinc-600">
-              {activeSong.artist?.name || "Unknown Artist"}
-            </p>
+            <div className="truncate text-xs font-medium text-zinc-600">
+              {splitArtistNames(activeSong.artist?.name).map((name, i, arr) => (
+                <span key={name}>
+                  <Link
+                    href={`/artists/${encodeURIComponent(name)}`}
+                    className="hover:text-zinc-950 hover:underline transition"
+                  >
+                    {name}
+                  </Link>
+                  {i < arr.length - 1 ? ", " : ""}
+                </span>
+              ))}
+            </div>
           </div>
           <button
             type="button"
