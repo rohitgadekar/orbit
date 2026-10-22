@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
-import { getIndividualArtists, type ParsedArtist } from "@/lib/artists";
+import { getIndividualArtists, songCreditsArtist, type ParsedArtist } from "@/lib/artists";
 import type { Song } from "@/lib/types";
 import {
   ArrowLeft,
@@ -40,15 +40,44 @@ export default function ArtistDetailPage() {
   const artist = useMemo(() => {
     if (!rawId) return null;
     const lower = rawId.toLowerCase().trim();
-    return (
+    const matched =
       individualArtists.find(
         (a) =>
           a.id === rawId ||
           a.name.toLowerCase().trim() === lower ||
           encodeURIComponent(a.name).toLowerCase() === lower,
-      ) ?? null
-    );
-  }, [rawId, individualArtists]);
+      ) ?? null;
+
+    if (!matched) {
+      // Check if rawId matches an artist name directly from catalog or song credits
+      const nameMatch = rawId.trim();
+      const songsForArtist = songs.filter((s) => songCreditsArtist(s, nameMatch));
+      if (songsForArtist.length > 0) {
+        const dbArtist = artists.find((a) => a.name.toLowerCase().trim() === lower);
+        return {
+          id: dbArtist?.id || `artist-${encodeURIComponent(lower)}`,
+          name: dbArtist?.name || nameMatch,
+          image_url: dbArtist?.image_url || null,
+          bio: dbArtist?.bio || null,
+          songs: songsForArtist,
+          plays: songsForArtist.reduce((sum, s) => sum + (s.play_count || 0), 0),
+          trackCount: songsForArtist.length,
+        };
+      }
+      return null;
+    }
+
+    // Ensure all songs crediting this artist (including shared songs and featured tracks) are included
+    const allCreditedSongs = songs.filter((s) => songCreditsArtist(s, matched.name));
+    const finalSongs = allCreditedSongs.length > 0 ? allCreditedSongs : matched.songs;
+
+    return {
+      ...matched,
+      songs: finalSongs,
+      plays: finalSongs.reduce((sum, s) => sum + (s.play_count || 0), 0),
+      trackCount: finalSongs.length,
+    };
+  }, [rawId, individualArtists, songs, artists]);
 
   if (loading && !artist) {
     return (

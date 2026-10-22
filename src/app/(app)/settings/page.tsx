@@ -492,38 +492,47 @@ export default function SettingsPage() {
                 {filteredArtists.map((artist) => (
                   <div
                     key={artist.name}
-                    className="group relative flex flex-col items-center rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-center transition hover:border-zinc-300 hover:bg-white hover:shadow-sm"
+                    className="group relative flex flex-col items-center rounded-2xl border border-zinc-200/70 bg-white p-3.5 text-center shadow-2xs transition hover:border-zinc-400 hover:shadow-xs"
                   >
-                    <ArtistAvatar
-                      name={artist.name}
-                      imageUrl={artist.image_url}
-                      sizeClassName="w-20 h-20"
-                    />
-                    <p
-                      className="mt-3 w-full truncate px-1 text-xs font-bold text-zinc-900"
-                      title={artist.name}
+                    {/* Compact Top-Right Edit Button */}
+                    <button
+                      type="button"
+                      onClick={() => setEditingArtist(artist)}
+                      className="absolute right-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-[#19181b] hover:text-[#dbe878]"
+                      title={`Edit profile picture and bio for ${artist.name}`}
                     >
-                      {artist.name}
-                    </p>
-                    <p className="text-[11px] text-zinc-500">
-                      {artist.songs.length} track{artist.songs.length === 1 ? "" : "s"}
-                    </p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <Link
-                        href={`/artists/${encodeURIComponent(artist.name)}`}
-                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 shadow-xs transition hover:border-zinc-900 hover:text-zinc-900"
+                      <Pencil className="h-3 w-3" />
+                    </button>
+
+                    <Link
+                      href={`/artists/${encodeURIComponent(artist.name)}`}
+                      className="flex flex-col items-center focus:outline-none"
+                    >
+                      <ArtistAvatar
+                        name={artist.name}
+                        imageUrl={artist.image_url}
+                        sizeClassName="w-16 h-16 sm:w-18 sm:h-18"
+                      />
+                      <p
+                        className="mt-2.5 w-full max-w-[120px] truncate px-1 text-xs font-bold text-zinc-900 hover:text-black transition"
+                        title={artist.name}
                       >
-                        <span>View</span>
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setEditingArtist(artist)}
-                        className="inline-flex items-center gap-1 rounded-full bg-[#19181b] px-3 py-1 text-[11px] font-semibold text-[#dbe878] shadow-xs transition hover:scale-105"
-                      >
-                        <Pencil className="h-3 w-3" />
-                        <span>Edit</span>
-                      </button>
-                    </div>
+                        {artist.name}
+                      </p>
+                      <p className="text-[10px] text-zinc-500">
+                        {artist.songs.length} track{artist.songs.length === 1 ? "" : "s"}
+                      </p>
+                    </Link>
+
+                    {/* Subtle compact edit trigger */}
+                    <button
+                      type="button"
+                      onClick={() => setEditingArtist(artist)}
+                      className="mt-2 inline-flex items-center gap-1 rounded-full bg-zinc-50 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600 ring-1 ring-black/5 transition hover:bg-[#19181b] hover:text-[#dbe878]"
+                    >
+                      <Pencil className="h-2.5 w-2.5" />
+                      <span>Edit</span>
+                    </button>
                   </div>
                 ))}
               </div>

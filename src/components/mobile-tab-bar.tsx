@@ -1,14 +1,14 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Compass, Disc3, FolderArchive, Heart, UserRound } from "lucide-react";
+import { Compass, Disc3, Heart, ListMusic, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const MOBILE_NAV_ITEMS = [
   { href: "/home", label: "Browse", icon: Compass },
   { href: "/music", label: "Songs", icon: Disc3 },
-  { href: "/folders", label: "Folders", icon: FolderArchive },
+  { href: "/folders", label: "Playlists", icon: ListMusic },
   { href: "/favourites", label: "Loved", icon: Heart },
   { href: "/profile", label: "Profile", icon: UserRound },
 ];
@@ -17,31 +17,47 @@ export function MobileTabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="grid grid-cols-5 gap-1 border-t border-black/5 bg-[#19181b] px-2 pb-[max(10px,var(--safe-bottom))] pt-2 md:hidden">
-      {MOBILE_NAV_ITEMS.map((item) => {
-        const active = pathname === item.href || (item.href !== "/home" && pathname.startsWith(`${item.href}/`));
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] font-semibold transition",
-              active ? "text-[#dbe878]" : "text-zinc-400 hover:text-white",
-            )}
-          >
-            <span
+    <div className="fixed bottom-3 left-3 right-3 z-40 mx-auto max-w-md md:hidden pointer-events-auto">
+      <nav className="flex items-center justify-around rounded-[32px] border border-white/15 bg-[#19181b]/92 px-2 py-2 shadow-2xl shadow-black/60 backdrop-blur-2xl">
+        {MOBILE_NAV_ITEMS.map((item) => {
+          const active =
+            pathname === item.href ||
+            (item.href !== "/home" && pathname.startsWith(`${item.href}/`));
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
               className={cn(
-                "grid h-8 w-8 place-items-center rounded-xl transition",
-                active ? "bg-[#2d2c2f] text-[#dbe878]" : "text-zinc-400",
+                "group relative flex flex-1 flex-col items-center justify-center gap-1 py-1 text-center transition-all duration-200 active:scale-95",
+                active ? "text-[#dbe878]" : "text-zinc-400 hover:text-white",
               )}
             >
-              <Icon className="h-4 w-4" />
-            </span>
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
+              <div
+                className={cn(
+                  "relative grid h-8 w-11 place-items-center rounded-full transition-all duration-200",
+                  active
+                    ? "bg-white/10 text-[#dbe878] shadow-inner"
+                    : "text-zinc-400 group-hover:text-zinc-200",
+                )}
+              >
+                <Icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                {active ? (
+                  <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-[#dbe878]" />
+                ) : null}
+              </div>
+              <span
+                className={cn(
+                  "text-[10px] tracking-tight font-medium transition-colors",
+                  active ? "font-bold text-[#dbe878]" : "text-zinc-400",
+                )}
+              >
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }

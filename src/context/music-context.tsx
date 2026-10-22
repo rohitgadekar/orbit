@@ -48,6 +48,7 @@ type MusicContextValue = {
     artistNameOrId: string,
     imageUrl?: string | null,
     bio?: string | null,
+    preferredId?: string | null,
   ) => Promise<void>;
 };
 
@@ -347,10 +348,9 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
   const updateTrack = useCallback(
     async (songId: string, input: TrackInput) => {
-      if (!user) return;
       const supabase = createClient();
       const song = songs.find((item) => item.id === songId);
-      // resolveArtist now splits compound names and returns the primary artist
+      // resolveArtist splits compound names and returns the primary artist
       const artist = await resolveArtist(
         supabase,
         input.artistName,
@@ -387,7 +387,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         albumId = null;
       }
 
-      const { error: songError } = await supabase
+      const { data: updatedSongs, error: songError } = await supabase
         .from("songs")
         .update({
           title: input.title.trim(),
@@ -397,15 +397,47 @@ export function MusicProvider({ children }: { children: ReactNode }) {
           cover_url: input.coverUrl?.trim() || null,
           duration_seconds: input.durationSeconds || null,
         })
-        .eq("id", songId);
+        .eq("id", songId)
+        .select();
+
       if (songError) throw songError;
+      if (!updatedSongs || updatedSongs.length === 0) {
+        throw new Error(
+          "Track could not be updated in database. Please verify your Supabase RLS policies permit update for authenticated users on public.songs.",
+        );
+      }
+
+      // Optimistically update local songs state
+      setSongs((current) =>
+        current.map((s) => {
+          if (s.id === songId) {
+            return {
+              ...s,
+              title: input.title.trim(),
+              artist_id: artist.id,
+              artist: artist,
+              album_id: albumId,
+              audio_url: input.audioUrl.trim(),
+              cover_url: input.coverUrl?.trim() || null,
+              duration_seconds: input.durationSeconds || null,
+            };
+          }
+          return s;
+        }),
+      );
+
       await refresh();
     },
-    [refresh, songs, user],
+    [refresh, songs],
   );
 
   const updateArtistProfile = useCallback(
-    async (artistNameOrId: string, imageUrl?: string | null, bio?: string | null) => {
+    async (
+      artistNameOrId: string,
+      imageUrl?: string | null,
+      bio?: string | null,
+      preferredId?: string | null,
+    ) => {
       const supabase = createClient();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         artistNameOrId,
@@ -415,23 +447,73 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       if (imageUrl !== undefined) updateData.image_url = imageUrl;
       if (bio !== undefined) updateData.bio = bio;
 
-      let query = supabase.from("artists").update(updateData);
-      if (isUuid) {
-        query = query.eq("id", artistNameOrId);
-      } else {
-        query = query.ilike("name", artistNameOrId.trim());
-      }
+      let updated = false;
 
-      const { data, error } = await query.select();
-      if (error || !data || data.length === 0) {
-        if (!isUuid) {
-          await supabase.from("artists").insert({
-            name: artistNameOrId.trim(),
-            image_url: imageUrl || null,
-            bio: bio || null,
-          });
+      // 1. If preferredId is a valid UUID, try updating that row directly
+      const targetId = isUuid ? artistNameOrId : preferredId;
+      if (
+        targetId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)
+      ) {
+        const { data, error } = await supabase
+          .from("artists")
+          .update(updateData)
+          .eq("id", targetId)
+          .select();
+        if (error) throw error;
+        if (data && data.length > 0) {
+          updated = true;
         }
       }
+
+      // 2. Try updating by exact name matching
+      if (!updated && !isUuid) {
+        const trimmed = artistNameOrId.trim();
+        const { data, error } = await supabase
+          .from("artists")
+          .update(updateData)
+          .ilike("name", trimmed)
+          .select();
+        if (error) throw error;
+        if (data && data.length > 0) {
+          updated = true;
+        }
+      }
+
+      // 3. Upsert if not found
+      if (!updated && !isUuid) {
+        const trimmed = artistNameOrId.trim();
+        const { error: upsertError } = await supabase
+          .from("artists")
+          .upsert(
+            {
+              name: trimmed,
+              image_url: imageUrl || null,
+              bio: bio || null,
+            },
+            { onConflict: "name" },
+          );
+        if (upsertError) throw upsertError;
+      }
+
+      // Optimistically update local artists state
+      setArtists((prev) =>
+        prev.map((a) => {
+          if (
+            (isUuid && a.id === artistNameOrId) ||
+            (preferredId && a.id === preferredId) ||
+            a.name.toLowerCase().trim() === artistNameOrId.toLowerCase().trim()
+          ) {
+            return {
+              ...a,
+              image_url: imageUrl !== undefined ? imageUrl : a.image_url,
+              bio: bio !== undefined ? bio : a.bio,
+            };
+          }
+          return a;
+        }),
+      );
+
       await refresh();
     },
     [refresh],

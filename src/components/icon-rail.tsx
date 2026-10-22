@@ -8,6 +8,7 @@ import {
   FolderArchive,
   Heart,
   History,
+  ListMusic,
   Music,
   Radio,
   Settings,
@@ -73,7 +74,7 @@ export function IconRail() {
     {
       href: "/folders",
       label: "Playlists",
-      icon: FolderArchive,
+      icon: ListMusic,
       isActive: pathname === "/folders" || pathname.startsWith("/folders/"),
     },
   ];

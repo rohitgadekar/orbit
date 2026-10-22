@@ -60,9 +60,62 @@ export type ParsedArtist = {
 };
 
 /**
+ * Extracts featured artist names from track titles (e.g. "We Don't Talk Anymore (feat. Selena Gomez)").
+ */
+export function extractArtistsFromTitle(title: string | null | undefined): string[] {
+  if (!title) return [];
+  const matches = title.match(/(?:\(|\[)?\s*(?:feat\.?|ft\.?|featuring|with)\s+([^\]\)]+)(?:\)|\])?/gi);
+  if (!matches) return [];
+
+  const results: string[] = [];
+  for (const match of matches) {
+    const cleaned = match
+      .replace(/^[(\[]?\s*(?:feat\.?|ft\.?|featuring|with)\s+/i, "")
+      .replace(/[)\]]$/, "")
+      .trim();
+    if (cleaned) {
+      results.push(...splitArtistNames(cleaned));
+    }
+  }
+  return results;
+}
+
+/**
+ * Returns true if a song credits the given artist (in the artist field, title features, or artist_id).
+ */
+export function songCreditsArtist(song: Song, artistNameOrId: string): boolean {
+  if (!artistNameOrId || !song) return false;
+  const target = artistNameOrId.toLowerCase().trim();
+  if (!target) return false;
+
+  // Direct ID check if UUID
+  if (song.artist_id && song.artist_id.toLowerCase() === target) return true;
+  if (song.artist?.id && song.artist.id.toLowerCase() === target) return true;
+
+  // Direct artist name check
+  const rawArtist = (song.artist?.name || "").toLowerCase().trim();
+  if (rawArtist === target) return true;
+
+  // Check split artist names
+  const creditedNames = splitArtistNames(song.artist?.name);
+  if (creditedNames.some((n) => n.toLowerCase().trim() === target)) return true;
+
+  // Check title featured artists
+  const titleArtists = extractArtistsFromTitle(song.title);
+  if (titleArtists.some((n) => n.toLowerCase().trim() === target)) return true;
+
+  // Check word boundary match in raw artist name (e.g. "Selena Gomez" inside "Wiz Khalifa, Selena Gomez")
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(^|[,/&+]|\\bfeat\\.?|\\bft\\.?|\\bwith\\b)\\s*${escaped}\\s*($|[,/&+]|\\bfeat\\.?|\\bft\\.?|\\bwith\\b)`, "i");
+  if (regex.test(rawArtist)) return true;
+
+  return false;
+}
+
+/**
  * Groups catalog songs by individual artist strictly using dynamic details stored in the database.
- * If a song has multiple artists (e.g. Calvin Harris, Ayah Marar), the song is placed in BOTH artists'
- * discographies. Profile pictures and bio are retrieved directly from the database.
+ * If a song credits multiple artists (e.g. Calvin Harris & Ayah Marar, or Wiz Khalifa and Selena Gomez),
+ * the song is placed in EVERY credited artist's discography.
  */
 export function getIndividualArtists(
   songs: Song[],
@@ -70,11 +123,15 @@ export function getIndividualArtists(
 ): ParsedArtist[] {
   const map = new Map<string, ParsedArtist>();
 
+  // 1. Process all songs and collect every credited artist
   for (const song of songs) {
     const rawArtistName = song.artist?.name || "Unknown Artist";
-    const individualNames = splitArtistNames(rawArtistName);
+    const creditedNames = new Set<string>([
+      ...splitArtistNames(rawArtistName),
+      ...extractArtistsFromTitle(song.title),
+    ]);
 
-    for (const name of individualNames) {
+    for (const name of creditedNames) {
       const key = name.toLowerCase().trim();
       if (!key) continue;
 
@@ -105,36 +162,56 @@ export function getIndividualArtists(
     }
   }
 
-  // Include any catalog artists from database that may have 0 songs currently in library
+  // 2. Include any catalog artists from database that may have 0 songs currently in library
   if (catalogArtists) {
     for (const artist of catalogArtists) {
       const names = splitArtistNames(artist.name);
+      const isSingleArtist = names.length === 1;
+
       for (const name of names) {
         const key = name.toLowerCase().trim();
         if (!key) continue;
 
         if (!map.has(key)) {
           map.set(key, {
-            id: artist.id,
+            // Only assign the DB UUID if this was an individual artist row or if no conflict
+            id: isSingleArtist ? artist.id : `artist-${encodeURIComponent(key)}`,
             name: name,
-            image_url: artist.image_url || null,
+            image_url: isSingleArtist ? (artist.image_url || null) : null,
             songs: [],
             plays: 0,
             trackCount: 0,
-            bio: artist.bio || null,
+            bio: isSingleArtist ? (artist.bio || null) : null,
           });
         } else {
           // If artist was already added via songs, make sure database image_url and bio are applied
           const existing = map.get(key)!;
-          if (!existing.image_url && artist.image_url) {
-            existing.image_url = artist.image_url;
+          if (isSingleArtist) {
+            if (artist.image_url) existing.image_url = artist.image_url;
+            if (artist.bio) existing.bio = artist.bio;
+            if (artist.id) existing.id = artist.id;
+          } else {
+            // Compound row: only use image/bio if individual doesn't have one yet
+            if (!existing.image_url && artist.image_url) {
+              existing.image_url = artist.image_url;
+            }
+            if (!existing.bio && artist.bio) {
+              existing.bio = artist.bio;
+            }
           }
-          if (!existing.bio && artist.bio) {
-            existing.bio = artist.bio;
-          }
-          if (artist.id) {
-            existing.id = artist.id;
-          }
+        }
+      }
+    }
+  }
+
+  // 3. Ensure any song that credits the artist (even if edge case formatting) is included
+  for (const entry of map.values()) {
+    for (const song of songs) {
+      if (!entry.songs.some((s) => s.id === song.id)) {
+        if (songCreditsArtist(song, entry.name)) {
+          entry.songs.push(song);
+          entry.plays += song.play_count || 0;
+          entry.trackCount += 1;
         }
       }
     }

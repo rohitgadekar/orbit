@@ -191,22 +191,30 @@ export default function MusicPage() {
       ) : view === "albums" ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {albums.map((album) => (
-            <div
+            <Link
               key={album.title}
-              onClick={() => playSong(album.songs[0], album.songs)}
-              className="group cursor-pointer rounded-[24px] border border-black/5 bg-white p-3 shadow-xs transition hover:shadow-md"
+              href={`/albums/${encodeURIComponent(album.title)}`}
+              className="group block rounded-[24px] border border-black/5 bg-white p-3 shadow-xs transition hover:shadow-md focus:outline-none"
             >
               <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-zinc-100">
                 <Cover src={album.cover} title={album.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100">
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-zinc-950 shadow-lg">
+                <div
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (album.songs[0]) playSong(album.songs[0], album.songs);
+                  }}
+                  className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100 cursor-pointer"
+                  title={`Play ${album.title}`}
+                >
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-zinc-950 shadow-lg transition hover:scale-110">
                     <Play className="h-4 w-4 translate-x-0.5 fill-current" />
                   </span>
                 </div>
               </div>
-              <p className="mt-2.5 truncate text-xs font-bold text-zinc-900">{album.title}</p>
+              <p className="mt-2.5 truncate text-xs font-bold text-zinc-900 group-hover:text-black transition">{album.title}</p>
               <p className="truncate text-[11px] text-zinc-500">{album.artist} • {album.songs.length} tracks</p>
-            </div>
+            </Link>
           ))}
         </div>
       ) : view === "artists" ? (

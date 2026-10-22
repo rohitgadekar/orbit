@@ -84,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex min-h-0 flex-1 gap-6 overflow-hidden px-4 pb-4 md:px-8">
             <main
               key={pathname}
-              className="no-scrollbar min-h-0 flex-1 overflow-y-auto pr-1"
+              className="no-scrollbar min-h-0 flex-1 overflow-y-auto pr-1 pb-24 md:pb-1"
             >
               {children}
             </main>

@@ -95,9 +95,13 @@ export function SongRow({
       {/* Meta & Actions matching screenshot */}
       <div className="flex items-center gap-2.5 sm:gap-4">
         {song.album?.title ? (
-          <span className="hidden max-w-[140px] truncate text-xs font-medium text-zinc-400 lg:block">
+          <Link
+            href={`/albums/${encodeURIComponent(song.album.title)}`}
+            className="hidden max-w-[140px] truncate text-xs font-medium text-zinc-400 hover:text-zinc-900 hover:underline transition lg:block"
+            title={song.album.title}
+          >
             {song.album.title}
-          </span>
+          </Link>
         ) : null}
 
         <span className="font-mono text-xs font-medium text-zinc-500">

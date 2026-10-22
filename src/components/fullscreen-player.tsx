@@ -4,6 +4,7 @@ import { Cover } from "@/components/cover";
 import { useMusic } from "@/context/music-context";
 import type { RepeatMode, Song } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
+import Link from "next/link";
 import {
   ChevronDown,
   Heart,
@@ -203,23 +204,25 @@ export function FullscreenPlayer({
 
       {/* Top Header Navigation */}
       <header className="relative z-10 flex items-center justify-between px-6 pt-[max(20px,var(--safe-top))] pb-4 md:px-12 md:pt-8">
-        <button
-          type="button"
-          onClick={onClose}
-          className="group flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2 text-xs font-medium tracking-wider uppercase text-zinc-300 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white"
-          aria-label="Collapse player"
-        >
-          <ChevronDown className="h-4 w-4 transition group-hover:-translate-y-0.5" />
-          <span>Close</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-400/80">ORBIT</span>
+        </div>
 
         <div className="flex flex-col items-center text-center">
           <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#dbe878]">
             Now Playing
           </span>
-          <span className="text-xs font-medium text-zinc-300">
-            {current.album?.title || "Orbit Studio Catalog"}
-          </span>
+          {current.album?.title ? (
+            <Link
+              href={`/albums/${encodeURIComponent(current.album.title)}`}
+              onClick={onClose}
+              className="text-xs font-medium text-zinc-300 hover:text-[#dbe878] hover:underline transition"
+            >
+              {current.album.title}
+            </Link>
+          ) : (
+            <span className="text-xs font-medium text-zinc-400">Orbit Studio Catalog</span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -252,6 +255,17 @@ export function FullscreenPlayer({
             title="Toggle fullscreen display"
           >
             {isNativeFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+
+          {/* Small rounded close button at right just like playlist and edit button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-white/10 bg-black/20 p-2.5 text-zinc-300 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white"
+            title="Close full screen player"
+            aria-label="Close"
+          >
+            <ChevronDown className="h-4 w-4" />
           </button>
         </div>
       </header>

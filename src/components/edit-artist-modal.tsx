@@ -47,7 +47,7 @@ function EditArtistForm({
     setBusy(true);
     setStatus(null);
     try {
-      await updateArtistProfile(artist.name, imageUrl.trim() || null, bio.trim() || null);
+      await updateArtistProfile(artist.name, imageUrl.trim() || null, bio.trim() || null, artist.id);
       setStatus("Artist details saved to database!");
       setTimeout(() => {
         onClose();
