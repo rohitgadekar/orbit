@@ -65,12 +65,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TrackEditorContext.Provider value={{ editSong: (song) => setEditingSong(song) }}>
-      <div className="flex h-dvh min-h-0 w-full overflow-hidden bg-[#19181b]">
+      <div className="flex h-dvh min-h-0 w-full overflow-hidden bg-[#f7f6f3] md:bg-[#19181b]">
         {/* Left Dark Sidebar with macOS Traffic Dots */}
         <IconRail />
 
-        {/* Center Main White/Ivory Canvas */}
-        <div className="m-1 flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl bg-[#f7f6f3] shadow-2xl">
+        {/* Center Main White/Ivory Canvas - edge to edge on mobile, framed on desktop */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f7f6f3] md:m-1 md:rounded-3xl md:shadow-2xl">
           {/* Top Bar Header */}
           <TopHeader />
 
