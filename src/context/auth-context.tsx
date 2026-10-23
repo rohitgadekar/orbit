@@ -57,64 +57,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
     const cached = getCachedProfile(userId);
 
-    const { data: authData } = await supabase.auth.getUser();
-    const meta = authData.user?.user_metadata as
-      | { display_name?: string; avatar_url?: string; role?: string }
-      | undefined;
-
-    let dbData: { id: string; display_name: string | null; avatar_url: string | null; role?: string | null } | null = null;
-    try {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, role")
-        .eq("id", userId)
-        .maybeSingle();
-      dbData = data;
-    } catch {
-      // In case role column query fails before migration is run
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url")
-        .eq("id", userId)
-        .maybeSingle();
-      dbData = data;
+    // ── Step 1: Serve from localStorage cache IMMEDIATELY ──────────────────
+    // This means even offline, the profile/role is available right away and
+    // the loading spinner resolves fast without any network round-trip.
+    if (cached) {
+      setProfile({
+        id: userId,
+        display_name: cached.display_name ?? "Listener",
+        avatar_url: cached.avatar_url ?? null,
+        role: cached.role ?? "user",
+      });
     }
 
-    const resolvedName =
-      cached?.display_name ??
-      dbData?.display_name ??
-      meta?.display_name ??
-      authData.user?.email?.split("@")[0] ??
-      "Listener";
+    // ── Step 2: Background network fetch (non-blocking) ─────────────────────
+    // If we're offline this will throw — catch it and keep the cached value.
+    try {
+      // getSession reads local JWT storage — NO network needed for this part
+      const { data: sessionData } = await supabase.auth.getSession();
+      const meta = sessionData.session?.user?.user_metadata as
+        | { display_name?: string; avatar_url?: string; role?: string }
+        | undefined;
 
-    const resolvedAvatar =
-      cached?.avatar_url ??
-      dbData?.avatar_url ??
-      meta?.avatar_url ??
-      null;
+      let dbData: {
+        id: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        role?: string | null;
+      } | null = null;
 
-    const resolvedRole =
-      dbData?.role ??
-      meta?.role ??
-      cached?.role ??
-      "user";
-
-    const resolvedProfile: Profile = {
-      id: userId,
-      display_name: resolvedName,
-      avatar_url: resolvedAvatar,
-      role: resolvedRole,
-    };
-
-    setProfile(resolvedProfile);
-    setCachedProfile(userId, { display_name: resolvedName, avatar_url: resolvedAvatar, role: resolvedRole });
-
-    // Ensure profiles table has the record
-    if (!dbData) {
       try {
-        await supabase
+        // This is the only real network call — fetch from Supabase DB
+        const { data } = await supabase
           .from("profiles")
-          .upsert(
+          .select("id, display_name, avatar_url, role")
+          .eq("id", userId)
+          .maybeSingle();
+        dbData = data;
+      } catch {
+        // Network unavailable or role column missing — fall through
+        try {
+          const { data } = await supabase
+            .from("profiles")
+            .select("id, display_name, avatar_url")
+            .eq("id", userId)
+            .maybeSingle();
+          dbData = data;
+        } catch {
+          // Completely offline — keep cached profile, stop here
+          return;
+        }
+      }
+
+      // DB data takes priority over cache for fresh data
+      const resolvedName =
+        dbData?.display_name ??
+        meta?.display_name ??
+        cached?.display_name ??
+        sessionData.session?.user?.email?.split("@")[0] ??
+        "Listener";
+
+      const resolvedAvatar =
+        dbData?.avatar_url ??
+        meta?.avatar_url ??
+        cached?.avatar_url ??
+        null;
+
+      const resolvedRole =
+        dbData?.role ??
+        meta?.role ??
+        cached?.role ??
+        "user";
+
+      const resolvedProfile: Profile = {
+        id: userId,
+        display_name: resolvedName,
+        avatar_url: resolvedAvatar,
+        role: resolvedRole,
+      };
+
+      setProfile(resolvedProfile);
+      setCachedProfile(userId, {
+        display_name: resolvedName,
+        avatar_url: resolvedAvatar,
+        role: resolvedRole,
+      });
+
+      // Ensure profiles table has the record
+      if (!dbData) {
+        try {
+          await supabase.from("profiles").upsert(
             {
               id: userId,
               display_name: resolvedName,
@@ -123,9 +154,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             },
             { onConflict: "id" }
           );
-      } catch {
-        // Ignore if table schema lacks privileges
+        } catch {
+          // Ignore if table schema lacks privileges or offline
+        }
       }
+    } catch {
+      // getSession itself failed (very unusual) — cached data already set above
     }
   }, []);
 
@@ -189,11 +223,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       try {
-        const { data } = await supabase.auth.getUser();
-        setUser(data.user);
-        if (data.user) {
-          await loadProfile(data.user.id);
+        // getSession reads local storage — works offline without any network call
+        const { data } = await supabase.auth.getSession();
+        const sessionUser = data.session?.user ?? null;
+        setUser(sessionUser);
+        if (sessionUser) {
+          await loadProfile(sessionUser.id);
         }
+      } catch {
+        // Session read failed — clear loading so app doesn't hang
       } finally {
         setLoading(false);
       }

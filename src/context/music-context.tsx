@@ -167,63 +167,114 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     if (!configured || !user) return;
+
+    // ── Offline cache helpers ─────────────────────────────────────────────────
+    const CACHE_KEY = `orbit_catalog_${user.id}`;
+    const loadCached = () => {
+      try {
+        const raw = typeof window !== "undefined" ? localStorage.getItem(CACHE_KEY) : null;
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    };
+    const saveCache = (data: unknown) => {
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        }
+      } catch { /* Quota exceeded — silently ignore */ }
+    };
+
+    // ── Serve from localStorage immediately (zero-latency offline boot) ───────
+    const cached = loadCached();
+    if (cached) {
+      setSongs(cached.songs ?? []);
+      setArtists(cached.artists ?? []);
+      setPlaylists(cached.playlists ?? []);
+      setFavouriteIds(new Set((cached.favouriteIds ?? []) as string[]));
+      setRecentFavouriteIds(cached.recentFavouriteIds ?? []);
+      setRecentlyPlayed(cached.recentlyPlayed ?? []);
+    }
+
+    // ── Try network refresh in background ────────────────────────────────────
     setLoading(true);
     setError(null);
     const supabase = createClient();
 
-    const [songsRes, artistsRes, playlistsRes, favRes, historyRes] =
-      await Promise.all([
-        supabase
-          .from("songs")
-          .select(songSelect)
-          .order("created_at", { ascending: false }),
-        supabase.from("artists").select("*").order("name"),
-        supabase
-          .from("playlists")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("favourites")
-          .select("song_id, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("play_history")
-          .select("song_id, played_at")
-          .eq("user_id", user.id)
-          .order("played_at", { ascending: false })
-          .limit(24),
-      ]);
+    try {
+      const [songsRes, artistsRes, playlistsRes, favRes, historyRes] =
+        await Promise.all([
+          supabase
+            .from("songs")
+            .select(songSelect)
+            .order("created_at", { ascending: false }),
+          supabase.from("artists").select("*").order("name"),
+          supabase
+            .from("playlists")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("favourites")
+            .select("song_id, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("play_history")
+            .select("song_id, played_at")
+            .eq("user_id", user.id)
+            .order("played_at", { ascending: false })
+            .limit(24),
+        ]);
 
-    if (songsRes.error) {
-      setError(songsRes.error.message);
-      setLoading(false);
-      return;
-    }
+      if (songsRes.error) {
+        setError(songsRes.error.message);
+        setLoading(false);
+        return;
+      }
 
-    const catalog = (songsRes.data ?? []).map((row) =>
-      normalizeSong(row as Record<string, unknown>),
-    );
-    setSongs(catalog);
-    setArtists((artistsRes.data ?? []) as Artist[]);
-    setPlaylists((playlistsRes.data ?? []) as Playlist[]);
+      const catalog = (songsRes.data ?? []).map((row) =>
+        normalizeSong(row as Record<string, unknown>),
+      );
+      const artistsList = (artistsRes.data ?? []) as Artist[];
+      const playlistsList = (playlistsRes.data ?? []) as Playlist[];
+      const favRows = favRes.data ?? [];
+      const favIds = favRows.map((row) => row.song_id as string);
 
-    const favRows = favRes.data ?? [];
-    setFavouriteIds(new Set(favRows.map((row) => row.song_id as string)));
-    setRecentFavouriteIds(favRows.map((row) => row.song_id as string));
+      setSongs(catalog);
+      setArtists(artistsList);
+      setPlaylists(playlistsList);
+      setFavouriteIds(new Set(favIds));
+      setRecentFavouriteIds(favIds);
 
-    const byId = new Map(catalog.map((song) => [song.id, song]));
-    const played: Song[] = [];
-    const seen = new Set<string>();
-    for (const row of historyRes.data ?? []) {
-      const song = byId.get(row.song_id as string);
-      if (song && !seen.has(song.id)) {
-        seen.add(song.id);
-        played.push(song);
+      const byId = new Map(catalog.map((song) => [song.id, song]));
+      const played: Song[] = [];
+      const seen = new Set<string>();
+      for (const row of historyRes.data ?? []) {
+        const song = byId.get(row.song_id as string);
+        if (song && !seen.has(song.id)) {
+          seen.add(song.id);
+          played.push(song);
+        }
+      }
+      setRecentlyPlayed(played);
+
+      // ── Persist fresh data to localStorage for next offline boot ───────────
+      saveCache({
+        songs: catalog,
+        artists: artistsList,
+        playlists: playlistsList,
+        favouriteIds: favIds,
+        recentFavouriteIds: favIds,
+        recentlyPlayed: played,
+      });
+    } catch (err) {
+      // Network unavailable — we already served from cache above, so just log
+      console.warn("Music refresh skipped (offline):", err);
+      if (!cached) {
+        setError("You are offline. Download songs first to listen without internet.");
       }
     }
-    setRecentlyPlayed(played);
+
     setLoading(false);
   }, [configured, user]);
 

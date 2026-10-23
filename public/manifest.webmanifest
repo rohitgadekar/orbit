@@ -1,15 +1,22 @@
 {
   "name": "Orbit",
   "short_name": "Orbit",
+  "description": "Luxury high-fidelity music streaming",
   "start_url": "/home",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0b0614",
-  "theme_color": "#12081f",
+  "theme_color": "#0b0614",
+  "categories": ["music", "entertainment"],
   "icons": [
     {
       "src": "/orbit.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
 }
