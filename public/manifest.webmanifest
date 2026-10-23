@@ -1,38 +1,15 @@
 {
-  "name": "Orbit — Luxury Music Player",
+  "name": "Orbit",
   "short_name": "Orbit",
-  "description": "A luxury studio music listening experience for your catalog.",
   "start_url": "/home",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#0e0c11",
-  "theme_color": "#181719",
-  "prefer_related_applications": false,
-  "categories": ["music", "entertainment"],
+  "background_color": "#0b0614",
+  "theme_color": "#12081f",
   "icons": [
     {
       "src": "/orbit.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [],
-  "shortcuts": [
-    {
-      "name": "Downloaded Music",
-      "short_name": "Downloaded",
-      "description": "Access your offline music library",
-      "url": "/downloaded",
-      "icons": [{ "src": "/orbit.svg", "sizes": "any" }]
-    },
-    {
-      "name": "My Playlists",
-      "short_name": "Playlists",
-      "description": "Browse your playlists",
-      "url": "/folders",
-      "icons": [{ "src": "/orbit.svg", "sizes": "any" }]
+      "type": "image/svg+xml"
     }
   ]
 }

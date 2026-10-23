@@ -8,36 +8,18 @@ import { useEffect } from "react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-
-    const registerSW = async () => {
-      try {
-        const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-        console.log("[Orbit SW] Registered, scope:", reg.scope);
-
-        // Wait for SW to be active then warm the app shell cache
-        const warmShell = () => {
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage("CACHE_SHELL");
-          }
-        };
-
-        if (reg.active) {
-          warmShell();
-        } else {
-          reg.addEventListener("updatefound", () => {
-            const worker = reg.installing ?? reg.waiting ?? reg.active;
-            worker?.addEventListener("statechange", () => {
-              if (worker.state === "activated") warmShell();
-            });
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((registration) => {
+            console.log("Orbit Service Worker registered successfully:", registration.scope);
+          })
+          .catch((error) => {
+            console.warn("Service Worker registration failed:", error);
           });
-        }
-      } catch (err) {
-        console.warn("[Orbit SW] Registration failed:", err);
-      }
-    };
-
-    void registerSW();
+      });
+    }
   }, []);
 
   return (
