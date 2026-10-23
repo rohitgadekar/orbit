@@ -91,10 +91,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="mx-4 mb-2.5 flex items-center justify-between rounded-2xl bg-[#dbe878]/25 border border-[#dbe878]/40 px-4 py-2 text-xs font-semibold text-zinc-900 md:mx-8">
               <div className="flex items-center gap-2">
                 <WifiOff className="h-3.5 w-3.5 text-zinc-900" />
-                <span>Offline Mode — Showing your cached music library</span>
+                <span>Offline Mode — Downloaded songs are ready to play; un-downloaded tracks are dimmed</span>
               </div>
-              <Link href="/downloaded" className="underline font-bold hover:text-black">
-                View Downloads
+              <Link href="/music" className="underline font-bold hover:text-black shrink-0 ml-2">
+                Browse Songs
               </Link>
             </div>
           ) : null}

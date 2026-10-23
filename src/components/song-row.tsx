@@ -36,14 +36,27 @@ export function SongRow({
   const { playSong, current, isPlaying, toggle } = usePlayer();
   const { favouriteIds, toggleFavourite } = useMusic();
   const { isAdmin } = useAuth();
-  const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
+  const { isOnline, isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
 
   const active = current?.id === song.id;
   const fav = favouriteIds.has(song.id);
   const downloaded = isDownloaded(song.id);
   const isDownloading = downloadingSongIds[song.id] !== undefined;
+  const isUnavailableOffline = !isOnline && !downloaded;
 
   const cover = song.cover_url || song.album?.cover_url || song.artist?.image_url;
+
+  const handlePlay = () => {
+    if (isUnavailableOffline) {
+      alert(`"${song.title}" is not saved offline. Connect to the internet to listen to this track.`);
+      return;
+    }
+    if (active) {
+      toggle();
+    } else {
+      playSong(song, queue);
+    }
+  };
 
   return (
     <div
@@ -52,11 +65,11 @@ export function SongRow({
         active
           ? "bg-[#edeae3] shadow-xs"
           : "hover:bg-[#f2efe9]/70",
+        isUnavailableOffline && "opacity-40 grayscale-[85%] hover:bg-transparent",
       )}
+      title={isUnavailableOffline ? `"${song.title}" is not available offline` : undefined}
     >
       <div className="flex min-w-0 flex-1 items-center gap-3.5">
-
-
         {/* Artwork Thumbnail */}
         <div className="relative shrink-0">
           <Cover
@@ -67,8 +80,12 @@ export function SongRow({
           />
           <button
             type="button"
-            onClick={() => (active ? toggle() : playSong(song, queue))}
-            className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 backdrop-blur-[1px] transition group-hover:opacity-100"
+            onClick={handlePlay}
+            disabled={isUnavailableOffline}
+            className={cn(
+              "absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 backdrop-blur-[1px] transition group-hover:opacity-100",
+              isUnavailableOffline && "cursor-not-allowed opacity-0 group-hover:opacity-30",
+            )}
             aria-label={active && isPlaying ? "Pause" : "Play"}
           >
             {active && isPlaying ? (
@@ -83,10 +100,23 @@ export function SongRow({
         <div className="min-w-0 flex-1 text-left">
           <button
             type="button"
-            onClick={() => (active ? toggle() : playSong(song, queue))}
-            className="block w-full truncate text-left text-sm font-bold tracking-tight text-zinc-900 transition focus:outline-none"
+            onClick={handlePlay}
+            className={cn(
+              "flex items-center gap-1.5 w-full text-left text-sm font-bold tracking-tight text-zinc-900 transition focus:outline-none",
+              isUnavailableOffline && "cursor-not-allowed",
+            )}
           >
-            <span className={cn(active && "text-[#bf5b30]")}>{song.title}</span>
+            <span className={cn("truncate", active && "text-[#bf5b30]")}>{song.title}</span>
+            {downloaded && (
+              <span title="Available offline" className="shrink-0 inline-flex items-center">
+                <CheckCircle2 className="h-3.5 w-3.5 fill-[#dbe878] text-[#3b4707]" />
+              </span>
+            )}
+            {isUnavailableOffline && (
+              <span className="shrink-0 rounded-md bg-zinc-200 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-500">
+                Unavailable
+              </span>
+            )}
           </button>
           <div className="truncate text-xs font-medium text-zinc-500">
             {splitArtistNames(song.artist?.name).map((name, i, arr) => (

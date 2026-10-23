@@ -30,17 +30,9 @@ const MOBILE_NAV_ITEMS = [
 export function MobileTabBar() {
   const pathname = usePathname();
   const { current, isPlaying, toggle, next, setExpanded, progress, duration } = usePlayer();
-  const { isOnline, isDownloaded } = useOffline();
+  const { isDownloaded } = useOffline();
 
-  const navItems = isOnline
-    ? MOBILE_NAV_ITEMS
-    : [
-        { href: "/home", label: "Browse", icon: Compass },
-        { href: "/downloaded", label: "Offline", icon: ArrowDownToLine },
-        { href: "/folders", label: "Playlists", icon: ListMusic },
-        { href: "/favourites", label: "Loved", icon: Heart },
-        { href: "/profile", label: "Profile", icon: UserRound },
-      ];
+  const navItems = MOBILE_NAV_ITEMS;
 
   const cover = current?.cover_url || current?.album?.cover_url || current?.artist?.image_url;
 
