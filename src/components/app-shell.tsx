@@ -8,7 +8,10 @@ import { PlayerBar } from "@/components/player-bar";
 import { TopHeader } from "@/components/top-header";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
+import { useOffline } from "@/context/offline-context";
 import type { Song } from "@/lib/types";
+import { WifiOff } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -27,6 +30,7 @@ export function useTrackEditor() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { configured, loading, user } = useAuth();
   const { refresh, error } = useMusic();
+  const { isOnline } = useOffline();
   const router = useRouter();
   const pathname = usePathname();
   const [editingSong, setEditingSong] = useState<Song | null>(null);
@@ -73,6 +77,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="md:m-1 flex min-w-0 flex-1 flex-col overflow-hidden md:rounded-3xl bg-[#f7f6f3] shadow-2xl">
           {/* Top Bar Header */}
           <TopHeader />
+
+          {!isOnline ? (
+            <div className="mx-4 mb-2.5 flex items-center justify-between rounded-2xl bg-[#dbe878]/25 border border-[#dbe878]/40 px-4 py-2 text-xs font-semibold text-zinc-900 md:mx-8">
+              <div className="flex items-center gap-2">
+                <WifiOff className="h-3.5 w-3.5 text-zinc-900" />
+                <span>Offline Mode — Showing your cached music library</span>
+              </div>
+              <Link href="/downloaded" className="underline font-bold hover:text-black">
+                View Downloads
+              </Link>
+            </div>
+          ) : null}
 
           {error ? (
             <p className="px-8 pb-2 text-xs font-medium text-rose-500">

@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { splitArtistNames } from "@/lib/artists";
-import type { Album, Artist, Playlist, Song } from "@/lib/types";
+import type { Album, Artist, BatchAlbumInput, Playlist, Song } from "@/lib/types";
 import {
   createContext,
   useCallback,
@@ -40,6 +40,7 @@ type MusicContextValue = {
   removeFromPlaylist: (playlistId: string, songId: string) => Promise<void>;
   playlistSongs: (playlistId: string) => Promise<Song[]>;
   addTrack: (input: TrackInput) => Promise<void>;
+  addAlbum: (input: BatchAlbumInput) => Promise<string>;
   updateTrack: (songId: string, input: TrackInput) => Promise<void>;
   deleteTrack: (songId: string) => Promise<void>;
   recordPlay: (songId: string) => Promise<void>;
@@ -154,7 +155,7 @@ async function resolveArtist(
 }
 
 export function MusicProvider({ children }: { children: ReactNode }) {
-  const { user, configured, refreshProfile, updateProfile: authUpdateProfile } = useAuth();
+  const { user, configured, refreshProfile, updateProfile: authUpdateProfile, isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [songs, setSongs] = useState<Song[]>([]);
@@ -329,6 +330,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const addTrack = useCallback(
     async (input: TrackInput) => {
       if (!user) return;
+      if (!isAdmin) throw new Error("Administrator role required to add catalog tracks.");
       const supabase = createClient();
       // resolveArtist now splits compound names and returns the primary artist
       const artist = await resolveArtist(
@@ -364,11 +366,88 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       if (songError) throw songError;
       await refresh();
     },
-    [refresh, user],
+    [isAdmin, refresh, user],
+  );
+
+  const addAlbum = useCallback(
+    async (input: BatchAlbumInput): Promise<string> => {
+      if (!user) throw new Error("Please log in to add albums.");
+      if (!isAdmin) throw new Error("Administrator role required to add albums.");
+
+      const albumTitle = input.albumTitle.trim();
+      if (!albumTitle) throw new Error("Album title is required.");
+      if (!input.tracks || input.tracks.length === 0) {
+        throw new Error("Please add at least one track to the album.");
+      }
+
+      const validTracks = input.tracks.filter(
+        (t) => t.title.trim() && t.audioUrl.trim(),
+      );
+      if (validTracks.length === 0) {
+        throw new Error("At least one track must have a title and audio URL.");
+      }
+
+      const supabase = createClient();
+      const mainArtist = await resolveArtist(supabase, input.artistName);
+
+      const { data: existingAlbum } = await supabase
+        .from("albums")
+        .select("id")
+        .eq("artist_id", mainArtist.id)
+        .ilike("title", albumTitle)
+        .maybeSingle();
+
+      let albumId: string;
+      if (existingAlbum) {
+        albumId = existingAlbum.id;
+        if (input.coverUrl?.trim()) {
+          await supabase
+            .from("albums")
+            .update({ cover_url: input.coverUrl.trim() })
+            .eq("id", albumId);
+        }
+      } else {
+        const { data: newAlbum, error: albumError } = await supabase
+          .from("albums")
+          .insert({
+            title: albumTitle,
+            artist_id: mainArtist.id,
+            cover_url: input.coverUrl?.trim() || null,
+          })
+          .select("id")
+          .single();
+        if (albumError) throw albumError;
+        albumId = newAlbum.id;
+      }
+
+      for (const track of validTracks) {
+        const trackArtist =
+          track.artistName?.trim() &&
+          track.artistName.trim().toLowerCase() !== input.artistName.trim().toLowerCase()
+            ? await resolveArtist(supabase, track.artistName)
+            : mainArtist;
+
+        const { error: songError } = await supabase.from("songs").insert({
+          title: track.title.trim(),
+          artist_id: trackArtist.id,
+          album_id: albumId,
+          audio_url: track.audioUrl.trim(),
+          cover_url: input.coverUrl?.trim() || null,
+          duration_seconds: track.durationSeconds || null,
+          created_by: user.id,
+        });
+        if (songError) throw songError;
+      }
+
+      await refresh();
+      return albumTitle;
+    },
+    [isAdmin, refresh, user],
   );
 
   const updateTrack = useCallback(
     async (songId: string, input: TrackInput) => {
+      if (!isAdmin) throw new Error("Administrator role required to edit catalog tracks.");
       const supabase = createClient();
       const song = songs.find((item) => item.id === songId);
       // resolveArtist splits compound names and returns the primary artist
@@ -449,7 +528,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
       await refresh();
     },
-    [refresh, songs],
+    [isAdmin, refresh, songs],
   );
 
   const updateArtistProfile = useCallback(
@@ -459,6 +538,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       bio?: string | null,
       preferredId?: string | null,
     ) => {
+      if (!isAdmin) throw new Error("Administrator role required to update artist profiles.");
       const supabase = createClient();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         artistNameOrId,
@@ -537,7 +617,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
       await refresh();
     },
-    [refresh],
+    [isAdmin, refresh],
   );
 
   const recordPlay = useCallback(
@@ -564,12 +644,13 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
   const deleteTrack = useCallback(
     async (songId: string) => {
+      if (!isAdmin) throw new Error("Administrator role required to delete catalog tracks.");
       const supabase = createClient();
       const { error: deleteError } = await supabase.from("songs").delete().eq("id", songId);
       if (deleteError) throw deleteError;
       await refresh();
     },
-    [refresh],
+    [isAdmin, refresh],
   );
 
   const updateProfile = useCallback(
@@ -598,6 +679,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       removeFromPlaylist,
       playlistSongs,
       addTrack,
+      addAlbum,
       updateTrack,
       deleteTrack,
       recordPlay,
@@ -621,6 +703,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       removeFromPlaylist,
       playlistSongs,
       addTrack,
+      addAlbum,
       updateTrack,
       deleteTrack,
       recordPlay,

@@ -7,6 +7,7 @@ import { Cover } from "@/components/cover";
 import { EditArtistModal } from "@/components/edit-artist-modal";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import { getIndividualArtists, splitArtistNames, type ParsedArtist } from "@/lib/artists";
@@ -24,6 +25,7 @@ export default function MusicPage() {
   const { songs, artists } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
+  const { isAdmin } = useAuth();
 
   const [query, setQuery] = useState(initialQuery);
   const [selectedForFolder, setSelectedForFolder] = useState<Song | null>(null);
@@ -115,13 +117,26 @@ export default function MusicPage() {
             </button>
           ) : null}
 
-          <Link
-            href="/settings"
-            className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-800 transition hover:border-zinc-900"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add Track</span>
-          </Link>
+          {isAdmin ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/settings?tab=add-album"
+                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-zinc-800 transition hover:border-zinc-900 shadow-2xs"
+                title="Add entire album at once"
+              >
+                <Disc3 className="h-3.5 w-3.5 text-amber-600" />
+                <span>Add Album</span>
+              </Link>
+
+              <Link
+                href="/settings?tab=add-track"
+                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-zinc-800 transition hover:border-zinc-900 shadow-2xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Add Track</span>
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -231,19 +246,21 @@ export default function MusicPage() {
                   key={artist.name}
                   className="group relative flex flex-col items-center rounded-[24px] border border-black/5 bg-white p-4 text-center shadow-xs transition hover:border-black/15 hover:shadow-md"
                 >
-                  {/* Edit Artist Profile Picture Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      setEditingArtist(artist);
-                    }}
-                    className="absolute right-3 top-3 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/5 text-zinc-500 opacity-0 transition hover:bg-black/10 hover:text-zinc-900 group-hover:opacity-100"
-                    title={`Edit profile picture and bio for ${artist.name}`}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
+                  {/* Edit Artist Profile Picture Button - Only for Admin */}
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setEditingArtist(artist);
+                      }}
+                      className="absolute right-3 top-3 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/5 text-zinc-500 opacity-0 transition hover:bg-black/10 hover:text-zinc-900 group-hover:opacity-100"
+                      title={`Edit profile picture and bio for ${artist.name}`}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
 
                   {/* Circular Avatar with Play overlay */}
                   <div className="relative">
@@ -298,7 +315,7 @@ export default function MusicPage() {
               queue={filtered}
               index={index}
               onMore={() => setSelectedForFolder(song)}
-              onEdit={(songToEdit) => editSong(songToEdit)}
+              onEdit={isAdmin ? (songToEdit) => editSong(songToEdit) : undefined}
             />
           ))}
         </div>

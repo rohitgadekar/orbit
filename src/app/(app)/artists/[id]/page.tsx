@@ -5,6 +5,7 @@ import { ArtistAvatar } from "@/components/artist-avatar";
 import { EditArtistModal } from "@/components/edit-artist-modal";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import { getIndividualArtists, songCreditsArtist, type ParsedArtist } from "@/lib/artists";
@@ -30,6 +31,7 @@ export default function ArtistDetailPage() {
   const { songs, artists, loading } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
+  const { isAdmin } = useAuth();
 
   const [editingArtist, setEditingArtist] = useState<ParsedArtist | null>(null);
 
@@ -201,14 +203,16 @@ export default function ArtistDetailPage() {
                 </>
               ) : null}
 
-              <button
-                type="button"
-                onClick={() => setEditingArtist(artist)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/20 px-4 py-2.5 text-xs font-medium text-zinc-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                <span>{artist.image_url ? "Update Photo & Bio" : "Add Profile Photo & Bio"}</span>
-              </button>
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => setEditingArtist(artist)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/20 px-4 py-2.5 text-xs font-medium text-zinc-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span>{artist.image_url ? "Update Photo & Bio" : "Add Profile Photo & Bio"}</span>
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -223,14 +227,16 @@ export default function ArtistDetailPage() {
             </span>
             <h2 className="font-serif text-xl font-bold text-zinc-900">About {artist.name}</h2>
           </div>
-          <button
-            type="button"
-            onClick={() => setEditingArtist(artist)}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
-          >
-            <Pencil className="h-3 w-3" />
-            <span>{artist.bio ? "Edit Bio" : "Add Bio"}</span>
-          </button>
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={() => setEditingArtist(artist)}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
+            >
+              <Pencil className="h-3 w-3" />
+              <span>{artist.bio ? "Edit Bio" : "Add Bio"}</span>
+            </button>
+          ) : null}
         </div>
 
         <div className="mt-4">
@@ -241,14 +247,16 @@ export default function ArtistDetailPage() {
           ) : (
             <div className="rounded-2xl bg-zinc-50 p-6 text-center text-xs text-zinc-500">
               <p>No biography has been added to the database for {artist.name} yet.</p>
-              <button
-                type="button"
-                onClick={() => setEditingArtist(artist)}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#19181b] px-4 py-2 text-xs font-semibold text-[#dbe878] transition hover:scale-105"
-              >
-                <Pencil className="h-3 w-3" />
-                <span>Add Bio & PNG Profile Picture</span>
-              </button>
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => setEditingArtist(artist)}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#19181b] px-4 py-2 text-xs font-semibold text-[#dbe878] transition hover:scale-105"
+                >
+                  <Pencil className="h-3 w-3" />
+                  <span>Add Bio & PNG Profile Picture</span>
+                </button>
+              ) : null}
             </div>
           )}
         </div>
@@ -287,7 +295,7 @@ export default function ArtistDetailPage() {
                 song={song}
                 queue={artist.songs}
                 index={index}
-                onEdit={(songToEdit) => editSong(songToEdit)}
+                onEdit={isAdmin ? (songToEdit) => editSong(songToEdit) : undefined}
               />
             ))}
           </div>

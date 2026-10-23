@@ -6,6 +6,7 @@ import { ArtistAvatar } from "@/components/artist-avatar";
 import { Cover } from "@/components/cover";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import { getIndividualArtists } from "@/lib/artists";
@@ -18,6 +19,7 @@ export default function HomePage() {
   const { songs, artists, recentlyPlayed, loading } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
+  const { isAdmin } = useAuth();
   const [selectedForPlaylist, setSelectedForPlaylist] = useState<Song | null>(null);
 
   const heroSong = [...songs].sort((a, b) => b.play_count - a.play_count)[0] ?? songs[0];
@@ -108,13 +110,15 @@ export default function HomePage() {
                 <Play className="h-3.5 w-3.5 fill-current" />
                 Listen Now
               </button>
-              <button
-                type="button"
-                onClick={() => editSong(heroSong)}
-                className="rounded-full border border-white/20 bg-black/20 px-4 py-2.5 text-xs font-medium text-white backdrop-blur-md transition hover:bg-white/10"
-              >
-                Edit Featured Track
-              </button>
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => editSong(heroSong)}
+                  className="rounded-full border border-white/20 bg-black/20 px-4 py-2.5 text-xs font-medium text-white backdrop-blur-md transition hover:bg-white/10"
+                >
+                  Edit Featured Track
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -222,7 +226,7 @@ export default function HomePage() {
               queue={recentTracks}
               index={index}
               onMore={() => setSelectedForPlaylist(song)}
-              onEdit={(songToEdit) => editSong(songToEdit)}
+              onEdit={isAdmin ? (songToEdit) => editSong(songToEdit) : undefined}
             />
           ))}
         </div>

@@ -1,12 +1,23 @@
 "use client";
 
 import { Cover } from "@/components/cover";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
+import { useOffline } from "@/context/offline-context";
 import { usePlayer } from "@/context/player-context";
 import type { Song } from "@/lib/types";
 import { splitArtistNames } from "@/lib/artists";
 import { cn, formatTime } from "@/lib/utils";
-import { Heart, MoreHorizontal, Pause, Play, Plus } from "lucide-react";
+import {
+  ArrowDownToLine,
+  CheckCircle2,
+  Heart,
+  Loader2,
+  MoreHorizontal,
+  Pause,
+  Play,
+  Plus,
+} from "lucide-react";
 import Link from "next/link";
 
 export function SongRow({
@@ -24,8 +35,13 @@ export function SongRow({
 }) {
   const { playSong, current, isPlaying, toggle } = usePlayer();
   const { favouriteIds, toggleFavourite } = useMusic();
+  const { isAdmin } = useAuth();
+  const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
+
   const active = current?.id === song.id;
   const fav = favouriteIds.has(song.id);
+  const downloaded = isDownloaded(song.id);
+  const isDownloading = downloadingSongIds[song.id] !== undefined;
 
   const cover = song.cover_url || song.album?.cover_url || song.artist?.image_url;
 
@@ -93,7 +109,7 @@ export function SongRow({
         {song.album?.title ? (
           <Link
             href={`/albums/${encodeURIComponent(song.album.title)}`}
-            className="hidden max-w-[140px] truncate text-xs font-medium text-zinc-400 hover:text-zinc-900 hover:underline transition lg:block"
+            className="hidden max-w-[140px] truncate !text-[12px] text-zinc-400 hover:text-zinc-900 hover:underline transition lg:block"
             title={song.album.title}
           >
             {song.album.title}
@@ -104,11 +120,40 @@ export function SongRow({
           {song.duration_seconds ? formatTime(song.duration_seconds) : "2:40"}
         </span>
 
+        {/* Offline Download Button (Spotify/Apple Music style cached listening) */}
+        <button
+          type="button"
+          onClick={() => void toggleDownloadSong(song)}
+          disabled={isDownloading}
+          className={cn(
+            "rounded-full p-1.5 transition hover:bg-black/5 active:scale-90",
+            downloaded
+              ? "text-[#657319] hover:text-[#4e5812]"
+              : "text-zinc-400 hover:text-zinc-800",
+          )}
+          title={
+            downloaded
+              ? "Downloaded for offline playback (click to remove)"
+              : isDownloading
+                ? `Downloading... ${downloadingSongIds[song.id] || 0}%`
+                : "Save track for offline playback"
+          }
+          aria-label={downloaded ? "Remove offline download" : "Save track offline"}
+        >
+          {isDownloading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-zinc-600" />
+          ) : downloaded ? (
+            <CheckCircle2 className="h-4 w-4 fill-[#dbe878]/50 text-[#54620f]" />
+          ) : (
+            <ArrowDownToLine className="h-4 w-4" />
+          )}
+        </button>
+
         {/* Favorite Heart */}
         <button
           type="button"
           onClick={() => void toggleFavourite(song.id)}
-          className="hidden md:block rounded-full p-1.5 text-zinc-400 transition hover:bg-black/5 hover:text-rose-500"
+          className="rounded-full p-1.5 text-zinc-400 transition hover:bg-black/5 hover:text-rose-500"
           aria-label={fav ? "Remove favorite" : "Add to favorites"}
         >
           <Heart
@@ -116,7 +161,7 @@ export function SongRow({
           />
         </button>
 
-        {/* Add to Playlist "+" Button matching screenshot */}
+        {/* Add to Playlist "+" Button */}
         {onMore ? (
           <button
             type="button"
@@ -128,8 +173,8 @@ export function SongRow({
           </button>
         ) : null}
 
-        {/* Edit Track button */}
-        {onEdit ? (
+        {/* Edit Track button - Only visible to Admins */}
+        {isAdmin && onEdit ? (
           <button
             type="button"
             onClick={() => onEdit(song)}

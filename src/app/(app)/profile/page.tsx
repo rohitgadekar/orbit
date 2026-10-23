@@ -20,7 +20,7 @@ import {
 import Link from "next/link";
 
 export default function ProfilePage() {
-  const { profile, user } = useAuth();
+  const { profile, user, isAdmin, role } = useAuth();
   const { songs, favouriteIds, playlists, recentlyPlayed } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
@@ -64,10 +64,10 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#dbe878]/15 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase text-[#dbe878]">
                   <Sparkles className="h-3 w-3" />
-                  VIP CONNOISSEUR
+                  {isAdmin ? "STUDIO ADMINISTRATOR" : "VIP LISTENER"}
                 </span>
                 <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-medium text-zinc-300">
-                  Lossless Master
+                  Role: {role.toUpperCase()}
                 </span>
               </div>
 
@@ -165,7 +165,7 @@ export default function ProfilePage() {
                 song={song}
                 queue={favoriteSongs}
                 index={idx}
-                onEdit={(songToEdit) => editSong(songToEdit)}
+                onEdit={isAdmin ? (songToEdit) => editSong(songToEdit) : undefined}
               />
             ))}
           </div>
@@ -202,7 +202,7 @@ export default function ProfilePage() {
                 song={song}
                 queue={recentlyPlayed}
                 index={idx}
-                onEdit={(songToEdit) => editSong(songToEdit)}
+                onEdit={isAdmin ? (songToEdit) => editSong(songToEdit) : undefined}
               />
             ))}
           </div>

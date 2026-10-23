@@ -4,14 +4,24 @@ import { useTrackEditor } from "@/components/app-shell";
 import { Cover } from "@/components/cover";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
+import { useOffline } from "@/context/offline-context";
 import { usePlayer } from "@/context/player-context";
 import { formatTime } from "@/lib/utils";
 import type { Song } from "@/lib/types";
-import { ArrowLeft, Disc3, Play, Shuffle } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowLeft,
+  CheckCircle2,
+  Disc3,
+  Loader2,
+  Play,
+  Shuffle,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export default function AlbumDetailPage() {
   const params = useParams<{ id: string }>();
@@ -21,6 +31,9 @@ export default function AlbumDetailPage() {
   const { songs, loading } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
+  const { isAdmin } = useAuth();
+  const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   // Find all songs that belong to this album by id or title
   const albumData = useMemo(() => {
@@ -216,6 +229,43 @@ export default function AlbumDetailPage() {
                     <Shuffle className="h-3.5 w-3.5" />
                     <span>Shuffle</span>
                   </button>
+
+                  {/* Batch Download Album button */}
+                  <button
+                    type="button"
+                    disabled={downloadingAll}
+                    onClick={async () => {
+                      setDownloadingAll(true);
+                      try {
+                        for (const s of albumData.songs) {
+                          if (!isDownloaded(s.id)) {
+                            await toggleDownloadSong(s);
+                          }
+                        }
+                      } finally {
+                        setDownloadingAll(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
+                    title="Save all tracks in album offline"
+                  >
+                    {downloadingAll ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#dbe878]" />
+                        <span>Downloading Album...</span>
+                      </>
+                    ) : albumData.songs.every((s) => isDownloaded(s.id)) ? (
+                      <>
+                        <CheckCircle2 className="h-3.5 w-3.5 fill-[#dbe878] text-[#19181b]" />
+                        <span>Album Downloaded</span>
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownToLine className="h-3.5 w-3.5" />
+                        <span>Download Album</span>
+                      </>
+                    )}
+                  </button>
                 </>
               ) : null}
             </div>
@@ -250,7 +300,7 @@ export default function AlbumDetailPage() {
               song={song}
               queue={albumData.songs}
               index={index}
-              onEdit={(songToEdit) => editSong(songToEdit)}
+              onEdit={isAdmin ? (songToEdit) => editSong(songToEdit) : undefined}
             />
           ))}
         </div>

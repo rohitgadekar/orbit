@@ -3,6 +3,7 @@
 import { useAuth } from "@/context/auth-context";
 import { initials } from "@/lib/utils";
 import {
+  ArrowDownToLine,
   Compass,
   Disc3,
   FolderArchive,
@@ -21,7 +22,7 @@ export function IconRail() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentView = searchParams.get("view");
-  const { profile, user } = useAuth();
+  const { profile, user, isAdmin, role } = useAuth();
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "Listener";
 
@@ -76,6 +77,12 @@ export function IconRail() {
       label: "Playlists",
       icon: ListMusic,
       isActive: pathname === "/folders" || pathname.startsWith("/folders/"),
+    },
+    {
+      href: "/downloaded",
+      label: "Downloaded",
+      icon: ArrowDownToLine,
+      isActive: pathname === "/downloaded",
     },
   ];
 
@@ -152,7 +159,9 @@ export function IconRail() {
             <p className="truncate text-xs font-semibold text-white group-hover:text-[#dbe878]">
               {displayName}
             </p>
-            <p className="truncate text-[10px] text-zinc-500">Premium Listener</p>
+            <p className="truncate text-[10px] text-zinc-400 capitalize">
+              {isAdmin ? "Studio Admin" : "Listener"}
+            </p>
           </div>
         </Link>
         <Link

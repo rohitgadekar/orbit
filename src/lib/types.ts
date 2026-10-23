@@ -1,7 +1,24 @@
+export type UserRole = "admin" | "user" | string;
+
 export type Profile = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  role?: UserRole;
+};
+
+export type AlbumTrackInput = {
+  title: string;
+  audioUrl: string;
+  artistName?: string;
+  durationSeconds?: number;
+};
+
+export type BatchAlbumInput = {
+  albumTitle: string;
+  artistName: string;
+  coverUrl?: string;
+  tracks: AlbumTrackInput[];
 };
 
 export type Artist = {

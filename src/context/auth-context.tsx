@@ -19,6 +19,8 @@ type AuthContextValue = {
   loading: boolean;
   user: User | null;
   profile: Profile | null;
+  role: string;
+  isAdmin: boolean;
   refreshProfile: () => Promise<void>;
   updateProfile: (displayName: string, avatarUrl?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -26,7 +28,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function getCachedProfile(userId: string): { display_name?: string | null; avatar_url?: string | null } | null {
+function getCachedProfile(userId: string): { display_name?: string | null; avatar_url?: string | null; role?: string | null } | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(`orbit_profile_${userId}`);
@@ -36,7 +38,7 @@ function getCachedProfile(userId: string): { display_name?: string | null; avata
   }
 }
 
-function setCachedProfile(userId: string, data: { display_name?: string | null; avatar_url?: string | null }) {
+function setCachedProfile(userId: string, data: { display_name?: string | null; avatar_url?: string | null; role?: string | null }) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(`orbit_profile_${userId}`, JSON.stringify(data));
@@ -57,14 +59,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: authData } = await supabase.auth.getUser();
     const meta = authData.user?.user_metadata as
-      | { display_name?: string; avatar_url?: string }
+      | { display_name?: string; avatar_url?: string; role?: string }
       | undefined;
 
-    const { data: dbData } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url")
-      .eq("id", userId)
-      .maybeSingle();
+    let dbData: { id: string; display_name: string | null; avatar_url: string | null; role?: string | null } | null = null;
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, role")
+        .eq("id", userId)
+        .maybeSingle();
+      dbData = data;
+    } catch {
+      // In case role column query fails before migration is run
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .eq("id", userId)
+        .maybeSingle();
+      dbData = data;
+    }
 
     const resolvedName =
       cached?.display_name ??
@@ -79,14 +93,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       meta?.avatar_url ??
       null;
 
+    const resolvedRole =
+      dbData?.role ??
+      meta?.role ??
+      cached?.role ??
+      "user";
+
     const resolvedProfile: Profile = {
       id: userId,
       display_name: resolvedName,
       avatar_url: resolvedAvatar,
+      role: resolvedRole,
     };
 
     setProfile(resolvedProfile);
-    setCachedProfile(userId, { display_name: resolvedName, avatar_url: resolvedAvatar });
+    setCachedProfile(userId, { display_name: resolvedName, avatar_url: resolvedAvatar, role: resolvedRole });
 
     // Ensure profiles table has the record
     if (!dbData) {
@@ -98,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               id: userId,
               display_name: resolvedName,
               avatar_url: resolvedAvatar,
+              role: resolvedRole,
             },
             { onConflict: "id" }
           );
@@ -116,14 +138,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const nextAvatar = avatarUrl?.trim() || null;
 
       // 1. Update local state immediately for snappy UX
-      setProfile({
+      setProfile((prev) => ({
         id: activeUser.id,
         display_name: nextName,
         avatar_url: nextAvatar,
-      });
+        role: prev?.role || "user",
+      }));
       setCachedProfile(activeUser.id, {
         display_name: nextName,
         avatar_url: nextAvatar,
+        role: profile?.role || "user",
       });
 
       // 2. Update Supabase Auth metadata
@@ -153,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn("Failed to upsert profile record:", e);
       }
     },
-    [user]
+    [user, profile]
   );
 
   useEffect(() => {
@@ -190,12 +214,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [configured, loadProfile]);
 
+  const role = profile?.role || "user";
+  const isAdmin = role.toLowerCase() === "admin";
+
   const value = useMemo<AuthContextValue>(
     () => ({
       configured,
       loading,
       user,
       profile,
+      role,
+      isAdmin,
       refreshProfile: async () => {
         if (user) await loadProfile(user.id);
       },
@@ -205,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     }),
-    [configured, loading, user, profile, loadProfile, updateProfile]
+    [configured, loading, user, profile, role, isAdmin, loadProfile, updateProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

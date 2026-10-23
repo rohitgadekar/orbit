@@ -2,13 +2,17 @@
 
 import { Cover } from "@/components/cover";
 import { useMusic } from "@/context/music-context";
+import { useOffline } from "@/context/offline-context";
 import type { RepeatMode, Song } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
 import Link from "next/link";
 import {
+  ArrowDownToLine,
+  CheckCircle2,
   ChevronDown,
   Heart,
   ListMusic,
+  Loader2,
   Maximize2,
   Minimize2,
   Pause,
@@ -66,6 +70,7 @@ export function FullscreenPlayer({
   onPlaySong?: (song: Song) => void;
 }) {
   const { favouriteIds, toggleFavourite } = useMusic();
+  const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
   const [showQueue, setShowQueue] = useState(false);
   const [dominantColors, setDominantColors] = useState<{
     primary: string;
@@ -81,6 +86,8 @@ export function FullscreenPlayer({
 
   const cover = current?.cover_url || current?.album?.cover_url || current?.artist?.image_url;
   const isFav = current ? favouriteIds.has(current.id) : false;
+  const isSavedOffline = current ? isDownloaded(current.id) : false;
+  const isCurrentlyDownloading = current ? downloadingSongIds[current.id] !== undefined : false;
 
   // Extract dynamic colors from album art like YouTube Music
   useEffect(() => {
@@ -319,17 +326,39 @@ export function FullscreenPlayer({
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => void toggleFavourite(current.id)}
-                className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isFav
-                  ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
-                  : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
-                  }`}
-                aria-label={isFav ? "Favorited" : "Add to favorites"}
-              >
-                <Heart className={`h-5 w-5 ${isFav ? "fill-rose-400" : ""}`} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void toggleDownloadSong(current)}
+                  disabled={isCurrentlyDownloading}
+                  className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isSavedOffline
+                    ? "border-[#dbe878]/50 bg-[#dbe878]/20 text-[#dbe878]"
+                    : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
+                    }`}
+                  aria-label={isSavedOffline ? "Saved offline" : "Save offline"}
+                  title={isSavedOffline ? "Saved offline (tap to remove)" : "Save song offline"}
+                >
+                  {isCurrentlyDownloading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-[#dbe878]" />
+                  ) : isSavedOffline ? (
+                    <CheckCircle2 className="h-5 w-5 fill-[#dbe878] text-zinc-950" />
+                  ) : (
+                    <ArrowDownToLine className="h-5 w-5" />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void toggleFavourite(current.id)}
+                  className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isFav
+                    ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
+                    : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
+                    }`}
+                  aria-label={isFav ? "Favorited" : "Add to favorites"}
+                >
+                  <Heart className={`h-5 w-5 ${isFav ? "fill-rose-400" : ""}`} />
+                </button>
+              </div>
             </div>
 
             {/* Scrubber Progress Bar */}

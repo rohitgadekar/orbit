@@ -4,10 +4,21 @@ import { useTrackEditor } from "@/components/app-shell";
 import { Cover } from "@/components/cover";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
+import { useOffline } from "@/context/offline-context";
 import { usePlayer } from "@/context/player-context";
 import type { Song } from "@/lib/types";
-import { ArrowLeft, Play, Plus, Search, Trash2 } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  Play,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -17,6 +28,8 @@ export default function FolderDetailPage() {
   const { playlists, playlistSongs, songs, addToPlaylist, removeFromPlaylist, loading } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
+  const { isAdmin } = useAuth();
+  const { isPlaylistDownloaded, toggleDownloadPlaylist, downloadingPlaylistIds } = useOffline();
   const [items, setItems] = useState<Song[]>([]);
   const [searchSong, setSearchSong] = useState("");
   const playlist = playlists.find((item) => item.id === params.id);
@@ -96,16 +109,53 @@ export default function FolderDetailPage() {
           </div>
         </div>
 
-        {items[0] ? (
-          <button
-            type="button"
-            onClick={() => playSong(items[0], items)}
-            className="inline-flex items-center gap-2 rounded-full bg-[#19181b] px-6 py-2.5 text-xs font-bold text-[#dbe878] shadow-md transition hover:scale-105 active:scale-95"
-          >
-            <Play className="h-3.5 w-3.5 fill-current" />
-            <span>Play Playlist</span>
-          </button>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          {items.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => void toggleDownloadPlaylist(playlist, items)}
+              disabled={downloadingPlaylistIds.has(playlist.id)}
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold transition active:scale-95 ${
+                isPlaylistDownloaded(playlist.id)
+                  ? "border-[#dbe878] bg-[#dbe878]/15 text-[#525f12]"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-900"
+              }`}
+              title={
+                isPlaylistDownloaded(playlist.id)
+                  ? "Downloaded for offline listening (click to remove)"
+                  : "Download all tracks in this playlist for offline listening"
+              }
+            >
+              {downloadingPlaylistIds.has(playlist.id) ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-700" />
+                  <span>Downloading...</span>
+                </>
+              ) : isPlaylistDownloaded(playlist.id) ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5 fill-[#dbe878] text-[#54620f]" />
+                  <span>Downloaded Offline</span>
+                </>
+              ) : (
+                <>
+                  <ArrowDownToLine className="h-3.5 w-3.5" />
+                  <span>Download Playlist</span>
+                </>
+              )}
+            </button>
+          ) : null}
+
+          {items[0] ? (
+            <button
+              type="button"
+              onClick={() => playSong(items[0], items)}
+              className="inline-flex items-center gap-2 rounded-full bg-[#19181b] px-6 py-2.5 text-xs font-bold text-[#dbe878] shadow-md transition hover:scale-105 active:scale-95"
+            >
+              <Play className="h-3.5 w-3.5 fill-current" />
+              <span>Play Playlist</span>
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {/* Playlist Songs List */}
@@ -123,7 +173,7 @@ export default function FolderDetailPage() {
                   song={song}
                   queue={items}
                   index={index}
-                  onEdit={(songToEdit) => editSong(songToEdit)}
+                  onEdit={isAdmin ? (songToEdit) => editSong(songToEdit) : undefined}
                 />
               </div>
               <button

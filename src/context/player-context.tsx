@@ -1,5 +1,6 @@
 "use client";
 
+import { getOfflineSong } from "@/lib/offline-storage";
 import type { RepeatMode, Song } from "@/lib/types";
 import {
   createContext,
@@ -39,6 +40,7 @@ const PlayerContext = createContext<PlayerContextValue | null>(null);
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const { recordPlay } = useMusic();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
   const [current, setCurrent] = useState<Song | null>(null);
   const [queue, setQueue] = useState<Song[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -68,6 +70,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     audio.addEventListener("pause", onPause);
 
     return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
       audio.pause();
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("loadedmetadata", onMeta);
@@ -77,7 +82,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const playAtIndex = useCallback(
-    (list: Song[], index: number) => {
+    async (list: Song[], index: number) => {
       const song = list[index];
       const audio = audioRef.current;
       if (!song || !audio) return;
@@ -85,7 +90,34 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setCurrent(song);
       setProgress(0);
       recordedRef.current = null;
-      audio.src = song.audio_url;
+
+      try {
+        const offlineRecord = await getOfflineSong(song.id);
+        if (offlineRecord?.audioBlob) {
+          if (blobUrlRef.current) {
+            URL.revokeObjectURL(blobUrlRef.current);
+          }
+          const blobUrl = URL.createObjectURL(offlineRecord.audioBlob);
+          blobUrlRef.current = blobUrl;
+          audio.src = blobUrl;
+        } else {
+          if (blobUrlRef.current) {
+            URL.revokeObjectURL(blobUrlRef.current);
+            blobUrlRef.current = null;
+          }
+          if (typeof window !== "undefined" && !navigator.onLine) {
+            alert(
+              `"${song.title}" is not downloaded for offline playback. Please connect to the internet or choose a downloaded track.`,
+            );
+            setIsPlaying(false);
+            return;
+          }
+          audio.src = song.audio_url;
+        }
+      } catch {
+        audio.src = song.audio_url;
+      }
+
       audio.volume = volume;
       void audio.play().catch(() => setIsPlaying(false));
     },

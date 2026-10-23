@@ -3,6 +3,7 @@
 import { useTrackEditor } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import type { Song } from "@/lib/types";
@@ -13,6 +14,7 @@ export default function FavouritesPage() {
   const { songs, recentFavouriteIds } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
+  const { isAdmin } = useAuth();
 
   const favourites = recentFavouriteIds
     .map((id) => songs.find((song) => song.id === id))
@@ -68,7 +70,7 @@ export default function FavouritesPage() {
               song={song}
               queue={favourites}
               index={index}
-              onEdit={(songToEdit) => editSong(songToEdit)}
+              onEdit={isAdmin ? (songToEdit) => editSong(songToEdit) : undefined}
             />
           ))}
         </div>

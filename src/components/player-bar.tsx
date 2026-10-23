@@ -2,11 +2,13 @@
 
 import { EditTrackModal } from "@/components/edit-track-modal";
 import { FullscreenPlayer } from "@/components/fullscreen-player";
+import { useAuth } from "@/context/auth-context";
 import { usePlayer } from "@/context/player-context";
 import type { Song } from "@/lib/types";
 import { useState } from "react";
 
 export function PlayerBar() {
+  const { isAdmin } = useAuth();
   const {
     current,
     queue,
@@ -55,7 +57,7 @@ export function PlayerBar() {
         setVolume={setVolume}
         toggleShuffle={toggleShuffle}
         cycleRepeat={cycleRepeat}
-        onEditTrack={(song) => setEditingSong(song)}
+        onEditTrack={isAdmin ? (song) => setEditingSong(song) : undefined}
         onPlaySong={(song) => playSong(song, queue)}
       />
 

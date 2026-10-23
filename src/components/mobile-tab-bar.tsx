@@ -1,9 +1,12 @@
 "use client";
 
 import { Cover } from "@/components/cover";
+import { useOffline } from "@/context/offline-context";
 import { usePlayer } from "@/context/player-context";
 import { cn } from "@/lib/utils";
 import {
+  ArrowDownToLine,
+  CheckCircle2,
   Compass,
   Disc3,
   Heart,
@@ -27,6 +30,17 @@ const MOBILE_NAV_ITEMS = [
 export function MobileTabBar() {
   const pathname = usePathname();
   const { current, isPlaying, toggle, next, setExpanded, progress, duration } = usePlayer();
+  const { isOnline, isDownloaded } = useOffline();
+
+  const navItems = isOnline
+    ? MOBILE_NAV_ITEMS
+    : [
+        { href: "/home", label: "Browse", icon: Compass },
+        { href: "/downloaded", label: "Offline", icon: ArrowDownToLine },
+        { href: "/folders", label: "Playlists", icon: ListMusic },
+        { href: "/favourites", label: "Loved", icon: Heart },
+        { href: "/profile", label: "Profile", icon: UserRound },
+      ];
 
   const cover = current?.cover_url || current?.album?.cover_url || current?.artist?.image_url;
 
@@ -52,9 +66,16 @@ export function MobileTabBar() {
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-bold text-white tracking-tight">
-                    {current.title}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="truncate text-xs font-bold text-white tracking-tight">
+                      {current.title}
+                    </p>
+                    {isDownloaded(current.id) && (
+                      <span title="Available offline" aria-label="Available offline">
+                        <CheckCircle2 className="h-3 w-3 shrink-0 text-[#dbe878]" />
+                      </span>
+                    )}
+                  </div>
                   <p className="truncate text-[11px] font-medium text-zinc-400">
                     {current.artist?.name || "Unknown Artist"}
                   </p>
@@ -110,7 +131,7 @@ export function MobileTabBar() {
 
         {/* Navigation Tabs */}
         <nav className="flex items-center justify-around px-2 py-1.5">
-          {MOBILE_NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active =
               pathname === item.href ||
               (item.href !== "/home" && pathname.startsWith(`${item.href}/`));

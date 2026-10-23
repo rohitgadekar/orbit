@@ -1,14 +1,19 @@
 "use client";
 
 import { Cover } from "@/components/cover";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
+import { useOffline } from "@/context/offline-context";
 import { usePlayer } from "@/context/player-context";
 import type { Song } from "@/lib/types";
 import { splitArtistNames } from "@/lib/artists";
 import { formatTime } from "@/lib/utils";
 import Link from "next/link";
 import {
+  ArrowDownToLine,
+  CheckCircle2,
   Heart,
+  Loader2,
   Maximize2,
   Pause,
   Pencil,
@@ -25,6 +30,8 @@ export function NowPlayingPanel({
 }: {
   onEditTrack?: (song: Song) => void;
 }) {
+  const { isAdmin } = useAuth();
+  const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
   const {
     current,
     isPlaying,
@@ -89,7 +96,7 @@ export function NowPlayingPanel({
         </div>
 
         <div className="flex items-center gap-1">
-          {onEditTrack ? (
+          {isAdmin && onEditTrack ? (
             <button
               type="button"
               onClick={() => onEditTrack(activeSong)}
@@ -152,14 +159,40 @@ export function NowPlayingPanel({
               ))}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => void toggleFavourite(activeSong.id)}
-            className="rounded-full p-2 text-zinc-500 hover:text-rose-500"
-            aria-label="Favorite"
-          >
-            <Heart className={`h-4 w-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Offline download button */}
+            <button
+              type="button"
+              onClick={() => void toggleDownloadSong(activeSong)}
+              disabled={downloadingSongIds[activeSong.id] !== undefined}
+              className="rounded-full p-2 text-zinc-400 hover:text-zinc-900 transition"
+              title={
+                isDownloaded(activeSong.id)
+                  ? "Downloaded offline (click to remove)"
+                  : downloadingSongIds[activeSong.id] !== undefined
+                    ? `Downloading ${downloadingSongIds[activeSong.id]}%`
+                    : "Save track offline"
+              }
+              aria-label="Offline download"
+            >
+              {downloadingSongIds[activeSong.id] !== undefined ? (
+                <Loader2 className="h-4 w-4 animate-spin text-zinc-700" />
+              ) : isDownloaded(activeSong.id) ? (
+                <CheckCircle2 className="h-4 w-4 fill-[#dbe878]/60 text-[#54620f]" />
+              ) : (
+                <ArrowDownToLine className="h-4 w-4" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void toggleFavourite(activeSong.id)}
+              className="rounded-full p-2 text-zinc-500 hover:text-rose-500"
+              aria-label="Favorite"
+            >
+              <Heart className={`h-4 w-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} />
+            </button>
+          </div>
         </div>
 
         {/* Progress bar */}
