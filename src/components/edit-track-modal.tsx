@@ -2,8 +2,10 @@
 
 import { Cover } from "@/components/cover";
 import { useMusic } from "@/context/music-context";
+import { getAudioDuration } from "@/lib/audio-duration";
 import type { Song } from "@/lib/types";
-import { Check, Loader2, Trash2, X } from "lucide-react";
+import { formatTime } from "@/lib/utils";
+import { Check, Loader2, Sparkles, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
 export function EditTrackModal({
@@ -40,9 +42,24 @@ function EditTrackForm({
   const [durationSeconds, setDurationSeconds] = useState(
     song.duration_seconds ? String(song.duration_seconds) : "",
   );
+  const [detectingDuration, setDetectingDuration] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+
+  async function autoDetectDuration(urlOverride?: string) {
+    const target = (urlOverride ?? audioUrl).trim();
+    if (!target.startsWith("http://") && !target.startsWith("https://")) return;
+    setDetectingDuration(true);
+    try {
+      const dur = await getAudioDuration(target);
+      setDurationSeconds(String(dur));
+    } catch {
+      // Ignored
+    } finally {
+      setDetectingDuration(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -145,14 +162,39 @@ function EditTrackForm({
             />
           </label>
           <label className="block text-xs font-medium uppercase tracking-wider text-zinc-400">
-            Duration (Seconds)
-            <input
-              type="number"
-              value={durationSeconds}
-              onChange={(e) => setDurationSeconds(e.target.value)}
-              placeholder="e.g. 215"
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm normal-case tracking-normal text-white placeholder-zinc-500 outline-none transition focus:border-[#dbe878] focus:bg-white/10"
-            />
+            <div className="flex items-center justify-between">
+              <span>Duration (Seconds)</span>
+              {durationSeconds && Number(durationSeconds) > 0 ? (
+                <span className="text-[11px] font-mono text-[#dbe878] normal-case">
+                  {formatTime(Number(durationSeconds))}
+                </span>
+              ) : null}
+            </div>
+            <div className="relative mt-1.5">
+              <input
+                type="number"
+                value={durationSeconds}
+                onChange={(e) => setDurationSeconds(e.target.value)}
+                placeholder="e.g. 215"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 pr-20 text-sm normal-case tracking-normal text-white placeholder-zinc-500 outline-none transition focus:border-[#dbe878] focus:bg-white/10"
+              />
+              {audioUrl.trim().startsWith("http") ? (
+                <button
+                  type="button"
+                  onClick={() => void autoDetectDuration()}
+                  disabled={detectingDuration}
+                  className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-[10px] font-semibold text-zinc-200 hover:border-[#dbe878] hover:text-[#dbe878] transition disabled:opacity-50"
+                  title="Auto-detect duration from audio URL"
+                >
+                  {detectingDuration ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-[#dbe878]" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 text-[#dbe878]" />
+                  )}
+                  <span>Detect</span>
+                </button>
+              ) : null}
+            </div>
           </label>
         </div>
 
@@ -167,11 +209,29 @@ function EditTrackForm({
         </label>
 
         <label className="block text-xs font-medium uppercase tracking-wider text-zinc-400">
-          Audio Stream URL
+          <div className="flex items-center justify-between">
+            <span>Audio Stream URL</span>
+            {detectingDuration ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-normal text-[#dbe878] lowercase tracking-normal">
+                <Loader2 className="h-3 w-3 animate-spin" /> detecting duration...
+              </span>
+            ) : null}
+          </div>
           <input
             required
             value={audioUrl}
-            onChange={(e) => setAudioUrl(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setAudioUrl(val);
+              if (val.trim().startsWith("http") && (!durationSeconds || durationSeconds === "0")) {
+                void autoDetectDuration(val);
+              }
+            }}
+            onBlur={() => {
+              if (audioUrl.trim().startsWith("http") && !durationSeconds) {
+                void autoDetectDuration();
+              }
+            }}
             placeholder="https://res.cloudinary.com/.../audio.mp3"
             className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm normal-case tracking-normal text-white placeholder-zinc-500 outline-none transition focus:border-[#dbe878] focus:bg-white/10"
           />

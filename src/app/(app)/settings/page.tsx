@@ -7,7 +7,8 @@ import { Cover } from "@/components/cover";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { getIndividualArtists, type ParsedArtist } from "@/lib/artists";
-import { initials } from "@/lib/utils";
+import { formatTime, initials } from "@/lib/utils";
+import { getAudioDuration } from "@/lib/audio-duration";
 import {
   ArrowRight,
   Check,
@@ -105,6 +106,89 @@ export default function SettingsPage() {
   const [showBulkPaste, setShowBulkPaste] = useState(false);
   const [bulkPasteText, setBulkPasteText] = useState("");
 
+  // Duration auto-detect state
+  const [detectingSingleDuration, setDetectingSingleDuration] = useState(false);
+  const [detectingRowIds, setDetectingRowIds] = useState<Set<string>>(new Set());
+  const [batchDetectingAll, setBatchDetectingAll] = useState(false);
+
+  async function autoDetectSingleTrackDuration(urlOverride?: string) {
+    const raw = (urlOverride ?? audioUrl).trim();
+    const target = raw.replace(/^["']|["']$/g, "").trim();
+    if (!target.startsWith("http://") && !target.startsWith("https://")) return;
+    setDetectingSingleDuration(true);
+    try {
+      const dur = await getAudioDuration(target);
+      if (dur > 0) {
+        setDurationSeconds(String(dur));
+      }
+    } catch (err) {
+      console.warn("Failed to auto-detect audio duration:", err);
+    } finally {
+      setDetectingSingleDuration(false);
+    }
+  }
+
+  async function detectRowDuration(rowId: string, urlOverride?: string) {
+    const raw = (urlOverride ?? "").trim() || (batchTracks.find((r) => r.id === rowId)?.audioUrl ?? "").trim();
+    const target = raw.replace(/^["']|["']$/g, "").trim();
+    if (!target.startsWith("http://") && !target.startsWith("https://")) return;
+
+    setDetectingRowIds((prev) => new Set(prev).add(rowId));
+    try {
+      const dur = await getAudioDuration(target);
+      if (dur > 0) {
+        setBatchTracks((prev) =>
+          prev.map((r) => (r.id === rowId ? { ...r, durationSeconds: String(dur) } : r)),
+        );
+      }
+    } catch (err) {
+      console.warn("Failed to auto-detect row duration:", rowId, err);
+    } finally {
+      setDetectingRowIds((prev) => {
+        const next = new Set(prev);
+        next.delete(rowId);
+        return next;
+      });
+    }
+  }
+
+  async function detectAllMissingDurations(rowsToScan?: TrackRowState[]) {
+    const currentList = rowsToScan ?? batchTracks;
+    const targets = currentList.filter((r) => {
+      const clean = r.audioUrl.trim().replace(/^["']|["']$/g, "");
+      return (
+        (clean.startsWith("http://") || clean.startsWith("https://")) &&
+        (!r.durationSeconds || Number(r.durationSeconds) <= 0)
+      );
+    });
+    if (targets.length === 0) return;
+
+    setBatchDetectingAll(true);
+    await Promise.allSettled(
+      targets.map(async (r) => {
+        const clean = r.audioUrl.trim().replace(/^["']|["']$/g, "");
+        setDetectingRowIds((prev) => new Set(prev).add(r.id));
+        try {
+          const dur = await getAudioDuration(clean);
+          if (dur > 0) {
+            setBatchTracks((prev) =>
+              prev.map((item) => (item.id === r.id ? { ...item, durationSeconds: String(dur) } : item)),
+            );
+          }
+        } catch {
+          // ignore
+        } finally {
+          setDetectingRowIds((prev) => {
+            const next = new Set(prev);
+            next.delete(r.id);
+            return next;
+          });
+        }
+      }),
+    );
+    setBatchDetectingAll(false);
+  }
+
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
     setProfileBusy(true);
@@ -190,6 +274,8 @@ export default function SettingsPage() {
     setBatchTracks((prev) =>
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
     );
+    // NOTE: Auto-detection is intentionally NOT triggered here on every keystroke.
+    // Detection is handled by onPaste (immediate full URL) and onBlur (after typing finishes).
   }
 
   function parseBulkPaste() {
@@ -228,6 +314,7 @@ export default function SettingsPage() {
       setBatchTracks(newRows);
       setShowBulkPaste(false);
       setBulkPasteText("");
+      void detectAllMissingDurations(newRows);
     }
   }
 
@@ -680,6 +767,23 @@ export default function SettingsPage() {
                           required
                           value={row.audioUrl}
                           onChange={(e) => updateTrackRow(row.id, "audioUrl", e.target.value)}
+                          onPaste={(e) => {
+                            const pasted = e.clipboardData.getData("text").trim().replace(/^["']|["']$/g, "");
+                            if (pasted.startsWith("http://") || pasted.startsWith("https://")) {
+                              // Prevent default so we control state; update row state then detect
+                              e.preventDefault();
+                              setBatchTracks((prev) =>
+                                prev.map((r) => (r.id === row.id ? { ...r, audioUrl: pasted } : r)),
+                              );
+                              void detectRowDuration(row.id, pasted);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const clean = e.target.value.trim().replace(/^["']|["']$/g, "");
+                            if (clean.startsWith("http://") || clean.startsWith("https://")) {
+                              void detectRowDuration(row.id, clean);
+                            }
+                          }}
                           placeholder="https://res.cloudinary.com/.../audio.mp3"
                           className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
                         />
@@ -693,13 +797,34 @@ export default function SettingsPage() {
                         />
                       </td>
                       <td className="py-2.5 px-3">
-                        <input
-                          type="number"
-                          value={row.durationSeconds}
-                          onChange={(e) => updateTrackRow(row.id, "durationSeconds", e.target.value)}
-                          placeholder="e.g. 210"
-                          className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
-                        />
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={row.durationSeconds}
+                            onChange={(e) => updateTrackRow(row.id, "durationSeconds", e.target.value)}
+                            placeholder="e.g. 210"
+                            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 pr-7 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
+                          />
+                          {detectingRowIds.has(row.id) ? (
+                            <span className="absolute right-2 top-2.5 text-amber-600">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            </span>
+                          ) : row.audioUrl.trim().startsWith("http") ? (
+                            <button
+                              type="button"
+                              onClick={() => void detectRowDuration(row.id)}
+                              className="absolute right-2 top-2.5 text-zinc-400 hover:text-amber-600 transition"
+                              title="Auto-detect duration from audio URL"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
+                        {row.durationSeconds && Number(row.durationSeconds) > 0 ? (
+                          <span className="mt-0.5 block text-[10px] font-mono text-zinc-500 text-right pr-1">
+                            {formatTime(Number(row.durationSeconds))}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="py-2.5 px-3 text-center">
                         <button
@@ -718,8 +843,8 @@ export default function SettingsPage() {
             </div>
 
             {/* Quick row append buttons */}
-            <div className="mt-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={addTrackRow}
@@ -734,6 +859,20 @@ export default function SettingsPage() {
                   className="rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-600 hover:border-zinc-900 transition"
                 >
                   + Add 5 Rows
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void detectAllMissingDurations()}
+                  disabled={batchDetectingAll}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50/80 px-3.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition disabled:opacity-50"
+                  title="Auto-detect duration for all tracks from their audio stream URLs"
+                >
+                  {batchDetectingAll ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 text-amber-600" />
+                  )}
+                  <span>Auto-Detect Durations</span>
                 </button>
               </div>
 
@@ -827,22 +966,70 @@ export default function SettingsPage() {
             </label>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
-              Duration in Seconds
-              <input
-                type="number"
-                value={durationSeconds}
-                onChange={(e) => setDurationSeconds(e.target.value)}
-                placeholder="e.g. 230"
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
-              />
+              <div className="flex items-center justify-between">
+                <span>Duration in Seconds</span>
+                {durationSeconds && Number(durationSeconds) > 0 ? (
+                  <span className="text-[11px] font-mono font-medium text-zinc-500 normal-case">
+                    {formatTime(Number(durationSeconds))}
+                  </span>
+                ) : null}
+              </div>
+              <div className="relative mt-1.5">
+                <input
+                  type="number"
+                  value={durationSeconds}
+                  onChange={(e) => setDurationSeconds(e.target.value)}
+                  placeholder="e.g. 230"
+                  className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 pr-24 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                />
+                {audioUrl.trim().startsWith("http") ? (
+                  <button
+                    type="button"
+                    onClick={() => void autoDetectSingleTrackDuration()}
+                    disabled={detectingSingleDuration}
+                    className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 shadow-2xs hover:border-zinc-900 transition disabled:opacity-50"
+                    title="Auto-detect duration from audio URL"
+                  >
+                    {detectingSingleDuration ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+                    ) : (
+                      <Sparkles className="h-3 w-3 text-amber-600" />
+                    )}
+                    <span>Auto-detect</span>
+                  </button>
+                ) : null}
+              </div>
             </label>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 sm:col-span-2">
-              Audio Stream URL *
+              <div className="flex items-center justify-between">
+                <span>Audio Stream URL *</span>
+                {detectingSingleDuration ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 lowercase tracking-normal">
+                    <Loader2 className="h-3 w-3 animate-spin" /> detecting duration...
+                  </span>
+                ) : null}
+              </div>
               <input
                 required
                 value={audioUrl}
                 onChange={(e) => setAudioUrl(e.target.value)}
+                onPaste={(e) => {
+                  // Use the pasted text directly (state hasn't updated yet at paste time)
+                  const pasted = e.clipboardData.getData("text").trim().replace(/^["']|["']$/g, "");
+                  if (pasted.startsWith("http://") || pasted.startsWith("https://")) {
+                    // Also sync the state with the pasted value immediately
+                    e.preventDefault();
+                    setAudioUrl(pasted);
+                    void autoDetectSingleTrackDuration(pasted);
+                  }
+                }}
+                onBlur={(e) => {
+                  const clean = e.target.value.trim().replace(/^["']|["']$/g, "");
+                  if (clean.startsWith("http://") || clean.startsWith("https://")) {
+                    void autoDetectSingleTrackDuration(clean);
+                  }
+                }}
                 placeholder="https://res.cloudinary.com/.../video/upload/....mp3"
                 className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
               />
