@@ -171,60 +171,67 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     setError(null);
     const supabase = createClient();
 
-    const [songsRes, artistsRes, playlistsRes, favRes, historyRes] =
-      await Promise.all([
-        supabase
-          .from("songs")
-          .select(songSelect)
-          .order("created_at", { ascending: false }),
-        supabase.from("artists").select("*").order("name"),
-        supabase
-          .from("playlists")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("favourites")
-          .select("song_id, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("play_history")
-          .select("song_id, played_at")
-          .eq("user_id", user.id)
-          .order("played_at", { ascending: false })
-          .limit(24),
-      ]);
+    try {
+      const [songsRes, artistsRes, playlistsRes, favRes, historyRes] =
+        await Promise.all([
+          supabase
+            .from("songs")
+            .select(songSelect)
+            .order("created_at", { ascending: false }),
+          supabase.from("artists").select("*").order("name"),
+          supabase
+            .from("playlists")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("favourites")
+            .select("song_id, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("play_history")
+            .select("song_id, played_at")
+            .eq("user_id", user.id)
+            .order("played_at", { ascending: false })
+            .limit(24),
+        ]);
 
-    if (songsRes.error) {
-      setError(songsRes.error.message);
-      setLoading(false);
-      return;
-    }
-
-    const catalog = (songsRes.data ?? []).map((row) =>
-      normalizeSong(row as Record<string, unknown>),
-    );
-    setSongs(catalog);
-    setArtists((artistsRes.data ?? []) as Artist[]);
-    setPlaylists((playlistsRes.data ?? []) as Playlist[]);
-
-    const favRows = favRes.data ?? [];
-    setFavouriteIds(new Set(favRows.map((row) => row.song_id as string)));
-    setRecentFavouriteIds(favRows.map((row) => row.song_id as string));
-
-    const byId = new Map(catalog.map((song) => [song.id, song]));
-    const played: Song[] = [];
-    const seen = new Set<string>();
-    for (const row of historyRes.data ?? []) {
-      const song = byId.get(row.song_id as string);
-      if (song && !seen.has(song.id)) {
-        seen.add(song.id);
-        played.push(song);
+      if (songsRes.error) {
+        setError(songsRes.error.message);
+        setLoading(false);
+        return;
       }
+
+      const catalog = (songsRes.data ?? []).map((row) =>
+        normalizeSong(row as Record<string, unknown>),
+      );
+      setSongs(catalog);
+      setArtists((artistsRes.data ?? []) as Artist[]);
+      setPlaylists((playlistsRes.data ?? []) as Playlist[]);
+
+      const favRows = favRes.data ?? [];
+      setFavouriteIds(new Set(favRows.map((row) => row.song_id as string)));
+      setRecentFavouriteIds(favRows.map((row) => row.song_id as string));
+
+      const byId = new Map(catalog.map((song) => [song.id, song]));
+      const played: Song[] = [];
+      const seen = new Set<string>();
+      for (const row of historyRes.data ?? []) {
+        const song = byId.get(row.song_id as string);
+        if (song && !seen.has(song.id)) {
+          seen.add(song.id);
+          played.push(song);
+        }
+      }
+      setRecentlyPlayed(played);
+    } catch (networkErr) {
+      // Offline or network failure — don't crash, just show empty state
+      console.warn("[Orbit] Music load failed (offline?):", networkErr);
+      // Keep whatever data we already have in state (from before going offline)
+    } finally {
+      setLoading(false);
     }
-    setRecentlyPlayed(played);
-    setLoading(false);
   }, [configured, user]);
 
   const toggleFavourite = useCallback(
