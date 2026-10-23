@@ -59,16 +59,16 @@ export function TopHeader() {
   }
 
   return (
-    <header className="hidden md:block flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8">
+    <header className=" flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8">
       {/* Breadcrumb Navigation matching screenshot */}
-      <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500">
+      <div className="hidden md:block flex items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500">
         <span className="text-zinc-600 hover:text-zinc-900">{breadcrumb.parent}</span>
         <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />
         <span className="font-bold text-zinc-900">{breadcrumb.current}</span>
       </div>
 
       {/* Middle & Right Header Elements */}
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="hidden md:block flex items-center gap-3 sm:gap-4">
         {/* Search Bar / Icon */}
         <form onSubmit={handleSearchSubmit} className="relative flex items-center">
           {isSearchOpen ? (
