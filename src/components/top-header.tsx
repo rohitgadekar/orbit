@@ -23,7 +23,7 @@ export function TopHeader() {
   // Dynamic breadcrumb matching screenshot "Artists > Top 2023"
   function getBreadcrumb() {
     if (pathname === "/home" || pathname === "/") {
-      return { parent: "Artists", current: "Top 2023" };
+      return { parent: "Artists", current: "Top 2026" };
     }
     if (pathname.startsWith("/music")) {
       return { parent: "Library", current: "All Songs" };
@@ -59,16 +59,16 @@ export function TopHeader() {
   }
 
   return (
-    <header className=" flex items-center justify-between gap-4 px-6 pt-5 pb-8 md:pb-3 md:px-8">
+    <header className=" flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8">
       {/* Breadcrumb Navigation matching screenshot */}
-      <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500">
+      <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500">
         <span className="text-zinc-600 hover:text-zinc-900">{breadcrumb.parent}</span>
         <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />
         <span className="font-bold text-zinc-900">{breadcrumb.current}</span>
       </div>
 
       {/* Middle & Right Header Elements */}
-      <div className="hidden md:flex items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         {/* Search Bar / Icon */}
         <form onSubmit={handleSearchSubmit} className="relative flex items-center">
           {isSearchOpen ? (
@@ -122,7 +122,7 @@ export function TopHeader() {
         </div>
 
         {/* Action icons: Settings & Notification & Avatar */}
-        <div className="hidden md:flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/settings"
             className="rounded-full p-2 text-zinc-600 transition hover:bg-black/5 hover:text-zinc-900"
