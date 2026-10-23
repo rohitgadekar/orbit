@@ -375,9 +375,6 @@ export function FullscreenPlayer({
                 type="button"
                 onClick={toggle}
                 className="relative grid h-20 w-20 place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95"
-                style={{
-                  boxShadow: `0 0 35px ${dominantColors.primary}`,
-                }}
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
