@@ -57,8 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
     const cached = getCachedProfile(userId);
 
-    const { data: authData } = await supabase.auth.getUser();
-    const meta = authData.user?.user_metadata as
+    // Use cached profile immediately so UI doesn't block on network
+    if (cached) {
+      setProfile({
+        id: userId,
+        display_name: cached.display_name ?? "Listener",
+        avatar_url: cached.avatar_url ?? null,
+        role: cached.role ?? "user",
+      });
+    }
+
+    // getSession reads local JWT — no network required
+    const { data: sessionData } = await supabase.auth.getSession();
+    const meta = sessionData.session?.user?.user_metadata as
       | { display_name?: string; avatar_url?: string; role?: string }
       | undefined;
 
@@ -71,26 +82,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       dbData = data;
     } catch {
-      // In case role column query fails before migration is run
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url")
-        .eq("id", userId)
-        .maybeSingle();
-      dbData = data;
+      // Network offline — try without role column
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url")
+          .eq("id", userId)
+          .maybeSingle();
+        dbData = data;
+      } catch {
+        // Fully offline — keep cached data, don't update state again
+        return;
+      }
     }
 
     const resolvedName =
-      cached?.display_name ??
       dbData?.display_name ??
       meta?.display_name ??
-      authData.user?.email?.split("@")[0] ??
+      cached?.display_name ??
+      sessionData.session?.user?.email?.split("@")[0] ??
       "Listener";
 
     const resolvedAvatar =
-      cached?.avatar_url ??
       dbData?.avatar_url ??
       meta?.avatar_url ??
+      cached?.avatar_url ??
       null;
 
     const resolvedRole =
@@ -124,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             { onConflict: "id" }
           );
       } catch {
-        // Ignore if table schema lacks privileges
+        // Ignore if offline or table schema lacks privileges
       }
     }
   }, []);
