@@ -8,40 +8,25 @@ import { useEffect } from "react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-
-    // Register SW immediately (not on "load" — avoids delay for returning PWA users)
-    navigator.serviceWorker
-      .register("/sw.js", {
-        // Always check for a new SW version (don't use browser HTTP cache for sw.js itself)
-        updateViaCache: "none",
-      })
-      .then((registration) => {
-        // Force the waiting SW to activate immediately when a new version is found
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener("statechange", () => {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              // New SW installed — post a SKIP_WAITING message so it activates now
-              newWorker.postMessage({ type: "SKIP_WAITING" });
-            }
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      const registerSW = () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((registration) => {
+            console.log("Orbit Service Worker registered:", registration.scope);
+          })
+          .catch((error) => {
+            console.warn("Service Worker registration failed:", error);
           });
-        });
-      })
-      .catch((error) => {
-        console.warn("Service Worker registration failed:", error);
-      });
+      };
 
-    // When the SW takes control (after SKIP_WAITING), reload once so the new
-    // cached assets are served without needing a manual refresh.
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (!refreshing) {
-        refreshing = true;
-        window.location.reload();
+      if (document.readyState === "complete") {
+        registerSW();
+      } else {
+        window.addEventListener("load", registerSW);
+        return () => window.removeEventListener("load", registerSW);
       }
-    });
+    }
   }, []);
 
   return (

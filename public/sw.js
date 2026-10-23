@@ -1,191 +1,190 @@
-// Orbit PWA Service Worker — Offline-First
-// Bumping CACHE_VERSION forces the SW to reinstall when you deploy new code.
-const CACHE_VERSION = "v3";
-const SHELL_CACHE = `orbit-shell-${CACHE_VERSION}`;
-const PAGES_CACHE = `orbit-pages-${CACHE_VERSION}`;
-const ASSETS_CACHE = `orbit-assets-${CACHE_VERSION}`;
+// Orbit Luxury Audio PWA Service Worker — Offline & Shell Caching
+const CACHE_NAME = "orbit-app-cache-v3";
 
-// Critical pages to pre-cache on install so offline navigation always works
-const PRECACHE_PAGES = [
+const APP_SHELL_URLS = [
+  "/",
   "/home",
+  "/downloaded",
   "/music",
   "/folders",
   "/favourites",
   "/profile",
-  "/downloaded",
   "/settings",
-];
-
-// Critical shell files to pre-cache
-const PRECACHE_SHELL = [
   "/manifest.webmanifest",
   "/orbit.svg",
 ];
 
-// ─── SKIP WAITING (allow prompt-less instant updates) ─────────────────────────
-self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
-
-// ─── INSTALL ─────────────────────────────────────────────────────────────────
-// Pre-cache pages and shell assets. Don't wait on failures so bad URLs don't
-// block the SW from installing.
+// Install: Cache all critical app routes safely without atomic failure
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.open(SHELL_CACHE).then((cache) =>
-        cache.addAll(PRECACHE_SHELL).catch(() => {})
-      ),
-      caches.open(PAGES_CACHE).then((cache) =>
-        Promise.all(
-          PRECACHE_PAGES.map((url) =>
-            cache.add(url).catch(() => {})
-          )
-        )
-      ),
-    ]).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Fetch each URL individually so one failure does not abort the whole precache
+      await Promise.allSettled(
+        APP_SHELL_URLS.map(async (url) => {
+          try {
+            const response = await fetch(url, { credentials: "same-origin" });
+            if (response && (response.status === 200 || response.type === "opaque")) {
+              await cache.put(url, response);
+            }
+          } catch (e) {
+            // Silently continue for other URLs
+          }
+        })
+      );
+    }).then(() => self.skipWaiting())
   );
 });
 
-// ─── ACTIVATE ────────────────────────────────────────────────────────────────
-// Delete all caches not matching the current version.
+// Activate: Clean up old caches and claim clients immediately
 self.addEventListener("activate", (event) => {
-  const VALID = new Set([SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE]);
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((k) => !VALID.has(k))
-          .map((k) => caches.delete(k))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
-// ─── FETCH ───────────────────────────────────────────────────────────────────
+// Fetch handler
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Only handle GET requests on the same origin (or CDN-adjacent paths)
-  if (request.method !== "GET") return;
-
-  // ── Skip: Supabase API calls (auth, DB) — never cache these ──────────────
+  // Skip Supabase API, external streams (Cloudinary), or non-GET requests
+  // Audio files and covers are cached separately in IndexedDB by orbit-offline-db
   if (
     url.hostname.includes("supabase.co") ||
-    url.hostname.includes("supabase.in") ||
-    url.pathname.startsWith("/auth/") ||
-    url.pathname.startsWith("/rest/") ||
-    url.pathname.startsWith("/realtime/")
-  ) {
-    return; // fall through to browser default (no SW intercept)
-  }
-
-  // ── Skip: External media / CDN (audio/images) — handled by IndexedDB ─────
-  if (
     url.hostname.includes("cloudinary.com") ||
-    url.hostname.includes("res.cloudinary") ||
-    (url.hostname !== self.location.hostname &&
-     !url.pathname.startsWith("/_next/"))
+    request.method !== "GET"
   ) {
     return;
   }
 
-  // ── Strategy 1: Next.js static chunks — Cache First (immutable hashes) ────
-  if (
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/_next/image")
-  ) {
+  // 1. Navigation requests (HTML pages)
+  if (request.mode === "navigate") {
     event.respondWith(
-      caches.open(ASSETS_CACHE).then(async (cache) => {
-        const cached = await cache.match(request);
-        if (cached) return cached;
-        try {
-          const response = await fetch(request);
-          if (response.ok) {
-            cache.put(request, response.clone());
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           }
-          return response;
-        } catch {
-          return cached ?? new Response("Offline", { status: 503 });
+          return networkResponse;
+        })
+        .catch(async () => {
+          // Offline navigation fallback: try exact route, then /downloaded, then /home, then /
+          const cached = await caches.match(request);
+          if (cached) return cached;
+
+          const downloadedFallback = await caches.match("/downloaded");
+          if (downloadedFallback) return downloadedFallback;
+
+          const homeFallback = await caches.match("/home");
+          if (homeFallback) return homeFallback;
+
+          const rootFallback = await caches.match("/");
+          if (rootFallback) return rootFallback;
+
+          return new Response(
+            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Orbit Offline</title></head><body style='background:#18171a;color:#fff;font-family:sans-serif;padding:2rem;text-align:center;'><h2>Orbit is Offline</h2><p>Please connect to the internet or reopen the app.</p></body></html>",
+            { headers: { "Content-Type": "text/html" } }
+          );
+        })
+    );
+    return;
+  }
+
+  // 2. Next.js RSC (React Server Component) payloads & data fetches
+  const isRSC =
+    url.searchParams.has("_rsc") ||
+    request.headers.get("RSC") === "1" ||
+    url.pathname.includes("/_next/data/");
+
+  if (isRSC) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          // If offline and RSC payload is cached, return it
+          const cached = await caches.match(request);
+          if (cached) return cached;
+
+          // If not in cache, try matching without query params
+          const cleanUrl = url.origin + url.pathname;
+          const cleanCached = await caches.match(cleanUrl);
+          if (cleanCached) return cleanCached;
+
+          // Return empty 204 response so Next.js doesn't crash or hard reload
+          return new Response(null, { status: 204, statusText: "Offline Cached Data" });
+        })
+    );
+    return;
+  }
+
+  // 3. Static Assets: JS bundles (_next/static/*), CSS, fonts, SVG icons
+  const isStatic =
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.endsWith(".svg") ||
+    url.pathname.endsWith(".png") ||
+    url.pathname.endsWith(".woff2") ||
+    url.pathname.endsWith(".css") ||
+    url.pathname.endsWith(".js") ||
+    url.pathname === "/manifest.webmanifest";
+
+  if (isStatic) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          // Revalidate in background when online
+          fetch(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse));
+              }
+            })
+            .catch(() => {});
+          return cachedResponse;
         }
+
+        return fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            return new Response("", { status: 408, statusText: "Offline" });
+          });
       })
     );
     return;
   }
 
-  // ── Strategy 2: HTML Navigation — Network first, cache fallback ────────────
-  if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
-    event.respondWith(
-      (async () => {
-        try {
-          const response = await fetch(request);
-          // Cache every page we successfully load
-          if (response.ok) {
-            const cache = await caches.open(PAGES_CACHE);
-            cache.put(request, response.clone());
-          }
-          return response;
-        } catch {
-          // Offline — try exact URL match first
-          const pagesCache = await caches.open(PAGES_CACHE);
-          const exact = await pagesCache.match(request);
-          if (exact) return exact;
-
-          // Try matching the pathname without query string
-          const pathnameMatch = await pagesCache.match(url.pathname);
-          if (pathnameMatch) return pathnameMatch;
-
-          // Fallback to /home shell so the SPA can boot
-          const home = await pagesCache.match("/home");
-          if (home) return home;
-
-          // Last resort — return a minimal offline page
-          return new Response(
-            `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Orbit — Offline</title>
-<style>
-  body{background:#0b0614;color:#dbe878;font-family:system-ui,sans-serif;
-       display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center}
-  h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
-  p{color:#a1a1aa;margin-bottom:1.5rem}
-  a{display:inline-block;padding:.75rem 2rem;background:#dbe878;color:#0b0614;
-    font-weight:700;border-radius:9999px;text-decoration:none;font-size:.95rem}
-</style>
-</head>
-<body>
-<div>
-  <h1>🎵 Orbit</h1>
-  <p>You appear to be offline.<br>Connect to the internet and reload, or listen to your downloaded music.</p>
-  <a href="/downloaded">Downloaded Songs</a>
-</div>
-</body>
-</html>`,
-            { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-          );
-        }
-      })()
-    );
-    return;
-  }
-
-  // ── Strategy 3: Other same-origin assets — Stale-While-Revalidate ─────────
+  // 4. Default: Network first, cache fallback
   event.respondWith(
-    caches.open(ASSETS_CACHE).then(async (cache) => {
-      const cached = await cache.match(request);
-      const fetchPromise = fetch(request)
-        .then((response) => {
-          if (response.ok) cache.put(request, response.clone());
-          return response;
-        })
-        .catch(() => cached ?? new Response("Offline", { status: 503 }));
-      return cached ?? fetchPromise;
-    })
+    fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const copy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(request);
+      })
   );
 });

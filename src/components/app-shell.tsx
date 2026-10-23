@@ -36,8 +36,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [editingSong, setEditingSong] = useState<Song | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [loading, router, user]);
+    if (!loading && !user) {
+      if (!isOnline) {
+        const hasOfflineSession =
+          typeof window !== "undefined" &&
+          (Boolean(localStorage.getItem("orbit_cached_auth_user")) ||
+            Object.keys(localStorage).some((k) => k.startsWith("orbit_profile_")));
+        if (hasOfflineSession) return;
+      }
+      router.replace("/login");
+    }
+  }, [loading, router, user, isOnline]);
 
   useEffect(() => {
     if (user) void refresh();

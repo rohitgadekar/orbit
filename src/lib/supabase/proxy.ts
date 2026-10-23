@@ -23,16 +23,29 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const allCookies = request.cookies.getAll();
+  const hasAuthCookie = allCookies.some(
+    (c) => c.name.includes("-auth-token") || c.name.includes("sb-"),
+  );
+
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data?.user ?? null;
+  } catch {
+    // Supabase API is unreachable / offline: assume authenticated if cookies exist
+    if (hasAuthCookie) {
+      return response;
+    }
+  }
 
   const path = request.nextUrl.pathname;
   const isAuthPage = path === "/login" || path === "/signup";
   const isApi = path.startsWith("/api");
-  const isPublic = isAuthPage || path === "/" || isApi;
+  const isOfflineRoute = path === "/downloaded";
+  const isPublic = isAuthPage || path === "/" || isApi || isOfflineRoute;
 
-  if (!user && !isPublic) {
+  if (!user && !hasAuthCookie && !isPublic) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = "/login";
     return NextResponse.redirect(redirect);

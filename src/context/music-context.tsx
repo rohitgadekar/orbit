@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { splitArtistNames } from "@/lib/artists";
+import { getAllOfflineSongs } from "@/lib/offline-storage";
 import type { Album, Artist, BatchAlbumInput, Playlist, Song } from "@/lib/types";
 import {
   createContext,
@@ -154,51 +155,82 @@ async function resolveArtist(
   return resolveOneArtist(supabase, individualNames[0] ?? trimmed, imageUrl);
 }
 
+type CachedCatalog = {
+  songs: Song[];
+  artists: Artist[];
+  playlists: Playlist[];
+  favouriteIds: string[];
+  recentlyPlayed: Song[];
+};
+
+function getLocalCachedCatalog(): CachedCatalog | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("orbit_cached_catalog");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setLocalCachedCatalog(data: CachedCatalog) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("orbit_cached_catalog", JSON.stringify(data));
+  } catch {
+    // Ignore storage quota
+  }
+}
+
 export function MusicProvider({ children }: { children: ReactNode }) {
   const { user, configured, refreshProfile, updateProfile: authUpdateProfile, isAdmin } = useAuth();
+  const cachedInit = useMemo(() => getLocalCachedCatalog(), []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [artists, setArtists] = useState<Artist[]>([]);
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set());
-  const [recentFavouriteIds, setRecentFavouriteIds] = useState<string[]>([]);
-  const [recentlyPlayed, setRecentlyPlayed] = useState<Song[]>([]);
+  const [songs, setSongs] = useState<Song[]>(() => cachedInit?.songs ?? []);
+  const [artists, setArtists] = useState<Artist[]>(() => cachedInit?.artists ?? []);
+  const [playlists, setPlaylists] = useState<Playlist[]>(() => cachedInit?.playlists ?? []);
+  const [favouriteIds, setFavouriteIds] = useState<Set<string>>(
+    () => new Set(cachedInit?.favouriteIds ?? []),
+  );
+  const [recentFavouriteIds, setRecentFavouriteIds] = useState<string[]>(
+    () => cachedInit?.favouriteIds ?? [],
+  );
+  const [recentlyPlayed, setRecentlyPlayed] = useState<Song[]>(
+    () => cachedInit?.recentlyPlayed ?? [],
+  );
 
   const refresh = useCallback(async () => {
     if (!configured || !user) return;
-
-    // ── Offline cache helpers ─────────────────────────────────────────────────
-    const CACHE_KEY = `orbit_catalog_${user.id}`;
-    const loadCached = () => {
-      try {
-        const raw = typeof window !== "undefined" ? localStorage.getItem(CACHE_KEY) : null;
-        return raw ? JSON.parse(raw) : null;
-      } catch { return null; }
-    };
-    const saveCache = (data: unknown) => {
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        }
-      } catch { /* Quota exceeded — silently ignore */ }
-    };
-
-    // ── Serve from localStorage immediately (zero-latency offline boot) ───────
-    const cached = loadCached();
-    if (cached) {
-      setSongs(cached.songs ?? []);
-      setArtists(cached.artists ?? []);
-      setPlaylists(cached.playlists ?? []);
-      setFavouriteIds(new Set((cached.favouriteIds ?? []) as string[]));
-      setRecentFavouriteIds(cached.recentFavouriteIds ?? []);
-      setRecentlyPlayed(cached.recentlyPlayed ?? []);
-    }
-
-    // ── Try network refresh in background ────────────────────────────────────
     setLoading(true);
     setError(null);
     const supabase = createClient();
+
+    // 1. If currently offline, load cached catalog merged with IndexedDB offline downloads
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+    if (isOffline) {
+      const cached = getLocalCachedCatalog();
+      const offlineRecords = await getAllOfflineSongs();
+      const offlineSongMap = new Map(offlineRecords.map((r) => [r.id, r.song]));
+
+      const mergedSongs = [...(cached?.songs ?? [])];
+      for (const [id, s] of offlineSongMap.entries()) {
+        if (!mergedSongs.some((x) => x.id === id)) {
+          mergedSongs.push(s);
+        }
+      }
+
+      setSongs(mergedSongs);
+      if (cached) {
+        setArtists(cached.artists || []);
+        setPlaylists(cached.playlists || []);
+        setFavouriteIds(new Set(cached.favouriteIds || []));
+        setRecentFavouriteIds(cached.favouriteIds || []);
+        setRecentlyPlayed(cached.recentlyPlayed || []);
+      }
+      setLoading(false);
+      return;
+    }
 
     try {
       const [songsRes, artistsRes, playlistsRes, favRes, historyRes] =
@@ -227,9 +259,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         ]);
 
       if (songsRes.error) {
-        setError(songsRes.error.message);
-        setLoading(false);
-        return;
+        throw new Error(songsRes.error.message);
       }
 
       const catalog = (songsRes.data ?? []).map((row) =>
@@ -238,13 +268,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       const artistsList = (artistsRes.data ?? []) as Artist[];
       const playlistsList = (playlistsRes.data ?? []) as Playlist[];
       const favRows = favRes.data ?? [];
-      const favIds = favRows.map((row) => row.song_id as string);
-
-      setSongs(catalog);
-      setArtists(artistsList);
-      setPlaylists(playlistsList);
-      setFavouriteIds(new Set(favIds));
-      setRecentFavouriteIds(favIds);
+      const favIdList = favRows.map((row) => row.song_id as string);
 
       const byId = new Map(catalog.map((song) => [song.id, song]));
       const played: Song[] = [];
@@ -256,26 +280,47 @@ export function MusicProvider({ children }: { children: ReactNode }) {
           played.push(song);
         }
       }
+
+      setSongs(catalog);
+      setArtists(artistsList);
+      setPlaylists(playlistsList);
+      setFavouriteIds(new Set(favIdList));
+      setRecentFavouriteIds(favIdList);
       setRecentlyPlayed(played);
 
-      // ── Persist fresh data to localStorage for next offline boot ───────────
-      saveCache({
+      // Persist to local cache for instant offline browsing
+      setLocalCachedCatalog({
         songs: catalog,
         artists: artistsList,
         playlists: playlistsList,
-        favouriteIds: favIds,
-        recentFavouriteIds: favIds,
+        favouriteIds: favIdList,
         recentlyPlayed: played,
       });
     } catch (err) {
-      // Network unavailable — we already served from cache above, so just log
-      console.warn("Music refresh skipped (offline):", err);
-      if (!cached) {
-        setError("You are offline. Download songs first to listen without internet.");
-      }
-    }
+      console.warn("Catalog fetch failed, falling back to offline cache:", err);
+      // Fallback seamlessly to cached catalog + IndexedDB offline songs without showing an error
+      const cached = getLocalCachedCatalog();
+      const offlineRecords = await getAllOfflineSongs();
+      const offlineSongMap = new Map(offlineRecords.map((r) => [r.id, r.song]));
 
-    setLoading(false);
+      const mergedSongs = [...(cached?.songs ?? [])];
+      for (const [id, s] of offlineSongMap.entries()) {
+        if (!mergedSongs.some((x) => x.id === id)) {
+          mergedSongs.push(s);
+        }
+      }
+
+      setSongs(mergedSongs);
+      if (cached) {
+        setArtists(cached.artists || []);
+        setPlaylists(cached.playlists || []);
+        setFavouriteIds(new Set(cached.favouriteIds || []));
+        setRecentFavouriteIds(cached.favouriteIds || []);
+        setRecentlyPlayed(cached.recentlyPlayed || []);
+      }
+    } finally {
+      setLoading(false);
+    }
   }, [configured, user]);
 
   const toggleFavourite = useCallback(

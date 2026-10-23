@@ -47,19 +47,51 @@ function setCachedProfile(userId: string, data: { display_name?: string | null; 
   }
 }
 
+function getCachedUser(): User | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("orbit_cached_auth_user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedUser(user: User | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (user) {
+      localStorage.setItem("orbit_cached_auth_user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("orbit_cached_auth_user");
+    }
+  } catch {
+    // Ignore quota errors
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = isConfigured();
   const [loading, setLoading] = useState(configured);
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [user, setUser] = useState<User | null>(() => getCachedUser());
+  const [profile, setProfile] = useState<Profile | null>(() => {
+    const cachedUser = getCachedUser();
+    if (!cachedUser) return null;
+    const p = getCachedProfile(cachedUser.id);
+    if (!p) return null;
+    return {
+      id: cachedUser.id,
+      display_name: p.display_name ?? "Listener",
+      avatar_url: p.avatar_url ?? null,
+      role: p.role ?? "user",
+    };
+  });
 
   const loadProfile = useCallback(async (userId: string) => {
     const supabase = createClient();
     const cached = getCachedProfile(userId);
 
-    // ── Step 1: Serve from localStorage cache IMMEDIATELY ──────────────────
-    // This means even offline, the profile/role is available right away and
-    // the loading spinner resolves fast without any network round-trip.
+    // If we have cached profile, apply immediately so UI never blocks
     if (cached) {
       setProfile({
         id: userId,
@@ -69,83 +101,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    // ── Step 2: Background network fetch (non-blocking) ─────────────────────
-    // If we're offline this will throw — catch it and keep the cached value.
+    // Try reading session from local storage without network
+    let meta: { display_name?: string; avatar_url?: string; role?: string } | undefined;
     try {
-      // getSession reads local JWT storage — NO network needed for this part
       const { data: sessionData } = await supabase.auth.getSession();
-      const meta = sessionData.session?.user?.user_metadata as
-        | { display_name?: string; avatar_url?: string; role?: string }
-        | undefined;
+      meta = sessionData.session?.user?.user_metadata as typeof meta;
+    } catch {
+      // Offline fallback
+    }
 
-      let dbData: {
-        id: string;
-        display_name: string | null;
-        avatar_url: string | null;
-        role?: string | null;
-      } | null = null;
-
+    let dbData: { id: string; display_name: string | null; avatar_url: string | null; role?: string | null } | null = null;
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, role")
+        .eq("id", userId)
+        .maybeSingle();
+      dbData = data;
+    } catch {
       try {
-        // This is the only real network call — fetch from Supabase DB
         const { data } = await supabase
           .from("profiles")
-          .select("id, display_name, avatar_url, role")
+          .select("id, display_name, avatar_url")
           .eq("id", userId)
           .maybeSingle();
         dbData = data;
       } catch {
-        // Network unavailable or role column missing — fall through
-        try {
-          const { data } = await supabase
-            .from("profiles")
-            .select("id, display_name, avatar_url")
-            .eq("id", userId)
-            .maybeSingle();
-          dbData = data;
-        } catch {
-          // Completely offline — keep cached profile, stop here
-          return;
-        }
+        // Offline — keep using cached data
       }
+    }
 
-      // DB data takes priority over cache for fresh data
-      const resolvedName =
-        dbData?.display_name ??
-        meta?.display_name ??
-        cached?.display_name ??
-        sessionData.session?.user?.email?.split("@")[0] ??
-        "Listener";
+    const resolvedName =
+      cached?.display_name ??
+      dbData?.display_name ??
+      meta?.display_name ??
+      user?.email?.split("@")[0] ??
+      "Listener";
 
-      const resolvedAvatar =
-        dbData?.avatar_url ??
-        meta?.avatar_url ??
-        cached?.avatar_url ??
-        null;
+    const resolvedAvatar =
+      cached?.avatar_url ??
+      dbData?.avatar_url ??
+      meta?.avatar_url ??
+      null;
 
-      const resolvedRole =
-        dbData?.role ??
-        meta?.role ??
-        cached?.role ??
-        "user";
+    const resolvedRole =
+      dbData?.role ??
+      meta?.role ??
+      cached?.role ??
+      "user";
 
-      const resolvedProfile: Profile = {
-        id: userId,
-        display_name: resolvedName,
-        avatar_url: resolvedAvatar,
-        role: resolvedRole,
-      };
+    const resolvedProfile: Profile = {
+      id: userId,
+      display_name: resolvedName,
+      avatar_url: resolvedAvatar,
+      role: resolvedRole,
+    };
 
-      setProfile(resolvedProfile);
-      setCachedProfile(userId, {
-        display_name: resolvedName,
-        avatar_url: resolvedAvatar,
-        role: resolvedRole,
-      });
+    setProfile(resolvedProfile);
+    setCachedProfile(userId, { display_name: resolvedName, avatar_url: resolvedAvatar, role: resolvedRole });
 
-      // Ensure profiles table has the record
-      if (!dbData) {
-        try {
-          await supabase.from("profiles").upsert(
+    if (!dbData && navigator.onLine) {
+      try {
+        await supabase
+          .from("profiles")
+          .upsert(
             {
               id: userId,
               display_name: resolvedName,
@@ -154,14 +173,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             },
             { onConflict: "id" }
           );
-        } catch {
-          // Ignore if table schema lacks privileges or offline
-        }
+      } catch {
+        // Ignore if offline
       }
-    } catch {
-      // getSession itself failed (very unusual) — cached data already set above
     }
-  }, []);
+  }, [user?.email]);
 
   const updateProfile = useCallback(
     async (displayName: string, avatarUrl?: string) => {
@@ -223,15 +239,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       try {
-        // getSession reads local storage — works offline without any network call
-        const { data } = await supabase.auth.getSession();
-        const sessionUser = data.session?.user ?? null;
-        setUser(sessionUser);
-        if (sessionUser) {
-          await loadProfile(sessionUser.id);
+        // 1. Read local session token directly from client storage (zero network needed)
+        const { data: sessionData } = await supabase.auth.getSession();
+        const localUser = sessionData.session?.user ?? getCachedUser();
+        if (localUser) {
+          setUser(localUser);
+          setCachedUser(localUser);
+          await loadProfile(localUser.id);
+        }
+
+        // 2. If online, verify with remote auth server
+        if (typeof navigator !== "undefined" && navigator.onLine) {
+          try {
+            const { data } = await supabase.auth.getUser();
+            if (data?.user) {
+              setUser(data.user);
+              setCachedUser(data.user);
+              await loadProfile(data.user.id);
+            }
+          } catch {
+            // Keep using local session if remote check fails
+          }
         }
       } catch {
-        // Session read failed — clear loading so app doesn't hang
+        // Fallback to cached user
+        const localUser = getCachedUser();
+        if (localUser) {
+          setUser(localUser);
+          await loadProfile(localUser.id);
+        }
       } finally {
         setLoading(false);
       }
@@ -242,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextUser = session?.user ?? null;
       setUser(nextUser);
+      setCachedUser(nextUser);
       if (nextUser) {
         void loadProfile(nextUser.id);
       } else {
@@ -268,6 +305,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       updateProfile,
       signOut: async () => {
+        setCachedUser(null);
+        if (user) {
+          localStorage.removeItem(`orbit_profile_${user.id}`);
+        }
         const supabase = createClient();
         await supabase.auth.signOut();
       },

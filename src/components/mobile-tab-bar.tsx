@@ -140,6 +140,10 @@ export function MobileTabBar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
+                onClick={(e) => {
+                  if (active) e.preventDefault();
+                }}
                 className={cn(
                   "group relative flex flex-1 flex-col items-center justify-center py-1 text-center transition-all duration-200 active:scale-95",
                   active ? "text-[#dbe878]" : "text-zinc-400 hover:text-white",

@@ -101,6 +101,10 @@ export function IconRail() {
                 <Link
                   key={item.label}
                   href={item.href}
+                  prefetch={true}
+                  onClick={(e) => {
+                    if (item.isActive) e.preventDefault();
+                  }}
                   className={`group flex items-center gap-3 rounded-full px-3.5 py-2 text-xs font-medium transition ${item.isActive
                     ? "bg-[#2d2c2f] font-semibold text-[#dbe878] shadow-sm"
                     : "text-zinc-400 hover:bg-white/5 hover:text-white"
@@ -124,6 +128,10 @@ export function IconRail() {
                 <Link
                   key={item.label}
                   href={item.href}
+                  prefetch={true}
+                  onClick={(e) => {
+                    if (item.isActive) e.preventDefault();
+                  }}
                   className={`group flex items-center gap-3 rounded-full px-3.5 py-2 text-xs font-medium transition ${item.isActive
                     ? "bg-[#2d2c2f] font-semibold text-[#dbe878] shadow-sm"
                     : "text-zinc-400 hover:bg-white/5 hover:text-white"
