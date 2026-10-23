@@ -71,7 +71,7 @@ export default function HomePage() {
   return (
     <div className="space-y-8 pb-10">
       {/* 1. Curated Playlist Hero Banner */}
-      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#9c3e17] via-[#a8441c] to-[#6d270e] p-6 text-white shadow-xl shadow-[#9c3e17]/25 sm:p-8 md:p-10">
+      <section className="mt-8 md:mt-0 relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#9c3e17] via-[#a8441c] to-[#6d270e] p-6 text-white shadow-xl shadow-[#9c3e17]/25 sm:p-8 md:p-10">
         <div className="pointer-events-none absolute -right-16 -top-16 h-80 w-80 rounded-full bg-amber-500/20 blur-3xl" />
 
         <div className="flex flex-col-reverse justify-between gap-6 md:flex-row md:items-center">

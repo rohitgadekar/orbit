@@ -59,7 +59,7 @@ export function TopHeader() {
   }
 
   return (
-    <header className="flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8">
+    <header className="hidden md:block flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8">
       {/* Breadcrumb Navigation matching screenshot */}
       <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500">
         <span className="text-zinc-600 hover:text-zinc-900">{breadcrumb.parent}</span>
