@@ -1,5 +1,5 @@
 // Orbit Luxury Audio PWA Service Worker — Offline & Shell Caching
-const CACHE_NAME = "orbit-app-cache-v3";
+const CACHE_NAME = "orbit-app-cache-v4";
 
 const APP_SHELL_URLS = [
   "/",
@@ -11,7 +11,12 @@ const APP_SHELL_URLS = [
   "/profile",
   "/settings",
   "/manifest.webmanifest",
-  "/orbit.svg",
+  "/favicon.ico",
+  "/apple-touch-icon.png",
+  "/orbit-32.png",
+  "/orbit-16.png",
+  "/pwa-192x192.png",
+  "/pwa-512x512.png",
 ];
 
 // Install: Cache all critical app routes safely without atomic failure
