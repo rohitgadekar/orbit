@@ -534,47 +534,105 @@ export function FullscreenPlayer({
         </div>
       </main>
 
-      {/* Floating Queue Drawer */}
+      {/* Queue Sheet Modal — fixed overlay, never shifts layout */}
       {showQueue ? (
-        <div className="relative z-20 mx-auto mb-6 w-full max-w-2xl px-6">
-          <div className="rounded-[28px] border border-white/15 bg-black/60 p-5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-6">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="font-serif text-lg font-bold text-white">Next in Queue</h3>
-              <span className="text-xs text-zinc-400">{queue.length} songs</span>
-            </div>
-            <div className="mt-3 max-h-56 space-y-1 overflow-y-auto pr-1">
-              {queue.map((item, idx) => {
-                const isActive = item.id === current.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      if (onPlaySong) onPlaySong(item);
-                    }}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${isActive ? "bg-white/15 text-[#dbe878]" : "text-zinc-300 hover:bg-white/5"
-                      }`}
-                  >
-                    <span className="w-5 text-xs text-zinc-500">{idx + 1}</span>
-                    <Cover
-                      src={item.cover_url || item.album?.cover_url}
-                      title={item.title}
-                      className="h-9 w-9 rounded-lg"
-                      playing={isActive && isPlaying}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold">{item.title}</p>
-                      <p className="truncate text-[11px] text-zinc-400">{item.artist?.name}</p>
-                    </div>
-                    <span className="text-xs font-mono text-zinc-500">
-                      {item.duration_seconds ? formatTime(item.duration_seconds) : ""}
-                    </span>
-                  </button>
-                );
-              })}
+        <>
+          {/* Backdrop scrim */}
+          <div
+            className="absolute inset-0 z-30 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-300"
+            onClick={() => setShowQueue(false)}
+            aria-hidden="true"
+          />
+
+          {/* Sheet panel — absolute within the fixed fullscreen container so overflow-hidden doesn't clip it */}
+          <div
+            className="absolute inset-x-0 bottom-0 z-40 px-4 sm:px-6 animate-in slide-in-from-bottom-4 duration-300 ease-out"
+            style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom, 0px))" }}
+          >
+            <div
+              className="mx-auto w-full max-w-2xl rounded-[32px] border border-white/10 shadow-2xl overflow-hidden"
+              style={{
+                background: "rgba(12, 10, 16, 0.82)",
+                backdropFilter: "blur(48px) saturate(1.6)",
+              }}
+            >
+              {/* Drag handle pill */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="h-1 w-10 rounded-full bg-white/25" />
+              </div>
+
+              {/* Sheet header */}
+              <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-white/8">
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-tight">Next in Queue</h3>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">{queue.length} tracks</p>
+                </div>
+                {/* <button
+                  type="button"
+                  onClick={() => setShowQueue(false)}
+                  className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-zinc-400 transition hover:bg-white/20 hover:text-white"
+                  aria-label="Close queue"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  </svg>
+                </button> */}
+              </div>
+
+              {/* Track list */}
+              <div className="overflow-y-auto px-3 pt-2 pb-3 no-scrollbar" style={{ maxHeight: "min(55vh, 420px)" }}>
+                {queue.map((item, idx) => {
+                  const isActive = item.id === current.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        if (onPlaySong) onPlaySong(item);
+                        setShowQueue(false);
+                      }}
+                      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-all duration-150 ${isActive
+                          ? "bg-[#dbe878]/12 text-[#dbe878]"
+                          : "text-zinc-300 hover:bg-white/6 active:bg-white/10"
+                        }`}
+                    >
+                      {/* Index or now-playing indicator */}
+                      <span className="w-5 shrink-0 text-center">
+                        {isActive && isPlaying ? (
+                          <span className="flex h-3 items-end gap-[2px] justify-center">
+                            <i className="eq-bar-1 inline-block w-[3px] rounded-full bg-[#dbe878]" />
+                            <i className="eq-bar-2 inline-block w-[3px] rounded-full bg-[#dbe878]" />
+                            <i className="eq-bar-3 inline-block w-[3px] rounded-full bg-[#dbe878]" />
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-zinc-600">{idx + 1}</span>
+                        )}
+                      </span>
+
+                      <Cover
+                        src={item.cover_url || item.album?.cover_url}
+                        title={item.title}
+                        className="h-10 w-10 shrink-0 rounded-xl"
+                      />
+
+                      <div className="min-w-0 flex-1">
+                        <p className={`truncate text-[13px] font-semibold leading-tight ${isActive ? "text-[#dbe878]" : "text-white"
+                          }`}>
+                          {item.title}
+                        </p>
+                        <p className="truncate text-[11px] text-zinc-500 mt-0.5">{item.artist?.name}</p>
+                      </div>
+
+                      <span className="shrink-0 font-mono text-[11px] text-zinc-600">
+                        {item.duration_seconds ? formatTime(item.duration_seconds) : ""}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       ) : null}
 
       {/* Bottom Footer Details (hidden on mobile for cleaner interface) */}
