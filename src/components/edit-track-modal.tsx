@@ -3,6 +3,7 @@
 import { Cover } from "@/components/cover";
 import { useMusic } from "@/context/music-context";
 import { getAudioDuration } from "@/lib/audio-duration";
+import { detectAudioMetadata } from "@/lib/audio-metadata";
 import type { Song } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
 import { Check, Loader2, Sparkles, Trash2, X } from "lucide-react";
@@ -42,22 +43,32 @@ function EditTrackForm({
   const [durationSeconds, setDurationSeconds] = useState(
     song.duration_seconds ? String(song.duration_seconds) : "",
   );
-  const [detectingDuration, setDetectingDuration] = useState(false);
+  const [detectingMetadata, setDetectingMetadata] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  async function autoDetectDuration(urlOverride?: string) {
+  async function autoDetectMetadata(urlOverride?: string, forceOverwrite = false) {
     const target = (urlOverride ?? audioUrl).trim();
     if (!target.startsWith("http://") && !target.startsWith("https://")) return;
-    setDetectingDuration(true);
+    setDetectingMetadata(true);
     try {
-      const dur = await getAudioDuration(target);
-      setDurationSeconds(String(dur));
+      const meta = await detectAudioMetadata(target);
+      if (meta.title && (forceOverwrite || !title.trim())) setTitle(meta.title);
+      if (meta.artist && (forceOverwrite || !artistName.trim())) setArtistName(meta.artist);
+      if (meta.album && (forceOverwrite || !albumTitle.trim())) setAlbumTitle(meta.album);
+      if (meta.duration && (forceOverwrite || !durationSeconds || durationSeconds === "0")) {
+        setDurationSeconds(String(meta.duration));
+      }
+      if (meta.coverUrl && (forceOverwrite || !coverUrl.trim())) setCoverUrl(meta.coverUrl);
+      if (meta.title || meta.artist) {
+        setStatus(`✨ Detected: ${meta.title ? `"${meta.title}"` : ""}${meta.artist ? ` by ${meta.artist}` : ""}`);
+        setTimeout(() => setStatus(null), 3500);
+      }
     } catch {
       // Ignored
     } finally {
-      setDetectingDuration(false);
+      setDetectingMetadata(false);
     }
   }
 
@@ -181,12 +192,12 @@ function EditTrackForm({
               {audioUrl.trim().startsWith("http") ? (
                 <button
                   type="button"
-                  onClick={() => void autoDetectDuration()}
-                  disabled={detectingDuration}
+                  onClick={() => void autoDetectMetadata()}
+                  disabled={detectingMetadata}
                   className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-[10px] font-semibold text-zinc-200 hover:border-[#dbe878] hover:text-[#dbe878] transition disabled:opacity-50"
-                  title="Auto-detect duration from audio URL"
+                  title="Auto-detect metadata and duration from audio URL"
                 >
-                  {detectingDuration ? (
+                  {detectingMetadata ? (
                     <Loader2 className="h-3 w-3 animate-spin text-[#dbe878]" />
                   ) : (
                     <Sparkles className="h-3 w-3 text-[#dbe878]" />
@@ -211,10 +222,18 @@ function EditTrackForm({
         <label className="block text-xs font-medium uppercase tracking-wider text-zinc-400">
           <div className="flex items-center justify-between">
             <span>Audio Stream URL</span>
-            {detectingDuration ? (
+            {detectingMetadata ? (
               <span className="inline-flex items-center gap-1 text-[11px] font-normal text-[#dbe878] lowercase tracking-normal">
-                <Loader2 className="h-3 w-3 animate-spin" /> detecting duration...
+                <Loader2 className="h-3 w-3 animate-spin" /> detecting metadata...
               </span>
+            ) : audioUrl.trim().startsWith("http") ? (
+              <button
+                type="button"
+                onClick={() => void autoDetectMetadata(undefined, true)}
+                className="inline-flex items-center gap-1 text-[11px] font-normal text-[#dbe878] lowercase tracking-normal hover:underline"
+              >
+                <Sparkles className="h-3 w-3" /> re-detect all
+              </button>
             ) : null}
           </div>
           <input
@@ -223,13 +242,18 @@ function EditTrackForm({
             onChange={(e) => {
               const val = e.target.value;
               setAudioUrl(val);
-              if (val.trim().startsWith("http") && (!durationSeconds || durationSeconds === "0")) {
-                void autoDetectDuration(val);
+            }}
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData("text").trim().replace(/^["']|["']$/g, "");
+              if (pasted.startsWith("http://") || pasted.startsWith("https://")) {
+                e.preventDefault();
+                setAudioUrl(pasted);
+                void autoDetectMetadata(pasted);
               }
             }}
             onBlur={() => {
-              if (audioUrl.trim().startsWith("http") && !durationSeconds) {
-                void autoDetectDuration();
+              if (audioUrl.trim().startsWith("http") && (!title || !artistName || !durationSeconds)) {
+                void autoDetectMetadata();
               }
             }}
             placeholder="https://res.cloudinary.com/.../audio.mp3"

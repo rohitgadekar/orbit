@@ -9,6 +9,7 @@ import { useMusic } from "@/context/music-context";
 import { getIndividualArtists, type ParsedArtist } from "@/lib/artists";
 import { formatTime, initials } from "@/lib/utils";
 import { getAudioDuration } from "@/lib/audio-duration";
+import { detectAudioMetadata } from "@/lib/audio-metadata";
 import {
   ArrowRight,
   Check,
@@ -106,43 +107,86 @@ export default function SettingsPage() {
   const [showBulkPaste, setShowBulkPaste] = useState(false);
   const [bulkPasteText, setBulkPasteText] = useState("");
 
-  // Duration auto-detect state
-  const [detectingSingleDuration, setDetectingSingleDuration] = useState(false);
+  // Metadata auto-detect state
+  const [detectingSingleMetadata, setDetectingSingleMetadata] = useState(false);
   const [detectingRowIds, setDetectingRowIds] = useState<Set<string>>(new Set());
   const [batchDetectingAll, setBatchDetectingAll] = useState(false);
 
-  async function autoDetectSingleTrackDuration(urlOverride?: string) {
+  async function autoDetectSingleTrackMetadata(urlOverride?: string, forceOverwrite = false) {
     const raw = (urlOverride ?? audioUrl).trim();
     const target = raw.replace(/^["']|["']$/g, "").trim();
     if (!target.startsWith("http://") && !target.startsWith("https://")) return;
-    setDetectingSingleDuration(true);
+    setDetectingSingleMetadata(true);
     try {
-      const dur = await getAudioDuration(target);
-      if (dur > 0) {
-        setDurationSeconds(String(dur));
+      const meta = await detectAudioMetadata(target);
+      if (meta.title && (forceOverwrite || !title.trim())) {
+        setTitle(meta.title);
+      }
+      if (meta.artist && (forceOverwrite || !artistName.trim())) {
+        setArtistName(meta.artist);
+      }
+      if (meta.album && (forceOverwrite || !albumTitle.trim())) {
+        setAlbumTitle(meta.album);
+      }
+      if (meta.duration && (forceOverwrite || !durationSeconds.trim() || durationSeconds === "0")) {
+        setDurationSeconds(String(meta.duration));
+      }
+      if (meta.coverUrl && (forceOverwrite || !coverUrl.trim())) {
+        setCoverUrl(meta.coverUrl);
+      }
+      if (meta.title || meta.artist) {
+        setTrackStatus(
+          `✨ Detected: ${meta.title ? `"${meta.title}"` : ""}${meta.artist ? ` by ${meta.artist}` : ""}${meta.album ? ` (${meta.album})` : ""}`,
+        );
+        setTimeout(() => setTrackStatus(null), 4500);
       }
     } catch (err) {
-      console.warn("Failed to auto-detect audio duration:", err);
+      console.warn("Failed to auto-detect track metadata:", err);
     } finally {
-      setDetectingSingleDuration(false);
+      setDetectingSingleMetadata(false);
     }
   }
 
-  async function detectRowDuration(rowId: string, urlOverride?: string) {
+  // Alias for backward compatibility if called from duration button
+  async function autoDetectSingleTrackDuration(urlOverride?: string) {
+    return autoDetectSingleTrackMetadata(urlOverride, false);
+  }
+
+  async function detectRowMetadata(rowId: string, urlOverride?: string, forceOverwrite = false) {
     const raw = (urlOverride ?? "").trim() || (batchTracks.find((r) => r.id === rowId)?.audioUrl ?? "").trim();
     const target = raw.replace(/^["']|["']$/g, "").trim();
     if (!target.startsWith("http://") && !target.startsWith("https://")) return;
 
     setDetectingRowIds((prev) => new Set(prev).add(rowId));
     try {
-      const dur = await getAudioDuration(target);
-      if (dur > 0) {
-        setBatchTracks((prev) =>
-          prev.map((r) => (r.id === rowId ? { ...r, durationSeconds: String(dur) } : r)),
-        );
+      const meta = await detectAudioMetadata(target);
+      setBatchTracks((prev) =>
+        prev.map((r) => {
+          if (r.id !== rowId) return r;
+          return {
+            ...r,
+            title: meta.title && (forceOverwrite || !r.title.trim()) ? meta.title : r.title,
+            artistName: meta.artist && (forceOverwrite || !r.artistName.trim()) ? meta.artist : r.artistName,
+            durationSeconds:
+              meta.duration && (forceOverwrite || !r.durationSeconds.trim() || r.durationSeconds === "0")
+                ? String(meta.duration)
+                : r.durationSeconds,
+          };
+        }),
+      );
+
+      // Auto-populate album fields if they are still empty
+      if (meta.album && !batchAlbumTitle.trim()) {
+        setBatchAlbumTitle(meta.album);
+      }
+      if (meta.artist && !batchArtistName.trim()) {
+        setBatchArtistName(meta.artist);
+      }
+      if (meta.coverUrl && !batchCoverUrl.trim()) {
+        setBatchCoverUrl(meta.coverUrl);
       }
     } catch (err) {
-      console.warn("Failed to auto-detect row duration:", rowId, err);
+      console.warn("Failed to auto-detect row metadata:", rowId, err);
     } finally {
       setDetectingRowIds((prev) => {
         const next = new Set(prev);
@@ -152,13 +196,13 @@ export default function SettingsPage() {
     }
   }
 
-  async function detectAllMissingDurations(rowsToScan?: TrackRowState[]) {
+  async function detectAllMissingMetadata(rowsToScan?: TrackRowState[]) {
     const currentList = rowsToScan ?? batchTracks;
     const targets = currentList.filter((r) => {
       const clean = r.audioUrl.trim().replace(/^["']|["']$/g, "");
       return (
         (clean.startsWith("http://") || clean.startsWith("https://")) &&
-        (!r.durationSeconds || Number(r.durationSeconds) <= 0)
+        (!r.title.trim() || !r.artistName.trim() || !r.durationSeconds || Number(r.durationSeconds) <= 0)
       );
     });
     if (targets.length === 0) return;
@@ -167,23 +211,7 @@ export default function SettingsPage() {
     await Promise.allSettled(
       targets.map(async (r) => {
         const clean = r.audioUrl.trim().replace(/^["']|["']$/g, "");
-        setDetectingRowIds((prev) => new Set(prev).add(r.id));
-        try {
-          const dur = await getAudioDuration(clean);
-          if (dur > 0) {
-            setBatchTracks((prev) =>
-              prev.map((item) => (item.id === r.id ? { ...item, durationSeconds: String(dur) } : item)),
-            );
-          }
-        } catch {
-          // ignore
-        } finally {
-          setDetectingRowIds((prev) => {
-            const next = new Set(prev);
-            next.delete(r.id);
-            return next;
-          });
-        }
+        await detectRowMetadata(r.id, clean);
       }),
     );
     setBatchDetectingAll(false);
@@ -293,13 +321,24 @@ export default function SettingsPage() {
         ? line.split("\t").map((p) => p.trim())
         : [line];
 
-      // Remove leading track numbering e.g. "1. ", "01 - "
-      let trackTitle = parts[0] || "";
-      trackTitle = trackTitle.replace(/^\d+[\.\-\s]+/, "").trim();
+      let trackTitle = "";
+      let trackAudioUrl = "";
+      let trackArtist = "";
+      let trackDur = "";
 
-      const trackAudioUrl = parts[1] || "";
-      const trackArtist = parts[2] || "";
-      const trackDur = parts[3] ? String(Number(parts[3]) || "") : "";
+      if (parts.length === 1) {
+        const single = parts[0].trim();
+        if (single.startsWith("http://") || single.startsWith("https://")) {
+          trackAudioUrl = single;
+        } else {
+          trackTitle = single.replace(/^\d+[\.\-\s]+/, "").trim();
+        }
+      } else {
+        trackTitle = (parts[0] || "").replace(/^\d+[\.\-\s]+/, "").trim();
+        trackAudioUrl = parts[1] || "";
+        trackArtist = parts[2] || "";
+        trackDur = parts[3] ? String(Number(parts[3]) || "") : "";
+      }
 
       newRows.push({
         id: String(Date.now() + Math.random()),
@@ -314,7 +353,7 @@ export default function SettingsPage() {
       setBatchTracks(newRows);
       setShowBulkPaste(false);
       setBulkPasteText("");
-      void detectAllMissingDurations(newRows);
+      void detectAllMissingMetadata(newRows);
     }
   }
 
@@ -692,6 +731,20 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => void detectAllMissingMetadata()}
+                  disabled={batchDetectingAll}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900 disabled:opacity-50"
+                  title="Auto-detect title, artist, and duration for all tracks"
+                >
+                  {batchDetectingAll ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 text-amber-600" />
+                  )}
+                  <span>{batchDetectingAll ? "Detecting..." : "Auto-detect All"}</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowBulkPaste(!showBulkPaste)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900"
                 >
@@ -715,13 +768,13 @@ export default function SettingsPage() {
                   Paste multi-track list (one line per track):
                 </p>
                 <p className="text-[11px] text-zinc-500">
-                  Format: <code className="bg-zinc-200 px-1 py-0.5 rounded">Title | Audio URL | Optional Artist Override | Optional Duration</code>
+                  Format: <code className="bg-zinc-200 px-1 py-0.5 rounded">Audio Stream URL</code> OR <code className="bg-zinc-200 px-1 py-0.5 rounded">Title | Audio URL | Optional Artist Override | Optional Duration</code>
                 </p>
                 <textarea
                   rows={4}
                   value={bulkPasteText}
                   onChange={(e) => setBulkPasteText(e.target.value)}
-                  placeholder={`1. Give Life Back to Music | https://res.cloudinary.com/.../01.mp3 | Daft Punk | 275\n2. The Game of Love | https://res.cloudinary.com/.../02.mp3\n3. Giorgio by Moroder | https://res.cloudinary.com/.../03.mp3`}
+                  placeholder={`https://res.cloudinary.com/.../01%20-%20God's%20Plan.mp3\nhttps://res.cloudinary.com/.../02%20-%20Poetic%20Justice%20ft.%20Kendrick%20Lamar.mp3`}
                   className="w-full rounded-xl border border-zinc-200 bg-white p-3 font-mono text-xs text-zinc-900 outline-none"
                 />
                 <button
@@ -729,7 +782,7 @@ export default function SettingsPage() {
                   onClick={parseBulkPaste}
                   className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-black"
                 >
-                  Parse & Fill Table Rows
+                  Parse & Auto-Fill Tracks
                 </button>
               </div>
             ) : null}
@@ -763,30 +816,45 @@ export default function SettingsPage() {
                         />
                       </td>
                       <td className="py-2.5 px-3">
-                        <input
-                          required
-                          value={row.audioUrl}
-                          onChange={(e) => updateTrackRow(row.id, "audioUrl", e.target.value)}
-                          onPaste={(e) => {
-                            const pasted = e.clipboardData.getData("text").trim().replace(/^["']|["']$/g, "");
-                            if (pasted.startsWith("http://") || pasted.startsWith("https://")) {
-                              // Prevent default so we control state; update row state then detect
-                              e.preventDefault();
-                              setBatchTracks((prev) =>
-                                prev.map((r) => (r.id === row.id ? { ...r, audioUrl: pasted } : r)),
-                              );
-                              void detectRowDuration(row.id, pasted);
-                            }
-                          }}
-                          onBlur={(e) => {
-                            const clean = e.target.value.trim().replace(/^["']|["']$/g, "");
-                            if (clean.startsWith("http://") || clean.startsWith("https://")) {
-                              void detectRowDuration(row.id, clean);
-                            }
-                          }}
-                          placeholder="https://res.cloudinary.com/.../audio.mp3"
-                          className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
-                        />
+                        <div className="relative">
+                          <input
+                            required
+                            value={row.audioUrl}
+                            onChange={(e) => updateTrackRow(row.id, "audioUrl", e.target.value)}
+                            onPaste={(e) => {
+                              const pasted = e.clipboardData.getData("text").trim().replace(/^["']|["']$/g, "");
+                              if (pasted.startsWith("http://") || pasted.startsWith("https://")) {
+                                e.preventDefault();
+                                setBatchTracks((prev) =>
+                                  prev.map((r) => (r.id === row.id ? { ...r, audioUrl: pasted } : r)),
+                                );
+                                void detectRowMetadata(row.id, pasted);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const clean = e.target.value.trim().replace(/^["']|["']$/g, "");
+                              if (clean.startsWith("http://") || clean.startsWith("https://")) {
+                                void detectRowMetadata(row.id, clean);
+                              }
+                            }}
+                            placeholder="https://res.cloudinary.com/.../audio.mp3"
+                            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 pr-7 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
+                          />
+                          {detectingRowIds.has(row.id) ? (
+                            <span className="absolute right-2 top-2.5 text-amber-600" title="Detecting track metadata...">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            </span>
+                          ) : row.audioUrl.trim().startsWith("http") ? (
+                            <button
+                              type="button"
+                              onClick={() => void detectRowMetadata(row.id, undefined, true)}
+                              className="absolute right-2 top-2.5 text-zinc-400 hover:text-amber-600 transition"
+                              title="Auto-detect title, artist, and duration from audio URL"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3">
                         <input
@@ -803,22 +871,8 @@ export default function SettingsPage() {
                             value={row.durationSeconds}
                             onChange={(e) => updateTrackRow(row.id, "durationSeconds", e.target.value)}
                             placeholder="e.g. 210"
-                            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 pr-7 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
+                            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
                           />
-                          {detectingRowIds.has(row.id) ? (
-                            <span className="absolute right-2 top-2.5 text-amber-600">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            </span>
-                          ) : row.audioUrl.trim().startsWith("http") ? (
-                            <button
-                              type="button"
-                              onClick={() => void detectRowDuration(row.id)}
-                              className="absolute right-2 top-2.5 text-zinc-400 hover:text-amber-600 transition"
-                              title="Auto-detect duration from audio URL"
-                            >
-                              <Sparkles className="h-3.5 w-3.5" />
-                            </button>
-                          ) : null}
                         </div>
                         {row.durationSeconds && Number(row.durationSeconds) > 0 ? (
                           <span className="mt-0.5 block text-[10px] font-mono text-zinc-500 text-right pr-1">
@@ -862,17 +916,17 @@ export default function SettingsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => void detectAllMissingDurations()}
+                  onClick={() => void detectAllMissingMetadata()}
                   disabled={batchDetectingAll}
                   className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50/80 px-3.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition disabled:opacity-50"
-                  title="Auto-detect duration for all tracks from their audio stream URLs"
+                  title="Auto-detect titles, artists, and duration for all tracks"
                 >
                   {batchDetectingAll ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <Sparkles className="h-3 w-3 text-amber-600" />
                   )}
-                  <span>Auto-Detect Durations</span>
+                  <span>Auto-Detect All Details</span>
                 </button>
               </div>
 
@@ -985,12 +1039,12 @@ export default function SettingsPage() {
                 {audioUrl.trim().startsWith("http") ? (
                   <button
                     type="button"
-                    onClick={() => void autoDetectSingleTrackDuration()}
-                    disabled={detectingSingleDuration}
+                    onClick={() => void autoDetectSingleTrackMetadata(undefined, true)}
+                    disabled={detectingSingleMetadata}
                     className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 shadow-2xs hover:border-zinc-900 transition disabled:opacity-50"
-                    title="Auto-detect duration from audio URL"
+                    title="Auto-detect song details from audio URL"
                   >
-                    {detectingSingleDuration ? (
+                    {detectingSingleMetadata ? (
                       <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
                     ) : (
                       <Sparkles className="h-3 w-3 text-amber-600" />
@@ -1004,10 +1058,18 @@ export default function SettingsPage() {
             <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 sm:col-span-2">
               <div className="flex items-center justify-between">
                 <span>Audio Stream URL *</span>
-                {detectingSingleDuration ? (
+                {detectingSingleMetadata ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 lowercase tracking-normal">
-                    <Loader2 className="h-3 w-3 animate-spin" /> detecting duration...
+                    <Loader2 className="h-3 w-3 animate-spin" /> detecting metadata & duration...
                   </span>
+                ) : audioUrl.trim().startsWith("http") ? (
+                  <button
+                    type="button"
+                    onClick={() => void autoDetectSingleTrackMetadata(undefined, true)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 lowercase tracking-normal hover:text-amber-700 transition"
+                  >
+                    <Sparkles className="h-3 w-3" /> re-detect all
+                  </button>
                 ) : null}
               </div>
               <input
@@ -1018,16 +1080,15 @@ export default function SettingsPage() {
                   // Use the pasted text directly (state hasn't updated yet at paste time)
                   const pasted = e.clipboardData.getData("text").trim().replace(/^["']|["']$/g, "");
                   if (pasted.startsWith("http://") || pasted.startsWith("https://")) {
-                    // Also sync the state with the pasted value immediately
                     e.preventDefault();
                     setAudioUrl(pasted);
-                    void autoDetectSingleTrackDuration(pasted);
+                    void autoDetectSingleTrackMetadata(pasted);
                   }
                 }}
                 onBlur={(e) => {
                   const clean = e.target.value.trim().replace(/^["']|["']$/g, "");
                   if (clean.startsWith("http://") || clean.startsWith("https://")) {
-                    void autoDetectSingleTrackDuration(clean);
+                    void autoDetectSingleTrackMetadata(clean);
                   }
                 }}
                 placeholder="https://res.cloudinary.com/.../video/upload/....mp3"

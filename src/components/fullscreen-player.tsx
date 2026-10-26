@@ -26,6 +26,11 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import {
+  ExtractedColors,
+  extractArtworkColors,
+  getFallbackColors,
+} from "@/lib/cover-colors";
 import { useEffect, useRef, useState } from "react";
 
 export function FullscreenPlayer({
@@ -72,15 +77,6 @@ export function FullscreenPlayer({
   const { favouriteIds, toggleFavourite } = useMusic();
   const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
   const [showQueue, setShowQueue] = useState(false);
-  const [dominantColors, setDominantColors] = useState<{
-    primary: string;
-    secondary: string;
-    accent: string;
-  }>({
-    primary: "#bf5b30",
-    secondary: "#4a1910",
-    accent: "#e58a36",
-  });
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -89,65 +85,99 @@ export function FullscreenPlayer({
   const isSavedOffline = current ? isDownloaded(current.id) : false;
   const isCurrentlyDownloading = current ? downloadingSongIds[current.id] !== undefined : false;
 
-  // Extract dynamic colors from album art like YouTube Music
-  useEffect(() => {
-    if (!cover) return;
+  // Dynamic colors strictly extracted from album/track cover image
+  const [colors, setColors] = useState<ExtractedColors>(() =>
+    getFallbackColors(current?.title || "Orbit")
+  );
 
+  // Dual-buffered backdrop image for flicker-free cross-fade transitions
+  const [layers, setLayers] = useState<{
+    active: "A" | "B";
+    layerA: { src: string | null; opacity: number };
+    layerB: { src: string | null; opacity: number };
+  }>({
+    active: "A",
+    layerA: { src: cover || null, opacity: cover ? 0.65 : 0 },
+    layerB: { src: null, opacity: 0 },
+  });
+
+  const activeCoverRef = useRef(cover || null);
+
+  // Smooth cross-fade between album artworks on track changes
+  useEffect(() => {
+    if (cover === activeCoverRef.current) return;
+    activeCoverRef.current = cover || null;
+
+    if (!cover) {
+      queueMicrotask(() => {
+        setLayers((prev) => ({
+          ...prev,
+          layerA: { ...prev.layerA, opacity: 0 },
+          layerB: { ...prev.layerB, opacity: 0 },
+        }));
+      });
+      return;
+    }
+
+    let isCancelled = false;
     const img = new Image();
-    img.crossOrigin = "anonymous";
     img.src = cover;
 
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        canvas.width = 40;
-        canvas.height = 40;
-        ctx.drawImage(img, 0, 0, 40, 40);
+    const crossFade = () => {
+      if (isCancelled) return;
+      setLayers((prev) => {
+        const nextActive = prev.active === "A" ? "B" : "A";
+        return {
+          active: nextActive,
+          layerA:
+            nextActive === "A"
+              ? { src: cover, opacity: 0.65 }
+              : { ...prev.layerA, opacity: 0 },
+          layerB:
+            nextActive === "B"
+              ? { src: cover, opacity: 0.65 }
+              : { ...prev.layerB, opacity: 0 },
+        };
+      });
+    };
 
-        const imgData = ctx.getImageData(0, 0, 40, 40).data;
-        let rTotal = 0, gTotal = 0, bTotal = 0;
-        let maxBrightness = 0;
-        let bestR = 191, bestG = 91, bestB = 48;
+    if (img.complete) {
+      crossFade();
+    } else {
+      img.onload = crossFade;
+      img.onerror = crossFade;
+    }
 
-        for (let i = 0; i < imgData.length; i += 16) {
-          const r = imgData[i];
-          const g = imgData[i + 1];
-          const b = imgData[i + 2];
-          rTotal += r;
-          gTotal += g;
-          bTotal += b;
-
-          const sat = Math.max(r, g, b) - Math.min(r, g, b);
-          if (sat > maxBrightness) {
-            maxBrightness = sat;
-            bestR = r;
-            bestG = g;
-            bestB = b;
-          }
-        }
-
-        const count = imgData.length / 16;
-        const avgR = Math.round(rTotal / count);
-        const avgG = Math.round(gTotal / count);
-        const avgB = Math.round(bTotal / count);
-
-        setDominantColors({
-          primary: `rgb(${bestR}, ${bestG}, ${bestB})`,
-          secondary: `rgb(${Math.max(15, Math.round(avgR * 0.4))}, ${Math.max(12, Math.round(avgG * 0.4))}, ${Math.max(18, Math.round(avgB * 0.4))})`,
-          accent: `rgb(${Math.min(255, Math.round(bestR * 1.2))}, ${Math.min(255, Math.round(bestG * 1.2))}, ${Math.min(255, Math.round(bestB * 1.1))})`,
-        });
-      } catch {
-        // Fallback to warm amber palette if CORS prevents canvas read
-        setDominantColors({
-          primary: "#c86d38",
-          secondary: "#2c150c",
-          accent: "#f4a261",
-        });
-      }
+    return () => {
+      isCancelled = true;
     };
   }, [cover]);
+
+  // Extract artwork colors without dropping previous colors (eliminates flicker)
+  useEffect(() => {
+    if (!current) return;
+    let isCancelled = false;
+    const seed = current.title || "Orbit";
+
+    if (!cover) {
+      queueMicrotask(() => {
+        if (!isCancelled) {
+          setColors(getFallbackColors(seed));
+        }
+      });
+      return;
+    }
+
+    void extractArtworkColors(cover, seed).then((extracted) => {
+      if (!isCancelled) {
+        setColors(extracted);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [cover, current]);
 
   // Handle native browser full-screen toggle
   function toggleBrowserFullscreen() {
@@ -173,64 +203,110 @@ export function FullscreenPlayer({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex flex-col justify-between overflow-hidden text-white transition-all duration-700 animate-in fade-in"
+      className="fixed inset-0 h-dvh z-50 flex flex-col justify-between overflow-hidden text-white transition-colors duration-1000 ease-out animate-in fade-in"
       style={{
-        backgroundColor: "#0d0c0e",
+        backgroundColor: colors.ambientBase,
       }}
     >
-      {/* Dynamic YouTube-style ambient gradient mesh background */}
+      {/* Dynamic YouTube-style ambient gradient mesh strictly derived from cover image */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Layer 1: Ambient blurred album art mirror */}
-        {cover ? (
+        {/* Layer 1: Ambient blurred album art mirror with dual-buffer cross-fade */}
+        {layers.layerA.src ? (
           <div
-            className="ambient-layer absolute inset-[-20%] bg-cover bg-center opacity-45 blur-[120px] filter transition-all duration-1000"
-            style={{ backgroundImage: `url(${cover})` }}
+            className="ambient-layer absolute inset-[-30%] bg-cover bg-center transition-opacity duration-1000 ease-out"
+            style={{
+              backgroundImage: `url(${layers.layerA.src})`,
+              filter: "blur(90px) saturate(1.75) contrast(1.1)",
+              opacity: layers.layerA.opacity,
+              transform: "scale(1.2)",
+            }}
           />
         ) : null}
 
-        {/* Layer 2: Dynamic radial glow 1 */}
+        {layers.layerB.src ? (
+          <div
+            className="ambient-layer absolute inset-[-30%] bg-cover bg-center transition-opacity duration-1000 ease-out"
+            style={{
+              backgroundImage: `url(${layers.layerB.src})`,
+              filter: "blur(90px) saturate(1.75) contrast(1.1)",
+              opacity: layers.layerB.opacity,
+              transform: "scale(1.2)",
+            }}
+          />
+        ) : null}
+
+        {/* Layer 2: Top-Left Ambient Orb */}
         <div
-          className="ambient-layer absolute -top-[20%] -left-[10%] h-[75vw] w-[75vw] rounded-full opacity-60 blur-[130px] transition-colors duration-1000"
-          style={{ backgroundColor: dominantColors.primary }}
+          className="ambient-layer absolute -top-[25%] -left-[15%] h-[80vw] w-[80vw] rounded-full opacity-65 blur-[120px] transition-colors duration-1000 ease-out"
+          style={{ backgroundColor: colors.spatial.topLeft || colors.palette.primary }}
         />
 
-        {/* Layer 3: Dynamic radial glow 2 */}
+        {/* Layer 3: Top-Right Ambient Orb */}
         <div
-          className="ambient-layer absolute -bottom-[20%] -right-[10%] h-[80vw] w-[80vw] rounded-full opacity-50 blur-[140px] transition-colors duration-1000"
-          style={{ backgroundColor: dominantColors.accent }}
+          className="ambient-layer absolute -top-[25%] -right-[15%] h-[80vw] w-[80vw] rounded-full opacity-55 blur-[120px] transition-colors duration-1000 ease-out"
+          style={{ backgroundColor: colors.spatial.topRight || colors.palette.secondary }}
         />
 
-        {/* Layer 4: Deep ambient vignette overlay */}
+        {/* Layer 4: Bottom-Left Ambient Orb */}
         <div
-          className="absolute inset-0 transition-colors duration-1000"
+          className="ambient-layer absolute -bottom-[25%] -left-[15%] h-[85vw] w-[85vw] rounded-full opacity-60 blur-[130px] transition-colors duration-1000 ease-out"
+          style={{ backgroundColor: colors.spatial.bottomLeft || colors.palette.tertiary }}
+        />
+
+        {/* Layer 5: Bottom-Right Ambient Orb */}
+        <div
+          className="ambient-layer absolute -bottom-[25%] -right-[15%] h-[85vw] w-[85vw] rounded-full opacity-55 blur-[130px] transition-colors duration-1000 ease-out"
+          style={{ backgroundColor: colors.spatial.bottomRight || colors.palette.quaternary }}
+        />
+
+        {/* Layer 6: Center Ambient Core Aura */}
+        <div
+          className="ambient-layer absolute top-1/2 left-1/2 h-[60vw] w-[60vw] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-45 blur-[100px] transition-colors duration-1000 ease-out"
+          style={{ backgroundColor: colors.spatial.center || colors.palette.primary }}
+        />
+
+        {/* Layer 7: Cinematic Radial Vignette */}
+        <div
+          className="absolute inset-0 transition-opacity duration-1000"
           style={{
-            background: `radial-gradient(circle at 50% 50%, transparent 20%, rgba(10, 9, 12, 0.75) 75%, rgba(6, 6, 8, 0.95) 100%)`,
+            background:
+              "radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.15) 15%, rgba(6, 6, 9, 0.55) 65%, rgba(4, 4, 6, 0.94) 100%)",
+          }}
+        />
+
+        {/* Layer 8: Vertical gradient scrim for flawless contrast on text & controls */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 18%, transparent 82%, rgba(0, 0, 0, 0.65) 100%)",
           }}
         />
       </div>
 
       {/* Top Header Navigation */}
-      <header className="relative z-10 flex items-center justify-between px-6 pt-[max(20px,var(--safe-top))] pb-4 md:px-12 md:pt-8">
+      <header className="relative z-10 flex shrink-0 items-center justify-between px-6 pt-[max(16px,var(--safe-top))] pb-3 md:pt-8 md:pb-4 md:px-12">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-400/80">ORBIT</span>
         </div>
 
-        <div className="hidden md:inline flex flex-col items-center text-center">
+        {/* <div className="hidden md:inline flex flex-col items-center text-center">
           <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#dbe878]">
-            Now Playing
+            Now Playing {" "}
           </span>
           {current.album?.title ? (
             <Link
               href={`/albums/${encodeURIComponent(current.album.title)}`}
               onClick={onClose}
-              className="text-xs font-medium text-zinc-300 hover:text-[#dbe878] hover:underline transition"
+              className="!text-[10px] !font-semibold tracking-[0.25em] uppercase text-zinc-300 hover:text-[#dbe878] hover:underline"
+            // className="!text-[12px] !font-semibold  text-zinc-300 hover:text-[#dbe878] hover:underline transition uppercase"
             >
               {current.album.title}
             </Link>
           ) : (
             <span className="text-xs font-medium text-zinc-400">Orbit Studio Catalog</span>
           )}
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-2">
           {onEditTrack ? (
@@ -277,19 +353,19 @@ export function FullscreenPlayer({
       </header>
 
       {/* Main Body */}
-      <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-6 py-4 md:px-12">
-        <div className="grid w-full items-center gap-8 md:grid-cols-12 md:gap-14">
+      <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 min-h-0 items-center justify-center px-6 py-2 pb-[max(16px,var(--safe-bottom))] md:px-12 md:py-4">
+        <div className="grid w-full items-center gap-6 sm:gap-8 md:grid-cols-12 md:gap-14">
           {/* Artwork Showcase */}
           <div className="flex justify-center md:col-span-6 lg:col-span-6">
-            <div className="group relative aspect-square w-full max-w-[340px] sm:max-w-[400px] md:max-w-[440px]">
+            <div className="group relative aspect-square w-full max-w-[260px] sm:max-w-[340px] md:max-w-[440px]">
               {/* Dynamic ambient art drop-shadow */}
               <div
                 className="absolute inset-4 rounded-[36px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
-                style={{ backgroundColor: dominantColors.primary }}
+                style={{ backgroundColor: colors.palette.primary }}
               />
 
               {/* Cover Container */}
-              <div className="relative h-full w-full overflow-hidden rounded-[36px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
+              <div className="relative h-full w-full overflow-hidden rounded-[28px] sm:rounded-[36px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
                 <Cover
                   src={cover}
                   title={current.title}
@@ -299,7 +375,7 @@ export function FullscreenPlayer({
 
                 {/* Animated Equalizer Overlay when playing */}
                 {isPlaying ? (
-                  <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full bg-black/60 px-3 py-2 backdrop-blur-md">
+                  <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full px-3 py-2">
                     <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
                     <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
                     <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
@@ -318,10 +394,10 @@ export function FullscreenPlayer({
                 <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
                   Hi-Res Audio • Lossless
                 </span>
-                <h1 className="mt-3  text-xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+                <h1 className="mt-2 md:mt-3 text-xl font-bold tracking-tight text-white sm:text-3xl md:text-5xl">
                   {current.title}
                 </h1>
-                <p className="mt-2 text-base font-medium text-zinc-300 sm:text-md">
+                <p className="mt-1 md:mt-2 text-sm sm:text-base font-medium text-zinc-300">
                   {current.artist?.name || "Unknown Artist"}
                 </p>
               </div>
@@ -331,7 +407,7 @@ export function FullscreenPlayer({
                   type="button"
                   onClick={() => void toggleDownloadSong(current)}
                   disabled={isCurrentlyDownloading}
-                  className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isSavedOffline
+                  className={`rounded-full border border-white/15 p-2.5 sm:p-3.5 backdrop-blur-md transition ${isSavedOffline
                     ? "border-[#dbe878]/50 bg-[#dbe878]/20 text-[#dbe878]"
                     : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
                     }`}
@@ -350,7 +426,7 @@ export function FullscreenPlayer({
                 <button
                   type="button"
                   onClick={() => void toggleFavourite(current.id)}
-                  className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isFav
+                  className={`rounded-full border border-white/15 p-2.5 sm:p-3.5 backdrop-blur-md transition ${isFav
                     ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
                     : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
                     }`}
@@ -362,7 +438,7 @@ export function FullscreenPlayer({
             </div>
 
             {/* Scrubber Progress Bar */}
-            <div className="fullscreen-range mt-8 w-full space-y-2">
+            <div className="fullscreen-range mt-4 sm:mt-6 md:mt-8 w-full space-y-2">
               <input
                 type="range"
                 min={0}
@@ -379,7 +455,7 @@ export function FullscreenPlayer({
             </div>
 
             {/* Playback Controls */}
-            <div className="mt-6 flex items-center justify-between gap-4 sm:justify-center sm:gap-8">
+            <div className="mt-4 sm:mt-6 flex items-center justify-between gap-4 sm:justify-center sm:gap-8">
               <button
                 type="button"
                 onClick={toggleShuffle}
@@ -403,13 +479,13 @@ export function FullscreenPlayer({
               <button
                 type="button"
                 onClick={toggle}
-                className="relative grid h-20 w-20 place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95"
+                className="relative grid h-16 w-16 sm:h-20 sm:w-20 place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95"
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
-                  <Pause className="h-8 w-8 fill-zinc-950" />
+                  <Pause className="h-7 w-7 sm:h-8 sm:w-8 fill-zinc-950" />
                 ) : (
-                  <Play className="h-8 w-8 translate-x-0.5 fill-zinc-950" />
+                  <Play className="h-7 w-7 sm:h-8 sm:w-8 translate-x-0.5 fill-zinc-950" />
                 )}
               </button>
 
@@ -460,13 +536,13 @@ export function FullscreenPlayer({
 
       {/* Floating Queue Drawer */}
       {showQueue ? (
-        <div className="relative z-20 mx-auto mb-6 w-full max-w-2xl px-6">
-          <div className="rounded-[28px] border border-white/15 bg-black/60 p-5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-6">
+        <div className="relative z-20 mx-auto mb-2 md:mb-6 w-full max-w-2xl px-4 sm:px-6 pb-[max(12px,var(--safe-bottom))]">
+          <div className="rounded-[24px] sm:rounded-[28px] border border-white/15 bg-black/75 p-4 sm:p-5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="font-serif text-lg font-bold text-white">Next in Queue</h3>
+              <h3 className="font-serif text-base sm:text-lg font-bold text-white">Next in Queue</h3>
               <span className="text-xs text-zinc-400">{queue.length} songs</span>
             </div>
-            <div className="mt-3 max-h-56 space-y-1 overflow-y-auto pr-1">
+            <div className="mt-3 max-h-48 sm:max-h-56 space-y-1 overflow-y-auto pr-1">
               {queue.map((item, idx) => {
                 const isActive = item.id === current.id;
                 return (
@@ -502,15 +578,23 @@ export function FullscreenPlayer({
       ) : null}
 
       {/* Bottom Footer Details (hidden on mobile for cleaner interface) */}
-      <footer className="relative z-10 hidden md:flex items-center justify-between px-6 pb-[max(16px,var(--safe-bottom))] text-[11px] text-zinc-400 md:px-12">
-        <span>Orbit Audio Master • Studio Quality</span>
-        <button
-          type="button"
-          onClick={() => onEditTrack?.(current)}
-          className="text-[#dbe878] hover:underline"
-        >
-          Edit Track Metadata
-        </button>
+      <footer className="relative z-10 hidden md:flex items-center justify-center px-6 pb-[max(16px,var(--safe-bottom))] text-[11px] text-zinc-400 md:px-12">
+        <div className="hidden md:inline flex flex-col items-center text-center">
+          <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#dbe878]">
+            Now Playing {" "}
+          </span>
+          {current.album?.title ? (
+            <Link
+              href={`/albums/${encodeURIComponent(current.album.title)}`}
+              onClick={onClose}
+              className="!text-[10px] !font-semibold tracking-[0.25em] uppercase text-zinc-300 hover:text-[#dbe878] hover:underline"
+            >
+              {current.album.title}
+            </Link>
+          ) : (
+            <span className="text-xs font-medium text-zinc-400">Orbit Studio Catalog</span>
+          )}
+        </div>
       </footer>
     </div>
   );

@@ -25,15 +25,6 @@ export function Cover({
           {title.slice(0, 1)}
         </div>
       )}
-      {playing ? (
-        <div className="absolute inset-0 grid place-items-center bg-ink/20">
-          <span className="flex h-3 items-end gap-0.5">
-            <i className="h-2 w-0.5 animate-pulse bg-white" />
-            <i className="h-3 w-0.5 animate-pulse bg-white delay-75" />
-            <i className="h-1.5 w-0.5 animate-pulse bg-white delay-150" />
-          </span>
-        </div>
-      ) : null}
     </div>
   );
 }
