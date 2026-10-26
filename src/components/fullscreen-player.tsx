@@ -203,7 +203,7 @@ export function FullscreenPlayer({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 h-dvh z-50 flex flex-col justify-between overflow-hidden text-white transition-colors duration-1000 ease-out animate-in fade-in"
+      className="fixed inset-0 z-50 flex flex-col justify-between overflow-hidden text-white transition-colors duration-1000 ease-out animate-in fade-in"
       style={{
         backgroundColor: colors.ambientBase,
       }}
@@ -285,7 +285,7 @@ export function FullscreenPlayer({
       </div>
 
       {/* Top Header Navigation */}
-      <header className="relative z-10 flex shrink-0 items-center justify-between px-6 pt-[max(16px,var(--safe-top))] pb-3 md:pt-8 md:pb-4 md:px-12">
+      <header className="relative z-10 flex items-center justify-between px-6 pt-[max(20px,var(--safe-top))] pb-4 md:px-12 md:pt-8">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-400/80">ORBIT</span>
         </div>
@@ -353,11 +353,11 @@ export function FullscreenPlayer({
       </header>
 
       {/* Main Body */}
-      <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 min-h-0 items-center justify-center px-6 py-2 pb-[max(16px,var(--safe-bottom))] md:px-12 md:py-4">
-        <div className="grid w-full items-center gap-6 sm:gap-8 md:grid-cols-12 md:gap-14">
+      <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-6 py-4 md:px-12">
+        <div className="grid w-full items-center gap-8 md:grid-cols-12 md:gap-14">
           {/* Artwork Showcase */}
           <div className="flex justify-center md:col-span-6 lg:col-span-6">
-            <div className="group relative aspect-square w-full max-w-[260px] sm:max-w-[340px] md:max-w-[440px]">
+            <div className="group relative aspect-square w-full max-w-[340px] sm:max-w-[400px] md:max-w-[440px]">
               {/* Dynamic ambient art drop-shadow */}
               <div
                 className="absolute inset-4 rounded-[36px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
@@ -365,7 +365,7 @@ export function FullscreenPlayer({
               />
 
               {/* Cover Container */}
-              <div className="relative h-full w-full overflow-hidden rounded-[28px] sm:rounded-[36px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
+              <div className="relative h-full w-full overflow-hidden rounded-[36px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
                 <Cover
                   src={cover}
                   title={current.title}
@@ -375,7 +375,7 @@ export function FullscreenPlayer({
 
                 {/* Animated Equalizer Overlay when playing */}
                 {isPlaying ? (
-                  <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full px-3 py-2">
+                  <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full  px-3 py-2">
                     <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
                     <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
                     <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
@@ -394,10 +394,10 @@ export function FullscreenPlayer({
                 <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
                   Hi-Res Audio • Lossless
                 </span>
-                <h1 className="mt-2 md:mt-3 text-xl font-bold tracking-tight text-white sm:text-3xl md:text-5xl">
+                <h1 className="mt-3  text-xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
                   {current.title}
                 </h1>
-                <p className="mt-1 md:mt-2 text-sm sm:text-base font-medium text-zinc-300">
+                <p className="mt-2 text-base font-medium text-zinc-300 sm:text-md">
                   {current.artist?.name || "Unknown Artist"}
                 </p>
               </div>
@@ -407,7 +407,7 @@ export function FullscreenPlayer({
                   type="button"
                   onClick={() => void toggleDownloadSong(current)}
                   disabled={isCurrentlyDownloading}
-                  className={`rounded-full border border-white/15 p-2.5 sm:p-3.5 backdrop-blur-md transition ${isSavedOffline
+                  className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isSavedOffline
                     ? "border-[#dbe878]/50 bg-[#dbe878]/20 text-[#dbe878]"
                     : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
                     }`}
@@ -426,7 +426,7 @@ export function FullscreenPlayer({
                 <button
                   type="button"
                   onClick={() => void toggleFavourite(current.id)}
-                  className={`rounded-full border border-white/15 p-2.5 sm:p-3.5 backdrop-blur-md transition ${isFav
+                  className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isFav
                     ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
                     : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
                     }`}
@@ -438,7 +438,7 @@ export function FullscreenPlayer({
             </div>
 
             {/* Scrubber Progress Bar */}
-            <div className="fullscreen-range mt-4 sm:mt-6 md:mt-8 w-full space-y-2">
+            <div className="fullscreen-range mt-8 w-full space-y-2">
               <input
                 type="range"
                 min={0}
@@ -455,7 +455,7 @@ export function FullscreenPlayer({
             </div>
 
             {/* Playback Controls */}
-            <div className="mt-4 sm:mt-6 flex items-center justify-between gap-4 sm:justify-center sm:gap-8">
+            <div className="mt-6 flex items-center justify-between gap-4 sm:justify-center sm:gap-8">
               <button
                 type="button"
                 onClick={toggleShuffle}
@@ -479,13 +479,13 @@ export function FullscreenPlayer({
               <button
                 type="button"
                 onClick={toggle}
-                className="relative grid h-16 w-16 sm:h-20 sm:w-20 place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95"
+                className="relative grid h-20 w-20 place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95"
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
-                  <Pause className="h-7 w-7 sm:h-8 sm:w-8 fill-zinc-950" />
+                  <Pause className="h-8 w-8 fill-zinc-950" />
                 ) : (
-                  <Play className="h-7 w-7 sm:h-8 sm:w-8 translate-x-0.5 fill-zinc-950" />
+                  <Play className="h-8 w-8 translate-x-0.5 fill-zinc-950" />
                 )}
               </button>
 
@@ -536,13 +536,13 @@ export function FullscreenPlayer({
 
       {/* Floating Queue Drawer */}
       {showQueue ? (
-        <div className="relative z-20 mx-auto mb-2 md:mb-6 w-full max-w-2xl px-4 sm:px-6 pb-[max(12px,var(--safe-bottom))]">
-          <div className="rounded-[24px] sm:rounded-[28px] border border-white/15 bg-black/75 p-4 sm:p-5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-6">
+        <div className="relative z-20 mx-auto mb-6 w-full max-w-2xl px-6">
+          <div className="rounded-[28px] border border-white/15 bg-black/60 p-5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="font-serif text-base sm:text-lg font-bold text-white">Next in Queue</h3>
+              <h3 className="font-serif text-lg font-bold text-white">Next in Queue</h3>
               <span className="text-xs text-zinc-400">{queue.length} songs</span>
             </div>
-            <div className="mt-3 max-h-48 sm:max-h-56 space-y-1 overflow-y-auto pr-1">
+            <div className="mt-3 max-h-56 space-y-1 overflow-y-auto pr-1">
               {queue.map((item, idx) => {
                 const isActive = item.id === current.id;
                 return (
