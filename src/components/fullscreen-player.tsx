@@ -440,8 +440,8 @@ export function FullscreenPlayer({
                 </div>
               </div>
             ) : (
-              /* Live Synced Karaoke Lyrics Canvas */
-              <div className="relative h-[54vh] sm:h-[58vh] md:h-[62vh] max-h-[580px] w-full flex flex-col justify-center overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+              /* Live Synced Karaoke Lyrics Canvas (on mobile fills screen; on desktop takes left column) */
+              <div className="relative h-[68vh] sm:h-[72vh] md:h-[62vh] max-h-[660px] w-full flex flex-col justify-center overflow-hidden animate-in fade-in zoom-in-95 duration-500">
                 {lyricsState.status === "loading" && (
                   <div className="flex flex-col items-center justify-center gap-4 text-center">
                     <div className="flex items-end gap-1.5 h-10">
@@ -557,19 +557,31 @@ export function FullscreenPlayer({
                     <div className="h-32" />
                   </div>
                 )}
+
+                {/* Mobile close lyrics pill button */}
+                <div className="mt-4 flex justify-center md:hidden shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowLyrics(false)}
+                    className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold text-zinc-300 backdrop-blur-md transition hover:bg-white/20 hover:text-white active:scale-95"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                    <span>Back to player</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
           {/* Column 2: Album Art Showcase (when lyrics on) + Details & Controls */}
           <div
-            className={`flex flex-col justify-center ${
-              showLyrics ? "md:col-span-5 lg:col-span-5" : "md:col-span-6 lg:col-span-6"
-            } transition-all duration-500`}
+            className={`${
+              showLyrics ? "hidden md:flex md:col-span-5 lg:col-span-5" : "flex md:col-span-6 lg:col-span-6"
+            } flex-col justify-center transition-all duration-500`}
           >
-            {/* When showLyrics is true, display the Album Art Showcase right above details on the right side */}
+            {/* When showLyrics is true, display the Album Art Showcase right above details on desktop */}
             {showLyrics ? (
-              <div className="mb-4 flex justify-center md:justify-start">
+              <div className="mb-4 hidden md:flex justify-start">
                 <div className="group relative aspect-square w-[180px] sm:w-[220px] md:w-[240px] lg:w-[280px]">
                   {/* Dynamic ambient art drop-shadow */}
                   <div
