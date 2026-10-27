@@ -29,7 +29,6 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Orbit",
   description: "A luxury studio music listening experience for your catalog.",
-  applicationName: "Orbit",
   appleWebApp: {
     capable: true,
     title: "Orbit",
