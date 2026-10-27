@@ -1,9 +1,11 @@
 "use client";
 
 import { Cover } from "@/components/cover";
+import { LyricsSheet } from "@/components/lyrics-sheet";
 import { useMusic } from "@/context/music-context";
 import { useOffline } from "@/context/offline-context";
 import type { RepeatMode, Song } from "@/lib/types";
+import { useLyrics } from "@/lib/use-lyrics";
 import { formatTime } from "@/lib/utils";
 import Link from "next/link";
 import {
@@ -15,6 +17,7 @@ import {
   Loader2,
   Maximize2,
   Minimize2,
+  Music2,
   Pause,
   Pencil,
   Play,
@@ -77,8 +80,17 @@ export function FullscreenPlayer({
   const { favouriteIds, toggleFavourite } = useMusic();
   const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
   const [showQueue, setShowQueue] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Lyrics — fetched and synced to playback position
+  const { state: lyricsState, activeIndex } = useLyrics(
+    current?.title,
+    current?.artist?.name,
+    current?.duration_seconds,
+    progress,
+  );
 
   const cover = current?.cover_url || current?.album?.cover_url || current?.artist?.image_url;
   const isFav = current ? favouriteIds.has(current.id) : false;
@@ -322,7 +334,23 @@ export function FullscreenPlayer({
 
           <button
             type="button"
-            onClick={() => setShowQueue(!showQueue)}
+            onClick={() => {
+              setShowLyrics(!showLyrics);
+              if (showQueue) setShowQueue(false);
+            }}
+            className={`rounded-full border border-white/10 p-2.5 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white ${showLyrics ? "bg-[#dbe878] text-zinc-950 font-bold" : "bg-black/20 text-zinc-300"
+              }`}
+            title="Lyrics"
+          >
+            <Music2 className="h-4 w-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowQueue(!showQueue);
+              if (showLyrics) setShowLyrics(false);
+            }}
             className={`rounded-full border border-white/10 p-2.5 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white ${showQueue ? "bg-[#dbe878] text-zinc-950 font-bold" : "bg-black/20 text-zinc-300"
               }`}
             title="Playing Queue"
@@ -533,6 +561,19 @@ export function FullscreenPlayer({
           </div>
         </div>
       </main>
+
+      {/* Lyrics Sheet */}
+      <LyricsSheet
+        isOpen={showLyrics}
+        onClose={() => setShowLyrics(false)}
+        status={lyricsState.status}
+        lines={lyricsState.status === "synced" ? lyricsState.lines : undefined}
+        plainText={lyricsState.status === "plain" ? lyricsState.text : undefined}
+        activeIndex={activeIndex}
+        songTitle={current.title}
+        artistName={current.artist?.name}
+        accentColor={colors.palette.primary}
+      />
 
       {/* Queue Sheet Modal — fixed overlay, never shifts layout */}
       {showQueue ? (
