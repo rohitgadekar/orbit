@@ -20,19 +20,34 @@ type LyricsState =
 /** Parse an LRC file string into an array of timed lyric lines. */
 function parseLRC(lrc: string): LyricLine[] {
   const lines: LyricLine[] = [];
-  const lineRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+  const timeRegex = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
 
-  for (const raw of lrc.split("\n")) {
-    const match = raw.match(lineRegex);
-    if (!match) continue;
-    const minutes = parseInt(match[1], 10);
-    const seconds = parseInt(match[2], 10);
-    const centiseconds = parseInt(match[3].padEnd(3, "0"), 10);
-    const time = minutes * 60 + seconds + centiseconds / 1000;
-    const text = match[4].trim();
-    // Skip metadata lines, keep even empty lines for spacing
-    if (text.startsWith("ti:") || text.startsWith("ar:") || text.startsWith("al:")) continue;
-    lines.push({ time, text });
+  for (const rawLine of lrc.split(/\r?\n/)) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) continue;
+
+    // Skip metadata headers like [ti:Title], [ar:Artist], [length:03:30]
+    if (/^\[(ti|ar|al|by|offset|length|re|ve):/i.test(trimmed)) continue;
+
+    const matches = [...trimmed.matchAll(timeRegex)];
+    if (matches.length === 0) continue;
+
+    const text = trimmed.replace(timeRegex, "").trim();
+    if (!text) continue;
+
+    for (const match of matches) {
+      const minutes = parseInt(match[1], 10);
+      const seconds = parseInt(match[2], 10);
+      let millis = 0;
+      if (match[3]) {
+        const fraction = match[3];
+        if (fraction.length === 1) millis = parseInt(fraction, 10) * 100;
+        else if (fraction.length === 2) millis = parseInt(fraction, 10) * 10;
+        else millis = parseInt(fraction.slice(0, 3), 10);
+      }
+      const time = minutes * 60 + seconds + millis / 1000;
+      lines.push({ time, text });
+    }
   }
 
   return lines.sort((a, b) => a.time - b.time);
@@ -54,12 +69,12 @@ export function useLyrics(
   const keyRef = useRef<string>("");
 
   useEffect(() => {
-    if (!title || !artist) {
+    if (!title) {
       setState({ status: "idle" });
       return;
     }
 
-    const key = `${title}::${artist}`;
+    const key = `${title}::${artist || ""}`;
     if (key === keyRef.current) return; // same song, no re-fetch
     keyRef.current = key;
 
@@ -69,7 +84,8 @@ export function useLyrics(
 
     setState({ status: "loading" });
 
-    const params = new URLSearchParams({ title, artist });
+    const params = new URLSearchParams({ title });
+    if (artist) params.set("artist", artist);
     if (duration) params.set("duration", String(Math.round(duration)));
 
     void fetch(`/api/lyrics?${params.toString()}`, { signal: ctrl.signal })

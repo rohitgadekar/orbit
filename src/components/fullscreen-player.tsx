@@ -1,7 +1,6 @@
 "use client";
 
 import { Cover } from "@/components/cover";
-import { LyricsSheet } from "@/components/lyrics-sheet";
 import { useMusic } from "@/context/music-context";
 import { useOffline } from "@/context/offline-context";
 import type { RepeatMode, Song } from "@/lib/types";
@@ -83,8 +82,8 @@ export function FullscreenPlayer({
   const [showLyrics, setShowLyrics] = useState(false);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const desktopActiveRef = useRef<HTMLParagraphElement | null>(null);
-  const desktopContainerRef = useRef<HTMLDivElement | null>(null);
+  const activeLyricRef = useRef<HTMLParagraphElement | null>(null);
+  const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Lyrics — fetched and synced to playback position
   const { state: lyricsState, activeIndex } = useLyrics(
@@ -94,22 +93,21 @@ export function FullscreenPlayer({
     progress,
   );
 
-  // Auto-scroll active lyric line into center on desktop
+  // Auto-scroll active lyric line into center smoothly
   useEffect(() => {
-    if (!showLyrics || activeIndex < 0 || !desktopActiveRef.current || !desktopContainerRef.current) return;
-    const container = desktopContainerRef.current;
-    const el = desktopActiveRef.current;
-    const elTop = el.offsetTop;
-    const elHeight = el.offsetHeight;
-    const containerHeight = container.clientHeight;
-    const target = elTop - containerHeight / 2 + elHeight / 2;
-    container.scrollTo({ top: target, behavior: "smooth" });
+    if (!showLyrics || activeIndex < 0 || !activeLyricRef.current) return;
+    activeLyricRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
   }, [activeIndex, showLyrics]);
 
+  // Reset scroll to top when song changes or lyrics view opens
   useEffect(() => {
-    if (!showLyrics || activeIndex > 1) return;
-    desktopContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [showLyrics, activeIndex]);
+    if (!showLyrics || !lyricsContainerRef.current) return;
+    lyricsContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+  }, [current?.id, showLyrics]);
 
   const cover = current?.cover_url || current?.album?.cover_url || current?.artist?.image_url;
   const isFav = current ? favouriteIds.has(current.id) : false;
@@ -400,46 +398,50 @@ export function FullscreenPlayer({
       </header>
 
       {/* Main Body */}
-      <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-6 py-4 md:px-12">
-        <div className="grid w-full items-center gap-8 md:grid-cols-12 md:gap-14">
-          {/* Artwork Showcase (or Desktop Lyrics when showLyrics is true) */}
-          <div className="flex justify-center md:col-span-6 lg:col-span-6 w-full">
-            {/* Album Cover Showcase (always visible on mobile; on desktop only when showLyrics is false) */}
-            <div
-              className={`${
-                showLyrics ? "flex md:hidden" : "flex"
-              } group relative aspect-square w-full max-w-[340px] sm:max-w-[400px] md:max-w-[440px]`}
-            >
-              {/* Dynamic ambient art drop-shadow */}
-              <div
-                className="absolute inset-4 rounded-[36px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
-                style={{ backgroundColor: colors.palette.primary }}
-              />
-
-              {/* Cover Container */}
-              <div className="relative h-full w-full overflow-hidden rounded-[36px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
-                <Cover
-                  src={cover}
-                  title={current.title}
-                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                  playing={isPlaying}
+      <main
+        className={`relative z-10 mx-auto flex w-full ${
+          showLyrics ? "max-w-6xl" : "max-w-5xl"
+        } flex-1 items-center justify-center px-6 py-4 md:px-10 lg:px-12 transition-all duration-500`}
+      >
+        <div className="grid w-full items-center gap-8 md:grid-cols-12 md:gap-10 lg:gap-14">
+          {/* Column 1: Artwork Showcase (when lyrics off) OR Live Synced Lyrics (when lyrics on) */}
+          <div
+            className={`flex justify-center ${
+              showLyrics ? "md:col-span-7 lg:col-span-7" : "md:col-span-6 lg:col-span-6"
+            } w-full transition-all duration-500`}
+          >
+            {!showLyrics ? (
+              /* Big Album Artwork Showcase */
+              <div className="group relative aspect-square w-full max-w-[340px] sm:max-w-[400px] md:max-w-[440px]">
+                {/* Dynamic ambient art drop-shadow */}
+                <div
+                  className="absolute inset-4 rounded-[36px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
+                  style={{ backgroundColor: colors.palette.primary }}
                 />
 
-                {/* Animated Equalizer Overlay when playing */}
-                {isPlaying ? (
-                  <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full px-3 py-2">
-                    <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
-                    <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
-                    <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
-                    <span className="eq-bar-4 inline-block w-1 rounded-full bg-[#dbe878]" />
-                  </div>
-                ) : null}
-              </div>
-            </div>
+                {/* Cover Container */}
+                <div className="relative h-full w-full overflow-hidden rounded-[36px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
+                  <Cover
+                    src={cover}
+                    title={current.title}
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                    playing={isPlaying}
+                  />
 
-            {/* Desktop Inline Lyrics Canvas (Spotify & Tidal style: replaces album cover on desktop in big fonts) */}
-            {showLyrics ? (
-              <div className="hidden md:flex relative h-[60vh] max-h-[560px] w-full flex-col justify-center overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+                  {/* Animated Equalizer Overlay when playing */}
+                  {isPlaying ? (
+                    <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full px-3 py-2 bg-black/30 backdrop-blur-md">
+                      <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
+                      <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
+                      <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
+                      <span className="eq-bar-4 inline-block w-1 rounded-full bg-[#dbe878]" />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ) : (
+              /* Live Synced Karaoke Lyrics Canvas */
+              <div className="relative h-[54vh] sm:h-[58vh] md:h-[62vh] max-h-[580px] w-full flex flex-col justify-center overflow-hidden animate-in fade-in zoom-in-95 duration-500">
                 {lyricsState.status === "loading" && (
                   <div className="flex flex-col items-center justify-center gap-4 text-center">
                     <div className="flex items-end gap-1.5 h-10">
@@ -468,7 +470,7 @@ export function FullscreenPlayer({
                     <div>
                       <h3 className="text-xl font-bold text-white">No lyrics available</h3>
                       <p className="mt-1 text-sm text-zinc-400">
-                        Lyrics aren&apos;t available for this track
+                        Lyrics aren&apos;t available for &ldquo;{current.title}&rdquo;
                       </p>
                     </div>
                     <button
@@ -483,11 +485,13 @@ export function FullscreenPlayer({
 
                 {lyricsState.status === "synced" && lyricsState.lines.length > 0 && (
                   <div
-                    ref={desktopContainerRef}
-                    className="h-full w-full overflow-y-auto no-scrollbar py-28 px-4"
+                    ref={lyricsContainerRef}
+                    className="h-full w-full overflow-y-auto no-scrollbar py-28 px-3 sm:px-6"
                     style={{
-                      maskImage: "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)",
-                      WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)",
+                      maskImage:
+                        "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)",
+                      WebkitMaskImage:
+                        "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)",
                     }}
                   >
                     <div className="space-y-4">
@@ -496,27 +500,32 @@ export function FullscreenPlayer({
                         const isPast = i < activeIndex;
 
                         if (!line.text) {
-                          return <div key={i} className="h-8" />;
+                          return <div key={i} className="h-6" />;
                         }
 
                         return (
                           <p
                             key={i}
-                            ref={isActive ? desktopActiveRef : null}
+                            ref={isActive ? activeLyricRef : null}
                             onClick={() => seek(line.time)}
-                            className="cursor-pointer select-none transition-all duration-300 ease-out leading-[1.25] py-1.5"
+                            className="cursor-pointer select-none transition-all duration-300 ease-out py-2 text-left"
                             style={{
-                              fontSize: isActive ? "2.35rem" : "1.75rem",
+                              fontSize: isActive
+                                ? "clamp(1.75rem, 3.2vw, 2.75rem)"
+                                : "clamp(1.2rem, 2.2vw, 1.85rem)",
                               fontWeight: isActive ? 800 : 700,
+                              lineHeight: 1.25,
                               color: isActive
                                 ? "#ffffff"
                                 : isPast
                                   ? "rgba(255, 255, 255, 0.28)"
                                   : "rgba(255, 255, 255, 0.45)",
-                              transform: isActive ? "scale(1.02)" : "scale(1)",
+                              transform: isActive ? "scale(1.025)" : "scale(1)",
                               transformOrigin: "left center",
                               textShadow: isActive
-                                ? `0 0 35px ${colors.palette.primary || "#dbe878"}88, 0 0 70px ${colors.palette.primary || "#dbe878"}33`
+                                ? `0 0 35px ${colors.palette.primary || "#dbe878"}99, 0 0 70px ${
+                                    colors.palette.primary || "#dbe878"
+                                  }44`
                                 : "none",
                               letterSpacing: "-0.02em",
                             }}
@@ -533,57 +542,86 @@ export function FullscreenPlayer({
 
                 {lyricsState.status === "plain" && lyricsState.text && (
                   <div
-                    ref={desktopContainerRef}
+                    ref={lyricsContainerRef}
                     className="h-full w-full overflow-y-auto no-scrollbar py-20 px-4"
                     style={{
-                      maskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
-                      WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
+                      maskImage:
+                        "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
+                      WebkitMaskImage:
+                        "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
                     }}
                   >
-                    <div className="whitespace-pre-line text-2xl lg:text-3xl font-bold leading-relaxed text-zinc-200 select-text">
+                    <div className="whitespace-pre-line text-xl sm:text-2xl lg:text-3xl font-bold leading-relaxed text-zinc-200 select-text">
                       {lyricsState.text}
                     </div>
                     <div className="h-32" />
                   </div>
                 )}
               </div>
-            ) : null}
+            )}
           </div>
 
-          {/* Details & Controls */}
-          <div className="flex flex-col justify-center md:col-span-6 lg:col-span-6">
+          {/* Column 2: Album Art Showcase (when lyrics on) + Details & Controls */}
+          <div
+            className={`flex flex-col justify-center ${
+              showLyrics ? "md:col-span-5 lg:col-span-5" : "md:col-span-6 lg:col-span-6"
+            } transition-all duration-500`}
+          >
+            {/* When showLyrics is true, display the Album Art Showcase right above details on the right side */}
+            {showLyrics ? (
+              <div className="mb-4 flex justify-center md:justify-start">
+                <div className="group relative aspect-square w-[180px] sm:w-[220px] md:w-[240px] lg:w-[280px]">
+                  {/* Dynamic ambient art drop-shadow */}
+                  <div
+                    className="absolute inset-3 rounded-[28px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
+                    style={{ backgroundColor: colors.palette.primary }}
+                  />
+
+                  {/* Cover Container */}
+                  <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
+                    <Cover
+                      src={cover}
+                      title={current.title}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      playing={isPlaying}
+                    />
+
+                    {/* Animated Equalizer Overlay when playing */}
+                    {isPlaying ? (
+                      <div className="absolute bottom-3 right-3 flex items-end gap-1 rounded-full px-2.5 py-1.5 bg-black/40 backdrop-blur-md">
+                        <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
+                        <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
+                        <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
+                        <span className="eq-bar-4 inline-block w-1 rounded-full bg-[#dbe878]" />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             {/* Title & Artist */}
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-4 min-w-0">
-                {/* Mini Album Cover Thumbnail when lyrics are open on desktop */}
-                {showLyrics ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowLyrics(false)}
-                    className="group relative hidden md:block shrink-0 overflow-hidden rounded-2xl border border-white/20 shadow-xl transition hover:scale-105 active:scale-95"
-                    title="Switch back to artwork showcase"
-                  >
-                    <div className="h-16 w-16 lg:h-18 lg:w-18">
-                      <Cover
-                        src={cover}
-                        title={current.title}
-                        className="h-full w-full object-cover"
-                        playing={isPlaying}
-                      />
-                    </div>
-                  </button>
-                ) : null}
-                <div className="min-w-0">
-                  <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
-                    Hi-Res Audio • Lossless
-                  </span>
-                  <h1 className="mt-3 text-xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl truncate">
-                    {current.title}
-                  </h1>
-                  <p className="mt-1.5 text-base font-medium text-zinc-300 truncate sm:text-lg">
-                    {current.artist?.name || "Unknown Artist"}
-                  </p>
-                </div>
+              <div className="min-w-0">
+                <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
+                  Hi-Res Audio • Lossless
+                </span>
+                <h1
+                  className={`mt-2 font-bold tracking-tight text-white truncate ${
+                    showLyrics
+                      ? "text-xl sm:text-2xl lg:text-3xl"
+                      : "text-xl sm:text-4xl md:text-5xl"
+                  }`}
+                >
+                  {current.title}
+                </h1>
+                <p
+                  className={`mt-1 font-medium text-zinc-300 truncate ${
+                    showLyrics ? "text-sm sm:text-base" : "text-base sm:text-md"
+                  }`}
+                >
+                  {current.artist?.name || "Unknown Artist"}
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -717,20 +755,6 @@ export function FullscreenPlayer({
           </div>
         </div>
       </main>
-
-      {/* Lyrics Sheet */}
-      <LyricsSheet
-        isOpen={showLyrics}
-        onClose={() => setShowLyrics(false)}
-        status={lyricsState.status}
-        lines={lyricsState.status === "synced" ? lyricsState.lines : undefined}
-        plainText={lyricsState.status === "plain" ? lyricsState.text : undefined}
-        activeIndex={activeIndex}
-        songTitle={current.title}
-        artistName={current.artist?.name}
-        accentColor={colors.palette.primary}
-        onSeek={seek}
-      />
 
       {/* Queue Sheet Modal — fixed overlay, never shifts layout */}
       {showQueue ? (
