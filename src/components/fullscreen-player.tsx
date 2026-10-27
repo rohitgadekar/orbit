@@ -33,7 +33,69 @@ import {
   extractArtworkColors,
   getFallbackColors,
 } from "@/lib/cover-colors";
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, memo, useCallback, useEffect, useRef, useState } from "react";
+
+interface LyricLineItemProps {
+  time: number;
+  text: string;
+  isActive: boolean;
+  isPast: boolean;
+  accentColor: string;
+  onSeek: (time: number) => void;
+}
+
+const LyricLineItem = memo(
+  forwardRef<HTMLParagraphElement, LyricLineItemProps>(function LyricLineItem(
+    { time, text, isActive, isPast, accentColor, onSeek },
+    ref
+  ) {
+    if (!text) {
+      return <div className="h-6" />;
+    }
+
+    return (
+      <p
+        ref={ref}
+        onClick={() => onSeek(time)}
+        className="cursor-pointer select-none transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] py-2.5 text-left active:scale-95 will-change-transform"
+        style={{
+          fontSize: "clamp(1.85rem, 3.4vw, 2.85rem)",
+          fontWeight: isActive ? 800 : 600,
+          lineHeight: 1.28,
+          color: isActive
+            ? "#ffffff"
+            : isPast
+              ? "rgba(255, 255, 255, 0.28)"
+              : "rgba(255, 255, 255, 0.45)",
+          transform: isActive
+            ? "scale(1.03) translateX(4px)"
+            : "scale(1) translateX(0px)",
+          transformOrigin: "left center",
+          textShadow: isActive
+            ? `0 0 35px ${accentColor || "#dbe878"}bb, 0 0 70px ${
+                accentColor || "#dbe878"
+              }44`
+            : "none",
+          letterSpacing: isActive ? "-0.025em" : "-0.01em",
+          filter: isActive ? "none" : isPast ? "blur(0.3px)" : "none",
+        }}
+      >
+        {text}
+      </p>
+    );
+  }),
+  (prev, next) => {
+    return (
+      prev.isActive === next.isActive &&
+      prev.isPast === next.isPast &&
+      prev.text === next.text &&
+      prev.time === next.time &&
+      prev.accentColor === next.accentColor &&
+      prev.onSeek === next.onSeek
+    );
+  }
+);
+LyricLineItem.displayName = "LyricLineItem";
 
 export function FullscreenPlayer({
   isOpen,
@@ -124,6 +186,13 @@ export function FullscreenPlayer({
     progress,
   );
 
+  const handleSeekLyric = useCallback(
+    (time: number) => {
+      seek(time);
+    },
+    [seek]
+  );
+
   // Auto-scroll active lyric line into center smoothly
   useEffect(() => {
     if (!showLyrics || activeIndex < 0 || !activeLyricRef.current) return;
@@ -132,13 +201,13 @@ export function FullscreenPlayer({
       block: "center",
       inline: "nearest",
     });
-  }, [activeIndex, showLyrics]);
+  }, [activeIndex, showLyrics, lyricsState.status]);
 
-  // Reset scroll to top when song changes or lyrics view opens
+  // Reset scroll to top when song changes
   useEffect(() => {
-    if (!showLyrics || !lyricsContainerRef.current) return;
-    lyricsContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
-  }, [current?.id, showLyrics]);
+    if (!lyricsContainerRef.current) return;
+    lyricsContainerRef.current.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, [current?.id]);
 
   const cover = current?.cover_url || current?.album?.cover_url || current?.artist?.image_url;
   const isFav = current ? favouriteIds.has(current.id) : false;
@@ -263,11 +332,10 @@ export function FullscreenPlayer({
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden text-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
-        isPresented
-          ? "translate-y-0 opacity-100 scale-100"
-          : "translate-y-full opacity-0 scale-95 pointer-events-none"
-      }`}
+      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden text-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${isPresented
+        ? "translate-y-0 opacity-100 scale-100"
+        : "translate-y-full opacity-0 scale-95 pointer-events-none"
+        }`}
       style={{
         backgroundColor: colors.ambientBase,
       }}
@@ -434,16 +502,14 @@ export function FullscreenPlayer({
 
       {/* Main Body */}
       <main
-        className={`relative z-10 mx-auto flex w-full ${
-          showLyrics ? "max-w-6xl" : "max-w-5xl"
-        } flex-1 items-center justify-center px-6 py-4 md:px-10 lg:px-12 transition-all duration-500`}
+        className={`relative z-10 mx-auto flex w-full ${showLyrics ? "max-w-6xl" : "max-w-5xl"
+          } flex-1 items-center justify-center px-6 py-4 md:px-10 lg:px-12 transition-all duration-500`}
       >
         <div className="grid w-full items-center gap-8 md:grid-cols-12 md:gap-10 lg:gap-14">
           {/* Column 1: Artwork Showcase (when lyrics off) OR Live Synced Lyrics (when lyrics on) */}
           <div
-            className={`flex justify-center ${
-              showLyrics ? "md:col-span-7 lg:col-span-7" : "md:col-span-6 lg:col-span-6"
-            } w-full transition-all duration-500`}
+            className={`flex justify-center ${showLyrics ? "md:col-span-7 lg:col-span-7" : "md:col-span-6 lg:col-span-6"
+              } w-full transition-all duration-500`}
           >
             {!showLyrics ? (
               /* Big Album Artwork Showcase */
@@ -465,7 +531,7 @@ export function FullscreenPlayer({
 
                   {/* Animated Equalizer Overlay when playing */}
                   {isPlaying ? (
-                    <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full px-3 py-2 bg-black/30 backdrop-blur-md">
+                    <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full px-3 py-2">
                       <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
                       <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
                       <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
@@ -479,20 +545,6 @@ export function FullscreenPlayer({
               <div className="relative h-[68vh] sm:h-[72vh] md:h-[62vh] max-h-[660px] w-full flex flex-col justify-center overflow-hidden animate-in fade-in zoom-in-95 duration-500">
                 {lyricsState.status === "loading" && (
                   <div className="flex flex-col items-center justify-center gap-4 text-center">
-                    <div className="flex items-end gap-1.5 h-10">
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <span
-                          key={i}
-                          className="inline-block w-2 rounded-full animate-pulse"
-                          style={{
-                            backgroundColor: colors.palette.primary || "#dbe878",
-                            height: `${14 + (i % 3) * 14}px`,
-                            animationDelay: `${i * 0.14}s`,
-                            animationDuration: "0.85s",
-                          }}
-                        />
-                      ))}
-                    </div>
                     <p className="text-base font-semibold text-zinc-400">Finding lyrics…</p>
                   </div>
                 )}
@@ -521,7 +573,7 @@ export function FullscreenPlayer({
                 {lyricsState.status === "synced" && lyricsState.lines.length > 0 && (
                   <div
                     ref={lyricsContainerRef}
-                    className="h-full w-full overflow-y-auto no-scrollbar py-28 px-3 sm:px-6"
+                    className="h-full w-full overflow-y-auto no-scrollbar py-28 px-3 sm:px-6 overscroll-contain scroll-smooth"
                     style={{
                       maskImage:
                         "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)",
@@ -534,42 +586,17 @@ export function FullscreenPlayer({
                         const isActive = i === activeIndex;
                         const isPast = i < activeIndex;
 
-                        if (!line.text) {
-                          return <div key={i} className="h-6" />;
-                        }
-
                         return (
-                          <p
-                            key={i}
+                          <LyricLineItem
+                            key={`${i}-${line.time}`}
                             ref={isActive ? activeLyricRef : null}
-                            onClick={() => seek(line.time)}
-                            className="cursor-pointer select-none transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] py-2.5 text-left active:scale-95 will-change-transform"
-                            style={{
-                              fontSize: isActive
-                                ? "clamp(1.85rem, 3.4vw, 2.85rem)"
-                                : "clamp(1.25rem, 2.2vw, 1.85rem)",
-                              fontWeight: isActive ? 800 : 600,
-                              lineHeight: 1.28,
-                              color: isActive
-                                ? "#ffffff"
-                                : isPast
-                                  ? "rgba(255, 255, 255, 0.28)"
-                                  : "rgba(255, 255, 255, 0.45)",
-                              transform: isActive
-                                ? "scale(1.03) translateX(4px)"
-                                : "scale(1) translateX(0px)",
-                              transformOrigin: "left center",
-                              textShadow: isActive
-                                ? `0 0 35px ${colors.palette.primary || "#dbe878"}bb, 0 0 70px ${
-                                    colors.palette.primary || "#dbe878"
-                                  }44`
-                                : "none",
-                              letterSpacing: isActive ? "-0.025em" : "-0.01em",
-                              filter: isActive ? "none" : isPast ? "blur(0.3px)" : "none",
-                            }}
-                          >
-                            {line.text}
-                          </p>
+                            time={line.time}
+                            text={line.text}
+                            isActive={isActive}
+                            isPast={isPast}
+                            accentColor={colors.palette.primary || "#dbe878"}
+                            onSeek={handleSeekLyric}
+                          />
                         );
                       })}
                       {/* Spacer so the last line can scroll comfortably to center */}
@@ -613,193 +640,199 @@ export function FullscreenPlayer({
 
           {/* Column 2: Album Art Showcase (when lyrics on) + Details & Controls */}
           <div
-            className={`${
-              showLyrics ? "hidden md:flex md:col-span-5 lg:col-span-5" : "flex md:col-span-6 lg:col-span-6"
-            } flex-col justify-center transition-all duration-500`}
+            className={`${showLyrics ? "hidden md:flex md:col-span-5 lg:col-span-5" : "flex md:col-span-6 lg:col-span-6"
+              } flex-col justify-center transition-all duration-500`}
           >
-            {/* When showLyrics is true, display the Album Art Showcase right above details on desktop */}
-            {showLyrics ? (
-              <div className="mb-4 hidden md:flex justify-start">
-                <div className="group relative aspect-square w-[180px] sm:w-[220px] md:w-[240px] lg:w-[280px]">
-                  {/* Dynamic ambient art drop-shadow */}
-                  <div
-                    className="absolute inset-3 rounded-[28px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
-                    style={{ backgroundColor: colors.palette.primary }}
-                  />
-
-                  {/* Cover Container */}
-                  <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
-                    <Cover
-                      src={cover}
-                      title={current.title}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                      playing={isPlaying}
+            <div
+              className={`w-full ${showLyrics
+                ? "max-w-[340px] lg:max-w-[380px] mx-auto md:ml-auto md:mr-0"
+                : "max-w-[480px] mx-auto md:mx-0"
+                } flex flex-col justify-center`}
+            >
+              {/* When showLyrics is true, display the Album Art Showcase right above details on desktop */}
+              {showLyrics ? (
+                <div className="mb-4 hidden md:flex w-full justify-center">
+                  <div className="group relative aspect-square w-full">
+                    {/* Dynamic ambient art drop-shadow */}
+                    <div
+                      className="absolute inset-3 rounded-[28px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
+                      style={{ backgroundColor: colors.palette.primary }}
                     />
 
-                    {/* Animated Equalizer Overlay when playing */}
-                    {isPlaying ? (
-                      <div className="absolute bottom-3 right-3 flex items-end gap-1 rounded-full px-2.5 py-1.5 bg-black/40 backdrop-blur-md">
-                        <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
-                        <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
-                        <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
-                        <span className="eq-bar-4 inline-block w-1 rounded-full bg-[#dbe878]" />
-                      </div>
-                    ) : null}
+                    {/* Cover Container */}
+                    <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
+                      <Cover
+                        src={cover}
+                        title={current.title}
+                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                        playing={isPlaying}
+                      />
+
+                      {/* Animated Equalizer Overlay when playing */}
+                      {isPlaying ? (
+                        <div className="absolute bottom-3 right-3 flex items-end gap-1 rounded-full px-2.5 py-1.5">
+                          <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
+                          <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
+                          <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
+                          <span className="eq-bar-4 inline-block w-1 rounded-full bg-[#dbe878]" />
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {/* Title & Artist */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
-                  Hi-Res Audio • Lossless
-                </span>
-                <h1
-                  className={`mt-2 font-bold tracking-tight text-white truncate ${
-                    showLyrics
-                      ? "text-xl sm:text-2xl lg:text-3xl"
+              {/* Title & Artist & Action Buttons */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className="inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
+                    Hi-Res Audio • Lossless
+                  </span>
+                  <h1
+                    className={`mt-1.5 font-bold tracking-tight text-white truncate ${showLyrics
+                      ? "text-lg sm:text-xl lg:text-2xl"
                       : "text-xl sm:text-4xl md:text-5xl"
-                  }`}
-                >
-                  {current.title}
-                </h1>
-                <p
-                  className={`mt-1 font-medium text-zinc-300 truncate ${
-                    showLyrics ? "text-sm sm:text-base" : "text-base sm:text-md"
-                  }`}
-                >
-                  {current.artist?.name || "Unknown Artist"}
-                </p>
+                      }`}
+                  >
+                    {current.title}
+                  </h1>
+                  <p
+                    className={`mt-0.5 font-medium text-zinc-300 truncate ${showLyrics ? "text-xs sm:text-sm" : "text-base sm:text-md"
+                      }`}
+                  >
+                    {current.artist?.name || "Unknown Artist"}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => void toggleDownloadSong(current)}
+                    disabled={isCurrentlyDownloading}
+                    className={`rounded-full border border-white/15 ${showLyrics ? "p-2.5 sm:p-3" : "p-3.5"
+                      } backdrop-blur-md transition ${isSavedOffline
+                        ? "border-[#dbe878]/50 bg-[#dbe878]/20 text-[#dbe878]"
+                        : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
+                      }`}
+                    aria-label={isSavedOffline ? "Saved offline" : "Save offline"}
+                    title={isSavedOffline ? "Saved offline (tap to remove)" : "Save song offline"}
+                  >
+                    {isCurrentlyDownloading ? (
+                      <Loader2 className={`${showLyrics ? "h-4 w-4" : "h-5 w-5"} animate-spin text-[#dbe878]`} />
+                    ) : isSavedOffline ? (
+                      <CheckCircle2 className={`${showLyrics ? "h-4 w-4" : "h-5 w-5"} fill-[#dbe878] text-zinc-950`} />
+                    ) : (
+                      <ArrowDownToLine className={`${showLyrics ? "h-4 w-4" : "h-5 w-5"}`} />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void toggleFavourite(current.id)}
+                    className={`rounded-full border border-white/15 ${showLyrics ? "p-2.5 sm:p-3" : "p-3.5"
+                      } backdrop-blur-md transition ${isFav
+                        ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
+                        : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
+                      }`}
+                    aria-label={isFav ? "Favorited" : "Add to favorites"}
+                  >
+                    <Heart className={`${showLyrics ? "h-4 w-4" : "h-5 w-5"} ${isFav ? "fill-rose-400" : ""}`} />
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Scrubber Progress Bar */}
+              <div className={`fullscreen-range ${showLyrics ? "mt-5" : "mt-8"} w-full space-y-2`}>
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || current.duration_seconds || 1}
+                  step={0.1}
+                  value={Math.min(progress, duration || progress)}
+                  onChange={(e) => seek(Number(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs font-mono font-medium text-zinc-400">
+                  <span>{formatTime(progress)}</span>
+                  <span>{formatTime(duration || current.duration_seconds || 0)}</span>
+                </div>
+              </div>
+
+              {/* Playback Controls */}
+              <div className={`${showLyrics ? "mt-4" : "mt-6"} flex items-center justify-between gap-4 sm:justify-center ${showLyrics ? "sm:gap-6" : "sm:gap-8"}`}>
                 <button
                   type="button"
-                  onClick={() => void toggleDownloadSong(current)}
-                  disabled={isCurrentlyDownloading}
-                  className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isSavedOffline
-                    ? "border-[#dbe878]/50 bg-[#dbe878]/20 text-[#dbe878]"
-                    : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
+                  onClick={toggleShuffle}
+                  className={`rounded-full p-2.5 transition ${shuffle ? "text-[#dbe878]" : "text-zinc-400 hover:text-white"
                     }`}
-                  aria-label={isSavedOffline ? "Saved offline" : "Save offline"}
-                  title={isSavedOffline ? "Saved offline (tap to remove)" : "Save song offline"}
+                  title="Shuffle"
                 >
-                  {isCurrentlyDownloading ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-[#dbe878]" />
-                  ) : isSavedOffline ? (
-                    <CheckCircle2 className="h-5 w-5 fill-[#dbe878] text-zinc-950" />
+                  <Shuffle className="h-5 w-5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={prev}
+                  className="rounded-full p-2.5 text-zinc-300 transition hover:scale-110 hover:text-white active:scale-95"
+                  title="Previous track"
+                >
+                  <SkipBack className="h-7 w-7 fill-current" />
+                </button>
+
+                {/* Luminous Center Play Button */}
+                <button
+                  type="button"
+                  onClick={toggle}
+                  className={`relative grid ${showLyrics ? "h-16 w-16" : "h-20 w-20"} place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95`}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? (
+                    <Pause className={`${showLyrics ? "h-7 w-7" : "h-8 w-8"} fill-zinc-950`} />
                   ) : (
-                    <ArrowDownToLine className="h-5 w-5" />
+                    <Play className={`${showLyrics ? "h-7 w-7" : "h-8 w-8"} translate-x-0.5 fill-zinc-950`} />
                   )}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => void toggleFavourite(current.id)}
-                  className={`rounded-full border border-white/15 p-3.5 backdrop-blur-md transition ${isFav
-                    ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
-                    : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
-                    }`}
-                  aria-label={isFav ? "Favorited" : "Add to favorites"}
+                  onClick={next}
+                  className="rounded-full p-2.5 text-zinc-300 transition hover:scale-110 hover:text-white active:scale-95"
+                  title="Next track"
                 >
-                  <Heart className={`h-5 w-5 ${isFav ? "fill-rose-400" : ""}`} />
+                  <SkipForward className="h-7 w-7 fill-current" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={cycleRepeat}
+                  className={`rounded-full p-2.5 transition ${repeat !== "off" ? "text-[#dbe878]" : "text-zinc-400 hover:text-white"
+                    }`}
+                  title="Repeat"
+                >
+                  {repeat === "one" ? <Repeat1 className="h-5 w-5" /> : <Repeat className="h-5 w-5" />}
                 </button>
               </div>
-            </div>
 
-            {/* Scrubber Progress Bar */}
-            <div className="fullscreen-range mt-8 w-full space-y-2">
-              <input
-                type="range"
-                min={0}
-                max={duration || current.duration_seconds || 1}
-                step={0.1}
-                value={Math.min(progress, duration || progress)}
-                onChange={(e) => seek(Number(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs font-mono font-medium text-zinc-400">
-                <span>{formatTime(progress)}</span>
-                <span>{formatTime(duration || current.duration_seconds || 0)}</span>
-              </div>
-            </div>
-
-            {/* Playback Controls */}
-            <div className="mt-6 flex items-center justify-between gap-4 sm:justify-center sm:gap-8">
-              <button
-                type="button"
-                onClick={toggleShuffle}
-                className={`rounded-full p-2.5 transition ${shuffle ? "text-[#dbe878]" : "text-zinc-400 hover:text-white"
-                  }`}
-                title="Shuffle"
-              >
-                <Shuffle className="h-5 w-5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={prev}
-                className="rounded-full p-2.5 text-zinc-300 transition hover:scale-110 hover:text-white active:scale-95"
-                title="Previous track"
-              >
-                <SkipBack className="h-7 w-7 fill-current" />
-              </button>
-
-              {/* Luminous Center Play Button */}
-              <button
-                type="button"
-                onClick={toggle}
-                className="relative grid h-20 w-20 place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95"
-                aria-label={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? (
-                  <Pause className="h-8 w-8 fill-zinc-950" />
-                ) : (
-                  <Play className="h-8 w-8 translate-x-0.5 fill-zinc-950" />
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={next}
-                className="rounded-full p-2.5 text-zinc-300 transition hover:scale-110 hover:text-white active:scale-95"
-                title="Next track"
-              >
-                <SkipForward className="h-7 w-7 fill-current" />
-              </button>
-
-              <button
-                type="button"
-                onClick={cycleRepeat}
-                className={`rounded-full p-2.5 transition ${repeat !== "off" ? "text-[#dbe878]" : "text-zinc-400 hover:text-white"
-                  }`}
-                title="Repeat"
-              >
-                {repeat === "one" ? <Repeat1 className="h-5 w-5" /> : <Repeat className="h-5 w-5" />}
-              </button>
-            </div>
-
-            {/* Volume Control (hidden on mobile as mobile devices use hardware buttons) */}
-            <div className="mt-8 hidden md:flex items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
-                className="text-zinc-400 hover:text-white"
-              >
-                {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              </button>
-              <div className="fullscreen-range w-32 sm:w-44">
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={volume}
-                  onChange={(e) => setVolume(Number(e.target.value))}
-                  className="w-full"
-                />
+              {/* Volume Control (hidden on mobile as mobile devices use hardware buttons) */}
+              <div className={`${showLyrics ? "mt-5" : "mt-8"} hidden md:flex items-center justify-center gap-3`}>
+                <button
+                  type="button"
+                  onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
+                  className="text-zinc-400 hover:text-white"
+                >
+                  {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </button>
+                <div className="fullscreen-range w-32 sm:w-44">
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={volume}
+                    onChange={(e) => setVolume(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -864,8 +897,8 @@ export function FullscreenPlayer({
                         setShowQueue(false);
                       }}
                       className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-all duration-150 ${isActive
-                          ? "bg-[#dbe878]/12 text-[#dbe878]"
-                          : "text-zinc-300 hover:bg-white/6 active:bg-white/10"
+                        ? "bg-[#dbe878]/12 text-[#dbe878]"
+                        : "text-zinc-300 hover:bg-white/6 active:bg-white/10"
                         }`}
                     >
                       {/* Index or now-playing indicator */}
