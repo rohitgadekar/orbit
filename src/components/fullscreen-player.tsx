@@ -60,8 +60,9 @@ const LyricLineItem = memo(
         className="cursor-pointer select-none transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] py-2.5 text-left active:scale-95 will-change-transform"
         style={{
           fontSize: "clamp(1.85rem, 3.4vw, 2.85rem)",
-          fontWeight: isActive ? 800 : 600,
+          fontWeight: 700,
           lineHeight: 1.28,
+          letterSpacing: "-0.02em",
           color: isActive
             ? "#ffffff"
             : isPast
@@ -76,7 +77,6 @@ const LyricLineItem = memo(
                 accentColor || "#dbe878"
               }44`
             : "none",
-          letterSpacing: isActive ? "-0.025em" : "-0.01em",
           filter: isActive ? "none" : isPast ? "blur(0.3px)" : "none",
         }}
       >
