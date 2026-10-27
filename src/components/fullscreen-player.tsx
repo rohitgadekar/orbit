@@ -73,9 +73,8 @@ const LyricLineItem = memo(
             : "scale(1) translateX(0px)",
           transformOrigin: "left center",
           textShadow: isActive
-            ? `0 0 35px ${accentColor || "#dbe878"}bb, 0 0 70px ${
-                accentColor || "#dbe878"
-              }44`
+            ? `0 0 35px ${accentColor || "#dbe878"}bb, 0 0 70px ${accentColor || "#dbe878"
+            }44`
             : "none",
           filter: isActive ? "none" : isPast ? "blur(0.3px)" : "none",
         }}
@@ -689,15 +688,15 @@ export function FullscreenPlayer({
                     Hi-Res Audio • Lossless
                   </span>
                   <h1
-                    className={`mt-1.5 font-bold tracking-tight text-white truncate ${showLyrics
-                      ? "text-lg sm:text-xl lg:text-2xl"
-                      : "text-xl sm:text-4xl md:text-5xl"
+                    className={`mt-1.5 min-w-0 max-w-full font-bold tracking-tight text-white ${showLyrics
+                      ? "text-lg sm:text-xl lg:text-2xl line-clamp-2 break-words"
+                      : "text-xl sm:text-4xl md:text-5xl line-clamp-2 break-words"
                       }`}
                   >
                     {current.title}
                   </h1>
                   <p
-                    className={`mt-0.5 font-medium text-zinc-300 truncate ${showLyrics ? "text-xs sm:text-sm" : "text-base sm:text-md"
+                    className={`mt-0.5 min-w-0 font-medium text-zinc-300 truncate ${showLyrics ? "text-xs sm:text-sm" : "text-base sm:text-md"
                       }`}
                   >
                     {current.artist?.name || "Unknown Artist"}
