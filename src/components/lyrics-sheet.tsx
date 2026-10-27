@@ -1,7 +1,7 @@
 "use client";
 
 import { type LyricLine } from "@/lib/use-lyrics";
-import { Music2, X } from "lucide-react";
+import { Music2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 type LyricsSheetProps = {
@@ -23,6 +23,8 @@ type LyricsSheetProps = {
   artistName?: string;
   /** Dominant accent color from album art */
   accentColor?: string;
+  /** Seek handler for tapping lyrics */
+  onSeek?: (time: number) => void;
 };
 
 export function LyricsSheet({
@@ -32,9 +34,8 @@ export function LyricsSheet({
   lines = [],
   plainText,
   activeIndex,
-  songTitle,
-  artistName,
   accentColor = "#dbe878",
+  onSeek,
 }: LyricsSheetProps) {
   const activeRef = useRef<HTMLParagraphElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -60,17 +61,17 @@ export function LyricsSheet({
   if (!isOpen) return null;
 
   return (
-    <>
+    <div className="md:hidden">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 z-30 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-300"
+        className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-300"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Sheet panel */}
       <div
-        className="absolute inset-x-0 bottom-0 z-40 px-4 pb-4 sm:px-6 animate-in slide-in-from-bottom-4 duration-300 ease-out"
+        className="fixed inset-x-0 bottom-0 z-40 px-4 pb-4 sm:px-6 animate-in slide-in-from-bottom-4 duration-300 ease-out"
         style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom, 0px))" }}
       >
         <div
@@ -83,35 +84,6 @@ export function LyricsSheet({
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
             <div className="h-1 w-10 rounded-full bg-white/20" />
-          </div>
-
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-white/8">
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${accentColor}22`, border: `1px solid ${accentColor}44` }}
-              >
-                <Music2 className="h-4 w-4" style={{ color: accentColor }} />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-white tracking-tight truncate">Lyrics</h3>
-                {songTitle && (
-                  <p className="text-[11px] text-zinc-500 mt-0.5 truncate">
-                    {songTitle}
-                    {artistName ? ` · ${artistName}` : ""}
-                  </p>
-                )}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/8 text-zinc-400 transition hover:bg-white/15 hover:text-white"
-              aria-label="Close lyrics"
-            >
-              <X className="h-4 w-4" />
-            </button>
           </div>
 
           {/* Content area */}
@@ -135,7 +107,6 @@ export function LyricsSheet({
                 {lines.map((line, i) => {
                   const isActive = i === activeIndex;
                   const isPast = i < activeIndex;
-                  const isFuture = i > activeIndex;
 
                   // Empty lines act as spacers
                   if (!line.text) {
@@ -146,15 +117,16 @@ export function LyricsSheet({
                     <p
                       key={i}
                       ref={isActive ? activeRef : null}
-                      className="transition-all duration-500 ease-out cursor-default select-text leading-snug"
+                      onClick={() => onSeek?.(line.time)}
+                      className="transition-all duration-500 ease-out cursor-pointer select-text leading-snug"
                       style={{
                         fontSize: isActive ? "1.25rem" : "1rem",
                         fontWeight: isActive ? 700 : 500,
                         color: isActive
                           ? "#ffffff"
                           : isPast
-                          ? "rgba(255,255,255,0.28)"
-                          : "rgba(255,255,255,0.42)",
+                            ? "rgba(255,255,255,0.28)"
+                            : "rgba(255,255,255,0.42)",
                         transform: isActive ? "scale(1.01)" : "scale(1)",
                         transformOrigin: "left center",
                         paddingTop: isActive ? "6px" : "4px",
@@ -163,14 +135,6 @@ export function LyricsSheet({
                         letterSpacing: isActive ? "-0.01em" : "normal",
                       }}
                     >
-                      {isActive && (
-                        <span
-                          className="mr-1.5 inline-block rounded-sm text-[9px] font-black tracking-widest uppercase align-middle"
-                          style={{ color: accentColor, opacity: 0.8 }}
-                        >
-                          ♪
-                        </span>
-                      )}
                       {line.text}
                     </p>
                   );
@@ -187,33 +151,10 @@ export function LyricsSheet({
             )}
           </div>
 
-          {/* LRCLIB attribution */}
-          {(status === "synced" || status === "plain") && (
-            <div className="border-t border-white/6 px-5 py-2.5 flex items-center justify-between">
-              <span className="text-[10px] text-zinc-600 tracking-wide">
-                Lyrics provided by{" "}
-                <a
-                  href="https://lrclib.net"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-500 hover:text-zinc-300 transition"
-                >
-                  LRCLIB
-                </a>
-              </span>
-              {status === "synced" && (
-                <span
-                  className="text-[9px] font-semibold tracking-widest uppercase rounded-full px-2 py-0.5"
-                  style={{ color: accentColor, backgroundColor: `${accentColor}18` }}
-                >
-                  Synced
-                </span>
-              )}
-            </div>
-          )}
+
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

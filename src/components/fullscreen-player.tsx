@@ -83,6 +83,8 @@ export function FullscreenPlayer({
   const [showLyrics, setShowLyrics] = useState(false);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const desktopActiveRef = useRef<HTMLParagraphElement | null>(null);
+  const desktopContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Lyrics — fetched and synced to playback position
   const { state: lyricsState, activeIndex } = useLyrics(
@@ -91,6 +93,23 @@ export function FullscreenPlayer({
     current?.duration_seconds,
     progress,
   );
+
+  // Auto-scroll active lyric line into center on desktop
+  useEffect(() => {
+    if (!showLyrics || activeIndex < 0 || !desktopActiveRef.current || !desktopContainerRef.current) return;
+    const container = desktopContainerRef.current;
+    const el = desktopActiveRef.current;
+    const elTop = el.offsetTop;
+    const elHeight = el.offsetHeight;
+    const containerHeight = container.clientHeight;
+    const target = elTop - containerHeight / 2 + elHeight / 2;
+    container.scrollTo({ top: target, behavior: "smooth" });
+  }, [activeIndex, showLyrics]);
+
+  useEffect(() => {
+    if (!showLyrics || activeIndex > 1) return;
+    desktopContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [showLyrics, activeIndex]);
 
   const cover = current?.cover_url || current?.album?.cover_url || current?.artist?.image_url;
   const isFav = current ? favouriteIds.has(current.id) : false;
@@ -383,9 +402,14 @@ export function FullscreenPlayer({
       {/* Main Body */}
       <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 items-center justify-center px-6 py-4 md:px-12">
         <div className="grid w-full items-center gap-8 md:grid-cols-12 md:gap-14">
-          {/* Artwork Showcase */}
-          <div className="flex justify-center md:col-span-6 lg:col-span-6">
-            <div className="group relative aspect-square w-full max-w-[340px] sm:max-w-[400px] md:max-w-[440px]">
+          {/* Artwork Showcase (or Desktop Lyrics when showLyrics is true) */}
+          <div className="flex justify-center md:col-span-6 lg:col-span-6 w-full">
+            {/* Album Cover Showcase (always visible on mobile; on desktop only when showLyrics is false) */}
+            <div
+              className={`${
+                showLyrics ? "flex md:hidden" : "flex"
+              } group relative aspect-square w-full max-w-[340px] sm:max-w-[400px] md:max-w-[440px]`}
+            >
               {/* Dynamic ambient art drop-shadow */}
               <div
                 className="absolute inset-4 rounded-[36px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
@@ -403,7 +427,7 @@ export function FullscreenPlayer({
 
                 {/* Animated Equalizer Overlay when playing */}
                 {isPlaying ? (
-                  <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full  px-3 py-2">
+                  <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full px-3 py-2">
                     <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
                     <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
                     <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
@@ -412,22 +436,154 @@ export function FullscreenPlayer({
                 ) : null}
               </div>
             </div>
+
+            {/* Desktop Inline Lyrics Canvas (Spotify & Tidal style: replaces album cover on desktop in big fonts) */}
+            {showLyrics ? (
+              <div className="hidden md:flex relative h-[60vh] max-h-[560px] w-full flex-col justify-center overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+                {lyricsState.status === "loading" && (
+                  <div className="flex flex-col items-center justify-center gap-4 text-center">
+                    <div className="flex items-end gap-1.5 h-10">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <span
+                          key={i}
+                          className="inline-block w-2 rounded-full animate-pulse"
+                          style={{
+                            backgroundColor: colors.palette.primary || "#dbe878",
+                            height: `${14 + (i % 3) * 14}px`,
+                            animationDelay: `${i * 0.14}s`,
+                            animationDuration: "0.85s",
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-base font-semibold text-zinc-400">Finding lyrics…</p>
+                  </div>
+                )}
+
+                {lyricsState.status === "not-found" && (
+                  <div className="flex flex-col items-center justify-center gap-4 text-center px-6">
+                    <div className="grid h-16 w-16 place-items-center rounded-full bg-white/10 backdrop-blur-md">
+                      <Music2 className="h-7 w-7 text-zinc-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">No lyrics available</h3>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Lyrics aren&apos;t available for this track
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowLyrics(false)}
+                      className="mt-2 rounded-full border border-white/20 bg-white/10 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/20 hover:scale-105 active:scale-95"
+                    >
+                      View Album Art
+                    </button>
+                  </div>
+                )}
+
+                {lyricsState.status === "synced" && lyricsState.lines.length > 0 && (
+                  <div
+                    ref={desktopContainerRef}
+                    className="h-full w-full overflow-y-auto no-scrollbar py-28 px-4"
+                    style={{
+                      maskImage: "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)",
+                      WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)",
+                    }}
+                  >
+                    <div className="space-y-4">
+                      {lyricsState.lines.map((line, i) => {
+                        const isActive = i === activeIndex;
+                        const isPast = i < activeIndex;
+
+                        if (!line.text) {
+                          return <div key={i} className="h-8" />;
+                        }
+
+                        return (
+                          <p
+                            key={i}
+                            ref={isActive ? desktopActiveRef : null}
+                            onClick={() => seek(line.time)}
+                            className="cursor-pointer select-none transition-all duration-300 ease-out leading-[1.25] py-1.5"
+                            style={{
+                              fontSize: isActive ? "2.35rem" : "1.75rem",
+                              fontWeight: isActive ? 800 : 700,
+                              color: isActive
+                                ? "#ffffff"
+                                : isPast
+                                  ? "rgba(255, 255, 255, 0.28)"
+                                  : "rgba(255, 255, 255, 0.45)",
+                              transform: isActive ? "scale(1.02)" : "scale(1)",
+                              transformOrigin: "left center",
+                              textShadow: isActive
+                                ? `0 0 35px ${colors.palette.primary || "#dbe878"}88, 0 0 70px ${colors.palette.primary || "#dbe878"}33`
+                                : "none",
+                              letterSpacing: "-0.02em",
+                            }}
+                          >
+                            {line.text}
+                          </p>
+                        );
+                      })}
+                      {/* Spacer so the last line can scroll comfortably to center */}
+                      <div className="h-44" />
+                    </div>
+                  </div>
+                )}
+
+                {lyricsState.status === "plain" && lyricsState.text && (
+                  <div
+                    ref={desktopContainerRef}
+                    className="h-full w-full overflow-y-auto no-scrollbar py-20 px-4"
+                    style={{
+                      maskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
+                      WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
+                    }}
+                  >
+                    <div className="whitespace-pre-line text-2xl lg:text-3xl font-bold leading-relaxed text-zinc-200 select-text">
+                      {lyricsState.text}
+                    </div>
+                    <div className="h-32" />
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
 
           {/* Details & Controls */}
           <div className="flex flex-col justify-center md:col-span-6 lg:col-span-6">
             {/* Title & Artist */}
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
-                  Hi-Res Audio • Lossless
-                </span>
-                <h1 className="mt-3  text-xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
-                  {current.title}
-                </h1>
-                <p className="mt-2 text-base font-medium text-zinc-300 sm:text-md">
-                  {current.artist?.name || "Unknown Artist"}
-                </p>
+              <div className="flex items-center gap-4 min-w-0">
+                {/* Mini Album Cover Thumbnail when lyrics are open on desktop */}
+                {showLyrics ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowLyrics(false)}
+                    className="group relative hidden md:block shrink-0 overflow-hidden rounded-2xl border border-white/20 shadow-xl transition hover:scale-105 active:scale-95"
+                    title="Switch back to artwork showcase"
+                  >
+                    <div className="h-16 w-16 lg:h-18 lg:w-18">
+                      <Cover
+                        src={cover}
+                        title={current.title}
+                        className="h-full w-full object-cover"
+                        playing={isPlaying}
+                      />
+                    </div>
+                  </button>
+                ) : null}
+                <div className="min-w-0">
+                  <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
+                    Hi-Res Audio • Lossless
+                  </span>
+                  <h1 className="mt-3 text-xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl truncate">
+                    {current.title}
+                  </h1>
+                  <p className="mt-1.5 text-base font-medium text-zinc-300 truncate sm:text-lg">
+                    {current.artist?.name || "Unknown Artist"}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -573,6 +729,7 @@ export function FullscreenPlayer({
         songTitle={current.title}
         artistName={current.artist?.name}
         accentColor={colors.palette.primary}
+        onSeek={seek}
       />
 
       {/* Queue Sheet Modal — fixed overlay, never shifts layout */}
