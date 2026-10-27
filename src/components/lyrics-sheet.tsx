@@ -120,14 +120,14 @@ export function LyricsSheet({
                       onClick={() => onSeek?.(line.time)}
                       className="transition-all duration-500 ease-out cursor-pointer select-text leading-snug"
                       style={{
-                        fontSize: isActive ? "1.25rem" : "1rem",
-                        fontWeight: isActive ? 700 : 500,
+                        fontSize: isActive ? "1rem" : "1rem",
+                        fontWeight: isActive ? 500 : 500,
                         color: isActive
                           ? "#ffffff"
                           : isPast
                             ? "rgba(255,255,255,0.28)"
                             : "rgba(255,255,255,0.42)",
-                        transform: isActive ? "scale(1.01)" : "scale(1)",
+                        transform: isActive ? "scale(1)" : "scale(1)",
                         transformOrigin: "left center",
                         paddingTop: isActive ? "6px" : "4px",
                         paddingBottom: isActive ? "6px" : "4px",

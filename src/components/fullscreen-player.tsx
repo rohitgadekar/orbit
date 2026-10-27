@@ -81,9 +81,40 @@ export function FullscreenPlayer({
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
+  const [rendered, setRendered] = useState(isOpen);
+  const [isPresented, setIsPresented] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const activeLyricRef = useRef<HTMLParagraphElement | null>(null);
   const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Smooth slide-up entrance and slide-down exit animation
+  useEffect(() => {
+    if (isOpen && current) {
+      setRendered(true);
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsPresented(true);
+        });
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      setIsPresented(false);
+      const timer = setTimeout(() => {
+        setRendered(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, current]);
+
+  // Close smoothly on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   // Lyrics — fetched and synced to playback position
   const { state: lyricsState, activeIndex } = useLyrics(
@@ -227,12 +258,16 @@ export function FullscreenPlayer({
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
-  if (!isOpen || !current) return null;
+  if (!rendered || !current) return null;
 
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex flex-col justify-between overflow-hidden text-white transition-colors duration-1000 ease-out animate-in fade-in"
+      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden text-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
+        isPresented
+          ? "translate-y-0 opacity-100 scale-100"
+          : "translate-y-full opacity-0 scale-95 pointer-events-none"
+      }`}
       style={{
         backgroundColor: colors.ambientBase,
       }}
@@ -508,26 +543,29 @@ export function FullscreenPlayer({
                             key={i}
                             ref={isActive ? activeLyricRef : null}
                             onClick={() => seek(line.time)}
-                            className="cursor-pointer select-none transition-all duration-300 ease-out py-2 text-left"
+                            className="cursor-pointer select-none transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] py-2.5 text-left active:scale-95 will-change-transform"
                             style={{
                               fontSize: isActive
-                                ? "clamp(1.75rem, 3.2vw, 2.75rem)"
-                                : "clamp(1.2rem, 2.2vw, 1.85rem)",
-                              fontWeight: isActive ? 800 : 700,
-                              lineHeight: 1.25,
+                                ? "clamp(1.85rem, 3.4vw, 2.85rem)"
+                                : "clamp(1.25rem, 2.2vw, 1.85rem)",
+                              fontWeight: isActive ? 800 : 600,
+                              lineHeight: 1.28,
                               color: isActive
                                 ? "#ffffff"
                                 : isPast
                                   ? "rgba(255, 255, 255, 0.28)"
                                   : "rgba(255, 255, 255, 0.45)",
-                              transform: isActive ? "scale(1.025)" : "scale(1)",
+                              transform: isActive
+                                ? "scale(1.03) translateX(4px)"
+                                : "scale(1) translateX(0px)",
                               transformOrigin: "left center",
                               textShadow: isActive
-                                ? `0 0 35px ${colors.palette.primary || "#dbe878"}99, 0 0 70px ${
+                                ? `0 0 35px ${colors.palette.primary || "#dbe878"}bb, 0 0 70px ${
                                     colors.palette.primary || "#dbe878"
                                   }44`
                                 : "none",
-                              letterSpacing: "-0.02em",
+                              letterSpacing: isActive ? "-0.025em" : "-0.01em",
+                              filter: isActive ? "none" : isPast ? "blur(0.3px)" : "none",
                             }}
                           >
                             {line.text}
