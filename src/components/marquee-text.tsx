@@ -113,9 +113,10 @@ export function MarqueeText({
         contain: "paint inline-size",
         ...(isOverflowing
           ? {
-
+            maskImage:
+              "linear-gradient(to right, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%)",
             WebkitMaskImage:
-              "linear-gradient(to right, black calc(100% - 24px), transparent 100%)",
+              "linear-gradient(to right, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%)",
           }
           : {}),
       }}

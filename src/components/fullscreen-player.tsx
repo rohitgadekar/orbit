@@ -1,7 +1,6 @@
 "use client";
 
 import { Cover } from "@/components/cover";
-import { MarqueeText } from "@/components/marquee-text";
 import { useMusic } from "@/context/music-context";
 import { useOffline } from "@/context/offline-context";
 import type { RepeatMode, Song } from "@/lib/types";
@@ -35,6 +34,7 @@ import {
   getFallbackColors,
 } from "@/lib/cover-colors";
 import { forwardRef, memo, useCallback, useEffect, useRef, useState } from "react";
+import { MarqueeText } from "./marquee-text";
 
 interface LyricLineItemProps {
   time: number;
@@ -502,14 +502,14 @@ export function FullscreenPlayer({
 
       {/* Main Body */}
       <main
-        className={`relative z-10 mx-auto flex w-full min-w-0 max-w-full ${showLyrics ? "max-w-6xl" : "max-w-5xl"
+        className={`relative z-10 mx-auto flex w-full ${showLyrics ? "max-w-6xl" : "max-w-5xl"
           } flex-1 items-center justify-center px-6 py-4 md:px-10 lg:px-12 transition-all duration-500`}
       >
-        <div className="grid grid-cols-1 md:grid-cols-12 w-full min-w-0 max-w-full items-center gap-8 md:gap-10 lg:gap-14">
+        <div className="grid w-full items-center gap-8 md:grid-cols-12 md:gap-10 lg:gap-14">
           {/* Column 1: Artwork Showcase (when lyrics off) OR Live Synced Lyrics (when lyrics on) */}
           <div
             className={`flex justify-center ${showLyrics ? "md:col-span-7 lg:col-span-7" : "md:col-span-6 lg:col-span-6"
-              } w-full min-w-0 max-w-full transition-all duration-500`}
+              } w-full transition-all duration-500`}
           >
             {!showLyrics ? (
               /* Big Album Artwork Showcase */
@@ -641,55 +641,35 @@ export function FullscreenPlayer({
           {/* Column 2: Album Art Showcase (when lyrics on) + Details & Controls */}
           <div
             className={`${showLyrics ? "hidden md:flex md:col-span-5 lg:col-span-5" : "flex md:col-span-6 lg:col-span-6"
-              } w-full min-w-0 max-w-full flex-col justify-center transition-all duration-500`}
+              } flex-col justify-center transition-all duration-500`}
           >
             <div
-              className={`w-full min-w-0 max-w-full ${showLyrics
-                ? "max-w-[340px] lg:max-w-[380px] mx-auto md:ml-auto md:mr-0"
+              className={`w-full ${showLyrics
+                ? "max-w-[300px] lg:max-w-[320px] mx-auto md:ml-auto md:mr-0"
                 : "max-w-[480px] mx-auto md:mx-0"
                 } flex flex-col justify-center`}
             >
-              {/* When showLyrics is true, display the Album Art Showcase right above details on desktop */}
-              {showLyrics ? (
-                <div className="mb-4 hidden md:flex w-full justify-center">
-                  <div className="group relative aspect-square w-full">
-                    {/* Dynamic ambient art drop-shadow */}
-                    <div
-                      className="absolute inset-3 rounded-[28px] opacity-75 blur-2xl transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
-                      style={{ backgroundColor: colors.palette.primary }}
-                    />
-
-                    {/* Cover Container */}
-                    <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/20 bg-black/40 shadow-2xl backdrop-blur-sm">
-                      <Cover
-                        src={cover}
-                        title={current.title}
-                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                        playing={isPlaying}
-                      />
-
-                      {/* Animated Equalizer Overlay when playing */}
-                      {isPlaying ? (
-                        <div className="absolute bottom-3 right-3 flex items-end gap-1 rounded-full px-2.5 py-1.5">
-                          <span className="eq-bar-1 inline-block w-1 rounded-full bg-[#dbe878]" />
-                          <span className="eq-bar-2 inline-block w-1 rounded-full bg-[#dbe878]" />
-                          <span className="eq-bar-3 inline-block w-1 rounded-full bg-[#dbe878]" />
-                          <span className="eq-bar-4 inline-block w-1 rounded-full bg-[#dbe878]" />
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
               {/* Title & Artist & Action Buttons */}
-              <div className="flex items-center justify-between gap-3 w-full min-w-0 max-w-full">
-                <div className="min-w-0 max-w-full flex-1 overflow-hidden">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <span className="inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
                     Hi-Res Audio • Lossless
                   </span>
+                  {/* <h1
+                    className={`mt-1.5 min-w-0 max-w-full font-bold tracking-tight text-white ${showLyrics
+                      ? "text-lg sm:text-xl lg:text-2xl line-clamp-2 break-words"
+                      : "text-xl sm:text-4xl md:text-5xl line-clamp-2 break-words"
+                      }`}
+                  >
+                    {current.title}
+                  </h1> */}
+                  {/* <p
+                    className={`mt-0.5 min-w-0 font-medium text-zinc-300 truncate ${showLyrics ? "text-xs sm:text-sm" : "text-base sm:text-md"
+                      }`}
+                  >
+                    {current.artist?.name || "Unknown Artist"}
+                  </p> */}
 
-                  {/* Fixed-height and width song title with Spotify/Tidal style marquee */}
                   <div className="mt-1.5 w-full min-w-0 max-w-full overflow-hidden">
                     <MarqueeText
                       as="h1"
@@ -716,6 +696,7 @@ export function FullscreenPlayer({
                       {current.artist?.name || "Unknown Artist"}
                     </MarqueeText>
                   </div>
+
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -797,7 +778,7 @@ export function FullscreenPlayer({
                 <button
                   type="button"
                   onClick={toggle}
-                  className={`relative grid ${showLyrics ? "h-16 w-16" : "h-20 w-20"} place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95`}
+                  className={`relative grid shrink-0 flex-none ${showLyrics ? "h-16 w-16" : "h-20 w-20"} place-items-center rounded-full bg-white text-zinc-950 shadow-2xl transition hover:scale-105 active:scale-95`}
                   aria-label={isPlaying ? "Pause" : "Play"}
                 >
                   {isPlaying ? (
