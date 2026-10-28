@@ -27,6 +27,16 @@ export type OfflinePlaylistRecord = {
   downloadedAt: number;
 };
 
+async function fetchWithProxyFallback(url: string): Promise<Response> {
+  try {
+    const res = await fetch(url, { mode: "cors", credentials: "omit" });
+    if (res.ok) return res;
+  } catch {
+    // CORS blocked or network error, fall through to proxy
+  }
+  return fetch(`/api/proxy-audio?url=${encodeURIComponent(url)}`);
+}
+
 function formatBytes(bytes: number): string {
   if (bytes <= 0) return "0 MB";
   const mb = bytes / (1024 * 1024);
@@ -74,10 +84,11 @@ export async function downloadSongOffline(
   const db = await openDB();
 
   // 1. Fetch the audio stream
-  const audioResponse = await fetch(song.audio_url, {
-    mode: "cors",
-    credentials: "omit",
-  });
+  // const audioResponse = await fetch(song.audio_url, {
+  //   mode: "cors",
+  //   credentials: "omit",
+  // });
+  const audioResponse = await fetchWithProxyFallback(song.audio_url);
 
   if (!audioResponse.ok) {
     throw new Error(
