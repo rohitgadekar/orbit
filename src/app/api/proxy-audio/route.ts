@@ -34,7 +34,12 @@ export async function GET(req: NextRequest) {
     });
 
     if (!upstream.ok || !upstream.body) {
-        return new Response("Upstream error", { status: 502 });
+        const snippet = (await upstream.text().catch(() => "")).slice(0, 300);
+        console.error("Upstream failed", upstream.status, upstream.url, snippet);
+        return new Response(
+            `Upstream ${upstream.status} from ${upstream.url}\n${snippet}`,
+            { status: 502 },
+        );
     }
 
     const contentType = upstream.headers.get("content-type") || "audio/mpeg";
