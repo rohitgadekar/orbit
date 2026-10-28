@@ -3,23 +3,30 @@
 import { ArtistAvatar } from "@/components/artist-avatar";
 import { useMusic } from "@/context/music-context";
 import type { ParsedArtist } from "@/lib/artists";
-import { Check, Image as ImageIcon, Loader2, X } from "lucide-react";
+import { Check, Globe, Image as ImageIcon, Loader2, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function EditArtistModal({
   artist,
   isOpen,
   onClose,
+  initialStatus,
 }: {
   artist: ParsedArtist | null;
   isOpen: boolean;
   onClose: () => void;
+  initialStatus?: string | null;
 }) {
   if (!isOpen || !artist) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in duration-200">
-      <EditArtistForm key={artist.name} artist={artist} onClose={onClose} />
+      <EditArtistForm
+        key={artist.name}
+        artist={artist}
+        onClose={onClose}
+        initialStatus={initialStatus}
+      />
     </div>
   );
 }
@@ -27,20 +34,50 @@ export function EditArtistModal({
 function EditArtistForm({
   artist,
   onClose,
+  initialStatus,
 }: {
   artist: ParsedArtist;
   onClose: () => void;
+  initialStatus?: string | null;
 }) {
   const { updateArtistProfile } = useMusic();
   const [imageUrl, setImageUrl] = useState(artist.image_url ?? "");
   const [bio, setBio] = useState(artist.bio ?? "");
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
+  const [fetchingInternet, setFetchingInternet] = useState(false);
+  const [status, setStatus] = useState<string | null>(initialStatus ?? null);
 
   useEffect(() => {
     setImageUrl(artist.image_url ?? "");
     setBio(artist.bio ?? "");
-  }, [artist]);
+    setStatus(initialStatus ?? null);
+  }, [artist, initialStatus]);
+
+  async function handleFetchInternet() {
+    setFetchingInternet(true);
+    setStatus(null);
+    try {
+      const res = await fetch(`/api/artist-info?name=${encodeURIComponent(artist.name)}`);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || data.error || "No artist info found on the internet");
+      }
+
+      if (data.imageUrl) {
+        setImageUrl(data.imageUrl);
+      }
+      if (data.bio) {
+        setBio(data.bio);
+      }
+
+      const sourceInfo = data.source ? ` (${data.source})` : "";
+      setStatus(`Found photo & short bio from internet${sourceInfo}! Review and click 'Save to Database'.`);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Failed to fetch artist details");
+    } finally {
+      setFetchingInternet(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,6 +131,32 @@ function EditArtistForm({
       </div>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        {/* Fetch from Internet action */}
+        <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#dbe878]/10 text-[#dbe878]">
+              <Globe className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white">Internet Info Lookup</p>
+              <p className="text-[10px] text-zinc-400">Fetch HD photo & bio from web</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleFetchInternet}
+            disabled={fetchingInternet || busy}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#dbe878] px-3.5 py-1.5 text-xs font-bold text-zinc-950 shadow-sm transition hover:bg-[#e4ef8f] hover:scale-105 active:scale-95 disabled:opacity-50"
+          >
+            {fetchingInternet ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Sparkles className="h-3 w-3 fill-current" />
+            )}
+            <span>{fetchingInternet ? "Fetching..." : "Fetch"}</span>
+          </button>
+        </div>
+
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300">
             Profile Picture URL (Direct PNG / JPG)
