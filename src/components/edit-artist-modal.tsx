@@ -1,6 +1,7 @@
 "use client";
 
 import { ArtistAvatar } from "@/components/artist-avatar";
+import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import type { ParsedArtist } from "@/lib/artists";
 import { Check, Globe, Image as ImageIcon, Loader2, Sparkles, X } from "lucide-react";
@@ -17,7 +18,9 @@ export function EditArtistModal({
   onClose: () => void;
   initialStatus?: string | null;
 }) {
-  if (!isOpen || !artist) return null;
+  const { isAdmin } = useAuth();
+
+  if (!isOpen || !artist || !isAdmin) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in duration-200">

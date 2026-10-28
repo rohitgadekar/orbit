@@ -42,7 +42,7 @@ export default function ArtistDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleFetchArtistInfo() {
-    if (!artist) return;
+    if (!artist || !isAdmin) return;
     setIsFetchingInternet(true);
     setErrorMessage(null);
     try {
@@ -174,33 +174,35 @@ export default function ArtistDetailPage() {
             <span>Back</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleFetchArtistInfo}
-              disabled={isFetchingInternet}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#19181b] bg-[#19181b] px-4 py-2 text-xs font-semibold text-[#dbe878] shadow-xs transition hover:bg-[#252429] hover:scale-105 active:scale-95 disabled:opacity-50"
-            >
-              {isFetchingInternet ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="h-3.5 w-3.5 fill-current" />
-              )}
-              <span>{isFetchingInternet ? "Fetching Info..." : "Fetch from Internet"}</span>
-            </button>
+          {isAdmin ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleFetchArtistInfo}
+                disabled={isFetchingInternet}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#19181b] bg-[#19181b] px-4 py-2 text-xs font-semibold text-[#dbe878] shadow-xs transition hover:bg-[#252429] hover:scale-105 active:scale-95 disabled:opacity-50"
+              >
+                {isFetchingInternet ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5 fill-current" />
+                )}
+                <span>{isFetchingInternet ? "Fetching Info..." : "Fetch from Internet"}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setInitialModalStatus(null);
-                setEditingArtist(artist);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800 shadow-xs transition hover:border-zinc-900 hover:text-zinc-950"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              <span>Edit Details</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setInitialModalStatus(null);
+                  setEditingArtist(artist);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800 shadow-xs transition hover:border-zinc-900 hover:text-zinc-950"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span>Edit Details</span>
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {errorMessage ? (
@@ -269,32 +271,34 @@ export default function ArtistDetailPage() {
                 </>
               ) : null}
 
-              <button
-                type="button"
-                onClick={handleFetchArtistInfo}
-                disabled={isFetchingInternet}
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-[#dbe878] backdrop-blur-md transition hover:bg-white/20 hover:scale-105 active:scale-95 disabled:opacity-50"
-              >
-                {isFetchingInternet ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5 fill-current" />
-                )}
-                <span>{isFetchingInternet ? "Fetching..." : "Fetch Info from Internet"}</span>
-              </button>
-
               {isAdmin ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInitialModalStatus(null);
-                    setEditingArtist(artist);
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/20 px-4 py-2.5 text-xs font-medium text-zinc-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span>{artist.image_url ? "Update Photo & Bio" : "Add Profile Photo & Bio"}</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={handleFetchArtistInfo}
+                    disabled={isFetchingInternet}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-[#dbe878] backdrop-blur-md transition hover:bg-white/20 hover:scale-105 active:scale-95 disabled:opacity-50"
+                  >
+                    {isFetchingInternet ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5 fill-current" />
+                    )}
+                    <span>{isFetchingInternet ? "Fetching..." : "Fetch Info from Internet"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInitialModalStatus(null);
+                      setEditingArtist(artist);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/20 px-4 py-2.5 text-xs font-medium text-zinc-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span>{artist.image_url ? "Update Photo & Bio" : "Add Profile Photo & Bio"}</span>
+                  </button>
+                </>
               ) : null}
             </div>
           </div>
@@ -310,22 +314,22 @@ export default function ArtistDetailPage() {
             </span>
             <h2 className="font-serif text-xl font-bold text-zinc-900">About {artist.name}</h2>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleFetchArtistInfo}
-              disabled={isFetchingInternet}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900 disabled:opacity-50"
-            >
-              {isFetchingInternet ? (
-                <Loader2 className="h-3 w-3 animate-spin text-zinc-900" />
-              ) : (
-                <Sparkles className="h-3 w-3 text-amber-500" />
-              )}
-              <span>Fetch from Internet</span>
-            </button>
+          {isAdmin ? (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleFetchArtistInfo}
+                disabled={isFetchingInternet}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900 disabled:opacity-50"
+              >
+                {isFetchingInternet ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-zinc-900" />
+                ) : (
+                  <Sparkles className="h-3 w-3 text-amber-500" />
+                )}
+                <span>Fetch from Internet</span>
+              </button>
 
-            {isAdmin ? (
               <button
                 type="button"
                 onClick={() => {
@@ -337,8 +341,8 @@ export default function ArtistDetailPage() {
                 <Pencil className="h-3 w-3" />
                 <span>{artist.bio ? "Edit Bio" : "Add Bio"}</span>
               </button>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-4">
@@ -349,22 +353,22 @@ export default function ArtistDetailPage() {
           ) : (
             <div className="rounded-2xl bg-zinc-50 p-6 text-center text-xs text-zinc-500">
               <p>No biography has been added to the database for {artist.name} yet.</p>
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleFetchArtistInfo}
-                  disabled={isFetchingInternet}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#19181b] px-4 py-2 text-xs font-semibold text-[#dbe878] transition hover:scale-105 disabled:opacity-50"
-                >
-                  {isFetchingInternet ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5 fill-current" />
-                  )}
-                  <span>Fetch Bio & Photo from Internet</span>
-                </button>
+              {isAdmin ? (
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleFetchArtistInfo}
+                    disabled={isFetchingInternet}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#19181b] px-4 py-2 text-xs font-semibold text-[#dbe878] transition hover:scale-105 disabled:opacity-50"
+                  >
+                    {isFetchingInternet ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5 fill-current" />
+                    )}
+                    <span>Fetch Bio & Photo from Internet</span>
+                  </button>
 
-                {isAdmin ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -376,8 +380,8 @@ export default function ArtistDetailPage() {
                     <Pencil className="h-3 w-3" />
                     <span>Edit Manually</span>
                   </button>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
             </div>
           )}
         </div>
