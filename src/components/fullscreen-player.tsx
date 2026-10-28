@@ -1,6 +1,7 @@
 "use client";
 
 import { Cover } from "@/components/cover";
+import { MarqueeText } from "@/components/marquee-text";
 import { useMusic } from "@/context/music-context";
 import { useOffline } from "@/context/offline-context";
 import type { RepeatMode, Song } from "@/lib/types";
@@ -501,14 +502,14 @@ export function FullscreenPlayer({
 
       {/* Main Body */}
       <main
-        className={`relative z-10 mx-auto flex w-full ${showLyrics ? "max-w-6xl" : "max-w-5xl"
+        className={`relative z-10 mx-auto flex w-full min-w-0 max-w-full ${showLyrics ? "max-w-6xl" : "max-w-5xl"
           } flex-1 items-center justify-center px-6 py-4 md:px-10 lg:px-12 transition-all duration-500`}
       >
-        <div className="grid w-full items-center gap-8 md:grid-cols-12 md:gap-10 lg:gap-14">
+        <div className="grid grid-cols-1 md:grid-cols-12 w-full min-w-0 max-w-full items-center gap-8 md:gap-10 lg:gap-14">
           {/* Column 1: Artwork Showcase (when lyrics off) OR Live Synced Lyrics (when lyrics on) */}
           <div
             className={`flex justify-center ${showLyrics ? "md:col-span-7 lg:col-span-7" : "md:col-span-6 lg:col-span-6"
-              } w-full transition-all duration-500`}
+              } w-full min-w-0 max-w-full transition-all duration-500`}
           >
             {!showLyrics ? (
               /* Big Album Artwork Showcase */
@@ -640,10 +641,10 @@ export function FullscreenPlayer({
           {/* Column 2: Album Art Showcase (when lyrics on) + Details & Controls */}
           <div
             className={`${showLyrics ? "hidden md:flex md:col-span-5 lg:col-span-5" : "flex md:col-span-6 lg:col-span-6"
-              } flex-col justify-center transition-all duration-500`}
+              } w-full min-w-0 max-w-full flex-col justify-center transition-all duration-500`}
           >
             <div
-              className={`w-full ${showLyrics
+              className={`w-full min-w-0 max-w-full ${showLyrics
                 ? "max-w-[340px] lg:max-w-[380px] mx-auto md:ml-auto md:mr-0"
                 : "max-w-[480px] mx-auto md:mx-0"
                 } flex flex-col justify-center`}
@@ -682,25 +683,39 @@ export function FullscreenPlayer({
               ) : null}
 
               {/* Title & Artist & Action Buttons */}
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-3 w-full min-w-0 max-w-full">
+                <div className="min-w-0 max-w-full flex-1 overflow-hidden">
                   <span className="inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[8px] md:text-[10px] font-semibold tracking-widest uppercase text-[#dbe878] backdrop-blur-sm">
                     Hi-Res Audio • Lossless
                   </span>
-                  <h1
-                    className={`mt-1.5 min-w-0 max-w-full font-bold tracking-tight text-white ${showLyrics
-                      ? "text-lg sm:text-xl lg:text-2xl line-clamp-2 break-words"
-                      : "text-xl sm:text-4xl md:text-5xl line-clamp-2 break-words"
-                      }`}
-                  >
-                    {current.title}
-                  </h1>
-                  <p
-                    className={`mt-0.5 min-w-0 font-medium text-zinc-300 truncate ${showLyrics ? "text-xs sm:text-sm" : "text-base sm:text-md"
-                      }`}
-                  >
-                    {current.artist?.name || "Unknown Artist"}
-                  </p>
+
+                  {/* Fixed-height and width song title with Spotify/Tidal style marquee */}
+                  <div className="mt-1.5 w-full min-w-0 max-w-full overflow-hidden">
+                    <MarqueeText
+                      as="h1"
+                      resetKey={`${current.id}-title`}
+                      containerClassName={`w-full max-w-full ${showLyrics ? "h-8 sm:h-9 lg:h-10" : "h-9 sm:h-12 md:h-16"} flex items-center`}
+                      className={`font-bold tracking-tight text-white py-0.5 ${showLyrics
+                        ? "text-lg sm:text-xl lg:text-2xl leading-tight"
+                        : "text-xl sm:text-3xl md:text-5xl leading-tight"
+                        }`}
+                    >
+                      {current.title}
+                    </MarqueeText>
+                  </div>
+
+                  {/* Fixed-height and width artist(s) with Spotify/Tidal style marquee */}
+                  <div className="mt-0.5 w-full min-w-0 max-w-full overflow-hidden">
+                    <MarqueeText
+                      as="p"
+                      resetKey={`${current.id}-artist`}
+                      containerClassName={`w-full max-w-full ${showLyrics ? "h-6 sm:h-7" : "h-6 sm:h-8"} flex items-center`}
+                      className={`font-medium text-zinc-300 py-0.5 ${showLyrics ? "text-xs sm:text-sm leading-snug" : "text-sm sm:text-base leading-snug"
+                        }`}
+                    >
+                      {current.artist?.name || "Unknown Artist"}
+                    </MarqueeText>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
