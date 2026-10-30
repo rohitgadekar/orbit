@@ -31,28 +31,43 @@ function AddToPlaylistForm({
   song: Song;
   onClose: () => void;
 }) {
-  const { playlists, createPlaylist, addToPlaylist, playlistSongs } = useMusic();
+  const { playlists, createPlaylist, addToPlaylist, playlistSongs, getCachedPlaylistSongs } = useMusic();
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [addingToId, setAddingToId] = useState<string | null>(null);
-  const [existingPlaylistIds, setExistingPlaylistIds] = useState<Set<string>>(new Set());
+  const [existingPlaylistIds, setExistingPlaylistIds] = useState<Set<string>>(() => {
+    // Check instant cache synchronously on initial render
+    const initialSet = new Set<string>();
+    for (const pl of playlists) {
+      const cached = getCachedPlaylistSongs(pl.id);
+      if (cached?.some((s) => s.id === song.id)) {
+        initialSet.add(pl.id);
+      }
+    }
+    return initialSet;
+  });
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Check which playlists already have this song
+  // Check playlists in parallel for any uncached items
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      const idsWithSong = new Set<string>();
-      for (const pl of playlists) {
-        try {
-          const songsInPl = await playlistSongs(pl.id);
-          if (songsInPl.some((s) => s.id === song.id)) {
-            idsWithSong.add(pl.id);
-          }
-        } catch {
-          // ignore lookup errors
-        }
+      const idsWithSong = new Set(existingPlaylistIds);
+      const uncached = playlists.filter((pl) => !getCachedPlaylistSongs(pl.id));
+
+      if (uncached.length > 0) {
+        await Promise.allSettled(
+          uncached.map(async (pl) => {
+            try {
+              const songsInPl = await playlistSongs(pl.id);
+              if (songsInPl.some((s) => s.id === song.id)) {
+                idsWithSong.add(pl.id);
+              }
+            } catch {}
+          }),
+        );
       }
+
       if (isMounted) {
         setExistingPlaylistIds(idsWithSong);
       }
@@ -61,35 +76,52 @@ function AddToPlaylistForm({
     return () => {
       isMounted = false;
     };
-  }, [song.id, playlists, playlistSongs]);
+  }, [song.id, playlists, playlistSongs, getCachedPlaylistSongs]);
 
   async function handleAddToPlaylist(playlistId: string, playlistName: string) {
-    setAddingToId(playlistId);
-    setSuccessMsg(null);
+    // 1. Instant optimistic UI feedback (0ms!)
+    setExistingPlaylistIds((prev) => new Set([...prev, playlistId]));
+    setSuccessMsg(`Added "${song.title}" to "${playlistName}"`);
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(10);
+      } catch {}
+    }
+    setTimeout(() => setSuccessMsg(null), 2500);
+
+    // 2. Perform DB mutation in background
     try {
       await addToPlaylist(playlistId, song.id);
-      setExistingPlaylistIds((prev) => new Set([...prev, playlistId]));
-      setSuccessMsg(`Added "${song.title}" to "${playlistName}"`);
-      setTimeout(() => setSuccessMsg(null), 2500);
-    } finally {
-      setAddingToId(null);
+    } catch (err) {
+      console.error("Failed to add to playlist:", err);
+      // Rollback on error
+      setExistingPlaylistIds((prev) => {
+        const next = new Set(prev);
+        next.delete(playlistId);
+        return next;
+      });
+      setSuccessMsg(null);
     }
   }
 
   async function handleCreateAndAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!newPlaylistName.trim()) return;
+    if (!newPlaylistName.trim() || isCreating) return;
     setIsCreating(true);
     setSuccessMsg(null);
+    const name = newPlaylistName.trim();
+    setNewPlaylistName("");
+
     try {
-      const pl = await createPlaylist(newPlaylistName.trim());
+      const pl = await createPlaylist(name);
       if (pl) {
-        await addToPlaylist(pl.id, song.id);
         setExistingPlaylistIds((prev) => new Set([...prev, pl.id]));
         setSuccessMsg(`Created playlist "${pl.name}" and added "${song.title}"!`);
-        setNewPlaylistName("");
         setTimeout(() => setSuccessMsg(null), 2500);
+        void addToPlaylist(pl.id, song.id);
       }
+    } catch (err) {
+      console.error("Failed to create playlist:", err);
     } finally {
       setIsCreating(false);
     }

@@ -21,29 +21,39 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function FolderDetailPage() {
   const params = useParams<{ id: string }>();
-  const { playlists, playlistSongs, songs, addToPlaylist, removeFromPlaylist, loading } = useMusic();
+  const {
+    playlists,
+    playlistSongs,
+    getCachedPlaylistSongs,
+    songs,
+    addToPlaylist,
+    removeFromPlaylist,
+    loading,
+  } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
   const { isAdmin } = useAuth();
   const { isPlaylistDownloaded, toggleDownloadPlaylist, downloadingPlaylistIds } = useOffline();
-  const [items, setItems] = useState<Song[]>([]);
+
+  // Load from instant cache synchronously on initial render
+  const cached = params?.id ? getCachedPlaylistSongs(params.id) : undefined;
+  const [items, setItems] = useState<Song[]>(() => cached ?? []);
+  const [fetching, setFetching] = useState(() => !cached);
   const [searchSong, setSearchSong] = useState("");
   const playlist = playlists.find((item) => item.id === params.id);
 
-  const load = useCallback(async () => {
-    if (!params.id) return;
-    const data = await playlistSongs(params.id);
-    setItems(data);
-  }, [params.id, playlistSongs]);
-
   useEffect(() => {
     let active = true;
+    if (!params.id) return;
     playlistSongs(params.id).then((res) => {
-      if (active) setItems(res);
+      if (active) {
+        setItems(res);
+        setFetching(false);
+      }
     });
     return () => {
       active = false;
@@ -159,7 +169,19 @@ export default function FolderDetailPage() {
       </div>
 
       {/* Playlist Songs List */}
-      {items.length === 0 ? (
+      {fetching && items.length === 0 ? (
+        <div className="rounded-2xl border border-black/5 bg-white p-3 shadow-2xs space-y-2 animate-pulse">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-3.5 px-3 py-2.5">
+              <div className="h-11 w-11 rounded-xl bg-zinc-200 shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-40 rounded bg-zinc-200" />
+                <div className="h-2.5 w-24 rounded bg-zinc-100" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <EmptyState
           title="Empty playlist"
           body="Use the search section below to add your favorite songs to this playlist."
@@ -178,11 +200,11 @@ export default function FolderDetailPage() {
               </div>
               <button
                 type="button"
-                onClick={async () => {
-                  await removeFromPlaylist(playlist.id, song.id);
-                  await load();
+                onClick={() => {
+                  setItems((prev) => prev.filter((s) => s.id !== song.id));
+                  void removeFromPlaylist(playlist.id, song.id);
                 }}
-                className="px-3 text-xs font-medium text-zinc-400 transition hover:text-rose-500"
+                className="px-3 text-xs font-medium text-zinc-400 transition hover:text-rose-500 active:scale-90"
                 title="Remove from playlist"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -236,11 +258,12 @@ export default function FolderDetailPage() {
 
                 <button
                   type="button"
-                  onClick={async () => {
-                    await addToPlaylist(playlist.id, song.id);
-                    await load();
+                  onClick={() => {
+                    // Instant optimistic UI addition (0ms!)
+                    setItems((prev) => [...prev, song]);
+                    void addToPlaylist(playlist.id, song.id);
                   }}
-                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-[#dbe878] hover:text-zinc-950 transition ml-3 shrink-0"
+                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-[#dbe878] hover:text-zinc-950 transition ml-3 shrink-0 active:scale-95"
                 >
                   <Plus className="h-3 w-3" />
                   <span>Add to playlist</span>

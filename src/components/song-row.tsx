@@ -179,15 +179,21 @@ export function SongRow({
           )}
         </button>
 
-        {/* Favorite Heart */}
+        {/* Favorite Heart with Bouncy Instant Feedback */}
         <button
           type="button"
-          onClick={() => void toggleFavourite(song.id)}
-          className="rounded-full p-1.5 text-zinc-400 transition hover:bg-black/5 hover:text-rose-500"
+          onClick={(e) => {
+            e.stopPropagation();
+            void toggleFavourite(song.id);
+          }}
+          className="rounded-full p-1.5 text-zinc-400 transition hover:bg-black/5 hover:text-rose-500 active:scale-75"
           aria-label={fav ? "Remove favorite" : "Add to favorites"}
         >
           <Heart
-            className={cn("h-4 w-4", fav && "fill-rose-500 text-rose-500")}
+            className={cn(
+              "h-4 w-4 transition-all duration-200",
+              fav ? "fill-rose-500 text-rose-500 scale-110" : "hover:scale-110",
+            )}
           />
         </button>
 

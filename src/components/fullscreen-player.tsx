@@ -725,13 +725,13 @@ export function FullscreenPlayer({
                     type="button"
                     onClick={() => void toggleFavourite(current.id)}
                     className={`rounded-full border border-white/15 ${showLyrics ? "p-2.5 sm:p-3" : "p-3.5"
-                      } backdrop-blur-md transition ${isFav
+                      } backdrop-blur-md transition-all active:scale-75 ${isFav
                         ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
                         : "bg-black/20 text-zinc-300 hover:border-white/30 hover:text-white"
                       }`}
                     aria-label={isFav ? "Favorited" : "Add to favorites"}
                   >
-                    <Heart className={`${showLyrics ? "h-4 w-4" : "h-5 w-5"} ${isFav ? "fill-rose-400" : ""}`} />
+                    <Heart className={`${showLyrics ? "h-4 w-4" : "h-5 w-5"} transition-transform duration-200 ${isFav ? "fill-rose-400 scale-110" : ""}`} />
                   </button>
                 </div>
               </div>

@@ -13,7 +13,7 @@ import type { Song } from "@/lib/types";
 import { WifiOff } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 type TrackEditorContextType = {
   editSong: (song: Song) => void;
@@ -34,6 +34,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -83,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <IconRail />
 
         {/* Center Main White/Ivory Canvas */}
-        <div className="md:m-1 flex min-w-0 flex-1 flex-col overflow-hidden md:rounded-3xl bg-[#f7f6f3] shadow-2xl">
+        <div className="md:m-4 flex min-w-0 flex-1 flex-col overflow-hidden md:rounded-[2em] bg-[#f7f6f3] shadow-2xl">
           {/* Top Bar Header */}
           <TopHeader />
 
@@ -108,7 +113,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Canvas layout with Right 'Now Playing' panel matching screenshot */}
           <div className="flex min-h-0 flex-1 gap-6 overflow-hidden px-4 pb-4 md:px-8">
             <main
-              key={pathname}
+              ref={mainRef}
               className="no-scrollbar min-h-0 flex-1 overflow-y-auto pr-1 pb-58 md:pb-1"
             >
               {children}

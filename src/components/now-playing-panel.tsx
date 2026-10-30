@@ -187,10 +187,10 @@ export function NowPlayingPanel({
             <button
               type="button"
               onClick={() => void toggleFavourite(activeSong.id)}
-              className="rounded-full p-2 text-zinc-500 hover:text-rose-500"
+              className="rounded-full p-2 text-zinc-500 hover:text-rose-500 active:scale-75 transition-all"
               aria-label="Favorite"
             >
-              <Heart className={`h-4 w-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} />
+              <Heart className={`h-4 w-4 transition-transform duration-200 ${isFav ? "fill-rose-500 text-rose-500 scale-110" : ""}`} />
             </button>
           </div>
         </div>

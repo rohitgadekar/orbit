@@ -62,7 +62,7 @@ export function IconRail() {
   const myMusicItems = [
     {
       href: "/home#recently-played",
-      label: "Recently Played",
+      label: "Last Played",
       icon: History,
       isActive: false,
     },
@@ -87,7 +87,7 @@ export function IconRail() {
   ];
 
   return (
-    <aside className="hidden h-full w-56 shrink-0 flex-col justify-between bg-[#19181b] px-4 py-5 text-zinc-300 md:flex lg:w-60">
+    <aside className="hidden h-full w-52 shrink-0 flex-col justify-between bg-[#19181b] px-4 py-5 text-zinc-300 md:flex lg:w-62">
       <div className="flex flex-col">
 
 
