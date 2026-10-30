@@ -33,7 +33,7 @@ import {
   extractArtworkColors,
   getFallbackColors,
 } from "@/lib/cover-colors";
-import { forwardRef, memo, useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MarqueeText } from "./marquee-text";
 
 interface LyricLineItemProps {
@@ -144,15 +144,127 @@ export function FullscreenPlayer({
   const [showLyrics, setShowLyrics] = useState(false);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const [rendered, setRendered] = useState(isOpen);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   const [isPresented, setIsPresented] = useState(false);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen && current) {
+      setRendered(true);
+    } else {
+      setIsPresented(false);
+    }
+  }
   const containerRef = useRef<HTMLDivElement | null>(null);
   const activeLyricRef = useRef<HTMLParagraphElement | null>(null);
   const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Swipe gestures for mobile: swipe down to minimize, swipe left/right to change songs
+  const touchStartRef = useRef<{ x: number; y: number; time: number; target: EventTarget | null } | null>(null);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+      target: e.target,
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+
+    const targetEl = touchStartRef.current.target as HTMLElement | null;
+    if (targetEl && (targetEl.tagName === "INPUT" || targetEl.closest("input"))) {
+      return;
+    }
+
+    const scrollContainer = targetEl?.closest(".overflow-y-auto");
+    if (scrollContainer && scrollContainer.scrollTop > 0) {
+      return;
+    }
+
+    // Interactive pull-down offset (dampened)
+    if (deltaY > 0 && deltaY > Math.abs(deltaX) * 1.1) {
+      setDragOffsetY(Math.min(deltaY * 0.7, 180));
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+
+    const touch = e.changedTouches[0];
+    setDragOffsetY(0);
+    if (!touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const elapsed = Date.now() - start.time;
+
+    const targetEl = start.target as HTMLElement | null;
+    if (targetEl && (targetEl.tagName === "INPUT" || targetEl.closest("input"))) {
+      return;
+    }
+
+    const scrollContainer = targetEl?.closest(".overflow-y-auto");
+    const isScrolledDown = scrollContainer && scrollContainer.scrollTop > 0;
+
+    // 1. Swipe down to minimize player
+    if (!isScrolledDown && deltaY > 55 && deltaY > Math.abs(deltaX) * 1.2) {
+      if (typeof window !== "undefined" && "vibrate" in navigator) {
+        try {
+          navigator.vibrate(10);
+        } catch {}
+      }
+      onClose();
+      return;
+    }
+
+    // 2. Swipe horizontal (left = next, right = prev)
+    const isQuickSwipe = elapsed < 450 && Math.abs(deltaX) > 40;
+    const isLongSwipe = Math.abs(deltaX) > 75;
+
+    if ((isQuickSwipe || isLongSwipe) && Math.abs(deltaX) > Math.abs(deltaY) * 1.25) {
+      if (deltaX < 0) {
+        // Swipe Left -> Next song
+        if (typeof window !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate(12);
+          } catch {}
+        }
+        next();
+      } else {
+        // Swipe Right -> Previous song
+        if (typeof window !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate(12);
+          } catch {}
+        }
+        prev();
+      }
+    }
+  };
+
+  // Up to next 10 songs from the current playing song for fast loading
+  const upcomingQueue = useMemo(() => {
+    if (!queue || queue.length === 0) return [];
+    const currentIdx = current ? queue.findIndex((item) => item.id === current.id) : 0;
+    const start = currentIdx >= 0 ? currentIdx : 0;
+    // Current song + next 10 songs
+    return queue.slice(start, start + 11);
+  }, [queue, current]);
+
   // Smooth slide-up entrance and slide-down exit animation
   useEffect(() => {
     if (isOpen && current) {
-      setRendered(true);
       const raf = requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsPresented(true);
@@ -160,7 +272,6 @@ export function FullscreenPlayer({
       });
       return () => cancelAnimationFrame(raf);
     } else {
-      setIsPresented(false);
       const timer = setTimeout(() => {
         setRendered(false);
       }, 500);
@@ -332,12 +443,16 @@ export function FullscreenPlayer({
   return (
     <div
       ref={containerRef}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden text-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${isPresented
         ? "translate-y-0 opacity-100 scale-100"
         : "translate-y-full opacity-0 scale-95 pointer-events-none"
         }`}
       style={{
         backgroundColor: colors.ambientBase,
+        transform: dragOffsetY > 0 ? `translate3d(0, ${dragOffsetY}px, 0)` : undefined,
       }}
     >
       {/* Dynamic YouTube-style ambient gradient mesh strictly derived from cover image */}
@@ -418,6 +533,9 @@ export function FullscreenPlayer({
 
       {/* Top Header Navigation */}
       <header className="relative z-10 flex items-center justify-between px-6 pt-[max(20px,var(--safe-top))] pb-4 md:px-12 md:pt-8">
+        {/* Mobile pull down handle pill */}
+        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 h-1 w-9 rounded-full bg-white/30 md:hidden pointer-events-none" />
+
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-400/80">ORBIT</span>
         </div>
@@ -865,23 +983,23 @@ export function FullscreenPlayer({
               <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-white/8">
                 <div>
                   <h3 className="text-base font-bold text-white tracking-tight">Next in Queue</h3>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">{queue.length} tracks</p>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Next {Math.max(0, upcomingQueue.length - 1)} songs • {queue.length} total in queue
+                  </p>
                 </div>
-                {/* <button
+                <button
                   type="button"
                   onClick={() => setShowQueue(false)}
-                  className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-zinc-400 transition hover:bg-white/20 hover:text-white"
+                  className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-zinc-300 hover:bg-white/20 hover:text-white transition"
                   aria-label="Close queue"
                 >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                  </svg>
-                </button> */}
+                  Done
+                </button>
               </div>
 
-              {/* Track list */}
+              {/* Track list — showing only next 10 songs from current for instant performance */}
               <div className="overflow-y-auto px-3 pt-2 pb-3 no-scrollbar" style={{ maxHeight: "min(55vh, 420px)" }}>
-                {queue.map((item, idx) => {
+                {upcomingQueue.map((item, idx) => {
                   const isActive = item.id === current.id;
                   return (
                     <button

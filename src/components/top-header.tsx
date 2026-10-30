@@ -1,24 +1,41 @@
 "use client";
 
 import { useFullscreen } from "@/components/app-shell";
+import { SearchCommandModal } from "@/components/search-command-modal";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import { initials } from "@/lib/utils";
 import { Bell, ChevronRight, Search, Settings, Shuffle } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export function TopHeader() {
   const pathname = usePathname();
-  const router = useRouter();
   const { profile, user } = useAuth();
   const { songs } = useMusic();
   const { playSong } = usePlayer();
   const { fullscreen } = useFullscreen();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isMac] = useState(() => {
+    return (
+      typeof navigator !== "undefined" &&
+      /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent)
+    );
+  });
+
+  // Global Command+K or Ctrl+K shortcut to search
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchModalOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "Listener";
 
@@ -53,15 +70,9 @@ export function TopHeader() {
     playSong(songs[randomIndex], songs);
   }
 
-  function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/music?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  }
-
   return (
-    <header className={`flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8${fullscreen ? " min-h-[64px]" : ""}`}>
+    <>
+      <header className={`flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8${fullscreen ? " min-h-[64px]" : ""}`}>
       {/* Breadcrumb Navigation matching screenshot */}
       <div className={`items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500${fullscreen ? " hidden md:flex" : " flex"}`}>
         <span className="text-zinc-600 hover:text-zinc-900">{breadcrumb.parent}</span>
@@ -71,33 +82,30 @@ export function TopHeader() {
 
       {/* Middle & Right Header Elements */}
       <div className={`items-center gap-3 sm:gap-4${fullscreen ? " hidden md:flex" : " flex"}`}>
-        {/* Search Bar / Icon */}
-        <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-          {isSearchOpen ? (
-            <div className="relative flex items-center">
-              <input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onBlur={() => {
-                  if (!searchQuery) setIsSearchOpen(false);
-                }}
-                placeholder="Search tracks, artists..."
-                className="w-48 rounded-full border border-black/10 bg-white px-4 py-1.5 pl-8 text-xs text-zinc-900 shadow-sm outline-none transition sm:w-64"
-              />
-              <Search className="absolute left-2.5 h-3.5 w-3.5 text-zinc-400" />
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen(true)}
-              className="rounded-full p-2 text-zinc-600 transition hover:bg-black/5 hover:text-zinc-900"
-              title="Search"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-          )}
-        </form>
+        {/* Desktop Command K Search Button */}
+        <button
+          type="button"
+          onClick={() => setIsSearchModalOpen(true)}
+          className="hidden md:flex items-center gap-2.5 rounded-full border border-black/10 bg-white/90 backdrop-blur-md px-3.5 py-1.5 text-xs text-zinc-500 shadow-2xs hover:border-black/25 hover:text-zinc-900 transition active:scale-95 cursor-pointer"
+          title={`Search songs, albums, and artists (${isMac ? "⌘K" : "Ctrl+K"})`}
+        >
+          <Search className="h-3.5 w-3.5 text-zinc-400" />
+          <span className="font-medium text-zinc-500">Search library...</span>
+          <kbd className="ml-1 flex items-center gap-0.5 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-zinc-600 shadow-2xs">
+            {isMac ? "⌘K" : "Ctrl+K"}
+          </kbd>
+        </button>
+
+        {/* Mobile Search Icon Button */}
+        <button
+          type="button"
+          onClick={() => setIsSearchModalOpen(true)}
+          className="md:hidden rounded-full p-2 text-zinc-600 transition hover:bg-black/5 hover:text-zinc-900"
+          title="Search library"
+          aria-label="Search library"
+        >
+          <Search className="h-4 w-4" />
+        </button>
 
         {/* Quick Nav Tabs matching screenshot: "New Releases", "New Feed", "Shuffle Play" */}
         <div className="hidden items-center gap-5 text-xs font-semibold text-zinc-600 md:flex">
@@ -164,5 +172,12 @@ export function TopHeader() {
         </div>
       </div>
     </header>
+
+    {/* Command K / Ctrl K Search Modal */}
+    <SearchCommandModal
+      isOpen={isSearchModalOpen}
+      onClose={() => setIsSearchModalOpen(false)}
+    />
+  </>
   );
 }

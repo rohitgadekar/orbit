@@ -59,8 +59,15 @@ export function NowPlayingPanel({
   const currentIndex = activeSong ? queue.findIndex((s) => s.id === activeSong.id) : -1;
   const upcomingQueue =
     queue.length > 1
-      ? queue.slice(currentIndex + 1).concat(queue.slice(0, Math.max(0, currentIndex))).slice(0, 5)
-      : songs.filter((s) => s.id !== activeSong?.id).slice(0, 4);
+      ? queue.slice(currentIndex + 1).concat(queue.slice(0, Math.max(0, currentIndex))).slice(0, 10)
+      : songs.filter((s) => s.id !== activeSong?.id).slice(0, 10);
+
+  const handleOpenFullscreen = () => {
+    if (!current && activeSong) {
+      playSong(activeSong, queue.length > 0 ? queue : songs);
+    }
+    setExpanded(true);
+  };
 
   if (!activeSong) {
     return (
@@ -109,7 +116,7 @@ export function NowPlayingPanel({
 
           <button
             type="button"
-            onClick={() => setExpanded(true)}
+            onClick={handleOpenFullscreen}
             className="rounded-full p-1.5 text-zinc-600 transition hover:bg-black/5 hover:text-zinc-900"
             title="Expand to ambient full-screen"
           >
@@ -119,7 +126,7 @@ export function NowPlayingPanel({
       </div>
 
       {/* Album Artwork Card */}
-      <div className="group relative mt-1 aspect-square w-full overflow-hidden rounded-[26px] bg-zinc-200 shadow-md">
+      <div className="group relative mt-1 aspect-square w-full shrink-0 overflow-hidden rounded-[26px] bg-zinc-200 shadow-md">
         <Cover
           src={cover}
           title={activeSong.title}
@@ -128,7 +135,7 @@ export function NowPlayingPanel({
         />
         <button
           type="button"
-          onClick={() => setExpanded(true)}
+          onClick={handleOpenFullscreen}
           className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 backdrop-blur-[2px] transition group-hover:opacity-100"
         >
           <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-zinc-900 shadow-lg">
@@ -139,7 +146,7 @@ export function NowPlayingPanel({
       </div>
 
       {/* Song Title & Controls */}
-      <div className="mt-4">
+      <div className="mt-4 shrink-0">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <h3 className="truncate font-sans text-base font-bold text-zinc-900">
@@ -230,7 +237,13 @@ export function NowPlayingPanel({
           </button>
           <button
             type="button"
-            onClick={toggle}
+            onClick={() => {
+              if (!current && activeSong) {
+                playSong(activeSong, queue.length > 0 ? queue : songs);
+              } else {
+                toggle();
+              }
+            }}
             className="grid h-10 w-10 place-items-center rounded-full bg-zinc-950 text-white shadow-md transition hover:scale-105 active:scale-95"
           >
             {isPlaying ? (
@@ -257,9 +270,12 @@ export function NowPlayingPanel({
       </div>
 
       {/* Queue Section matching screenshot */}
-      <div className="mt-5 flex-1 border-t border-black/5 pt-4">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Next Up</p>
-        <div className="mt-2.5 space-y-2 overflow-y-auto pr-1">
+      <div className="mt-5 min-h-0 flex-1 flex flex-col border-t border-black/5 pt-4 overflow-hidden">
+        <div className="flex items-center justify-between pb-1 shrink-0">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Next Up</p>
+          <span className="text-[10px] text-zinc-400 font-medium">{upcomingQueue.length} tracks</span>
+        </div>
+        <div className="mt-2 flex-1 min-h-0 space-y-2 overflow-y-auto pr-1 no-scrollbar">
           {upcomingQueue.map((song) => (
             <button
               key={song.id}
