@@ -1,5 +1,6 @@
 "use client";
 
+import { useFullscreen } from "@/components/app-shell";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
@@ -15,6 +16,7 @@ export function TopHeader() {
   const { profile, user } = useAuth();
   const { songs } = useMusic();
   const { playSong } = usePlayer();
+  const { fullscreen } = useFullscreen();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -59,16 +61,16 @@ export function TopHeader() {
   }
 
   return (
-    <header className=" flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8">
+    <header className={`flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8${fullscreen ? " min-h-[64px]" : ""}`}>
       {/* Breadcrumb Navigation matching screenshot */}
-      <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500">
+      <div className={`items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500${fullscreen ? " hidden md:flex" : " flex"}`}>
         <span className="text-zinc-600 hover:text-zinc-900">{breadcrumb.parent}</span>
         <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />
         <span className="font-bold text-zinc-900">{breadcrumb.current}</span>
       </div>
 
       {/* Middle & Right Header Elements */}
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className={`items-center gap-3 sm:gap-4${fullscreen ? " hidden md:flex" : " flex"}`}>
         {/* Search Bar / Icon */}
         <form onSubmit={handleSearchSubmit} className="relative flex items-center">
           {isSearchOpen ? (

@@ -27,6 +27,21 @@ export function useTrackEditor() {
   return useContext(TrackEditorContext);
 }
 
+// ── Fullscreen (immersive) mode context ──────────────────────────────────────
+type FullscreenContextType = {
+  fullscreen: boolean;
+  setFullscreen: (v: boolean) => void;
+};
+
+const FullscreenContext = createContext<FullscreenContextType>({
+  fullscreen: false,
+  setFullscreen: () => { },
+});
+
+export function useFullscreen() {
+  return useContext(FullscreenContext);
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { configured, loading, user } = useAuth();
   const { refresh, error } = useMusic();
@@ -34,6 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
   const mainRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -82,6 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <FullscreenContext.Provider value={{ fullscreen, setFullscreen }}>
     <TrackEditorContext.Provider value={{ editSong: (song) => setEditingSong(song) }}>
       <div className="flex h-dvh min-h-0 w-full overflow-hidden bg-[#19181b]">
         {/* Left Dark Sidebar with macOS Traffic Dots */}
@@ -136,5 +153,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
       </div>
     </TrackEditorContext.Provider>
+    </FullscreenContext.Provider>
   );
 }

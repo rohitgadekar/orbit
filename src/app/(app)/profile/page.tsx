@@ -1,6 +1,7 @@
 "use client";
 
 import { useTrackEditor } from "@/components/app-shell";
+import { useFullscreen } from "@/components/app-shell";
 import { SongRow } from "@/components/song-row";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
@@ -11,6 +12,8 @@ import {
   Crown,
   Disc3,
   Heart,
+  Maximize2,
+  Minimize2,
   Music2,
   Play,
   Settings,
@@ -24,6 +27,7 @@ export default function ProfilePage() {
   const { songs, favouriteIds, playlists, recentlyPlayed } = useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
+  const { fullscreen, setFullscreen } = useFullscreen();
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "Listener";
   const avatarUrl = profile?.avatar_url;
@@ -104,6 +108,43 @@ export default function ProfilePage() {
               <Share2 className="h-3.5 w-3.5" />
               <span>Share</span>
             </button>
+
+            {/* Immersive mode toggle — hides the top header nav on mobile to free up space below the status bar */}
+
+            <button
+              type="button"
+              onClick={() => setFullscreen(!fullscreen)}
+              aria-label={fullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
+              aria-pressed={fullscreen}
+              title={fullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"}
+              className="inline-flex md:hidden lg:hidden items-center gap-3 rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2 backdrop-blur-xl transition-all duration-300 hover:bg-white/[0.1] active:scale-[0.97]"
+            >
+              <span className={`transition-colors duration-300 ${fullscreen ? "text-[#dbe878]" : "text-white/60"
+                }`}>
+                {!fullscreen ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </span>
+
+              <span
+                className={`relative flex h-[22px] w-[40px] shrink-0 items-center rounded-full p-[3px] transition-all duration-300 ${fullscreen
+                  ? "bg-[#dbe878] shadow-[0_0_12px_rgba(219,232,120,0.25)]"
+                  : "bg-white/20"
+                  }`}
+              >
+                <span
+                  className={`h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${fullscreen ? "translate-x-[18px]" : "translate-x-0"
+                    }`}
+                />
+              </span>
+
+              <span className="min-w-[76px] text-left text-xs font-semibold tracking-wide text-white/90">
+                {fullscreen ? "Fullscreen" : "Windowed"}
+              </span>
+            </button>
+
           </div>
         </div>
       </section>
@@ -140,7 +181,7 @@ export default function ProfilePage() {
         />
       </section>
 
-      {/* 3. Favorite Tracks Section */}
+      {/* 4. Favorite Tracks Section */}
       {favoriteSongs.length > 0 ? (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
@@ -172,7 +213,7 @@ export default function ProfilePage() {
         </section>
       ) : null}
 
-      {/* 4. Recently Played Section */}
+      {/* 5. Recently Played Section */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
