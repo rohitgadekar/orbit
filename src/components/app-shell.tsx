@@ -49,8 +49,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [editingSong, setEditingSong] = useState<Song | null>(null);
-  const [fullscreen, setFullscreen] = useState(false);
+  const [fullscreen, setFullscreenRaw] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("orbit_fullscreen") === "true";
+  });
   const mainRef = useRef<HTMLElement | null>(null);
+
+  // Persist fullscreen preference across sessions
+  function setFullscreen(v: boolean) {
+    setFullscreenRaw(v);
+    try {
+      localStorage.setItem("orbit_fullscreen", String(v));
+    } catch {}
+  }
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: "instant" });
