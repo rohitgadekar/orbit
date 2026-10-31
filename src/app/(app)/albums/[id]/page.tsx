@@ -81,8 +81,8 @@ export default function AlbumDetailPage() {
   if (loading && !albumData) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-64 rounded-[32px] bg-zinc-200" />
-        <div className="h-40 rounded-2xl bg-zinc-200" />
+        <div className="h-64 rounded-[32px] bg-[#2c2c2f]" />
+        <div className="h-40 rounded-2xl bg-[#2c2c2f]" />
       </div>
     );
   }
@@ -93,7 +93,7 @@ export default function AlbumDetailPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-white"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back to Albums</span>
@@ -104,7 +104,7 @@ export default function AlbumDetailPage() {
           action={
             <Link
               href="/music?view=albums"
-              className="rounded-full bg-[#19181b] px-5 py-2 text-xs font-bold text-[#dbe878]"
+              className="rounded-full bg-blue-500 px-5 py-2 text-xs font-bold text-white"
             >
               Browse all albums
             </Link>
@@ -138,7 +138,7 @@ export default function AlbumDetailPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 rounded-full border border-black/5 bg-white px-4 py-2 text-xs font-semibold text-zinc-600 shadow-xs transition hover:border-black/20 hover:text-zinc-950"
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/5 bg-[#222224] px-4 py-2 text-xs font-semibold text-zinc-400 shadow-xs transition hover:border-white/20 hover:text-white"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back</span>
@@ -146,7 +146,7 @@ export default function AlbumDetailPage() {
 
         <Link
           href="/music?view=albums"
-          className="text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition"
+          className="text-xs font-semibold text-zinc-500 hover:text-white transition"
         >
           All Albums
         </Link>
@@ -154,8 +154,8 @@ export default function AlbumDetailPage() {
 
       {/* Album Hero Banner */}
       <section className="relative overflow-hidden rounded-[36px] bg-gradient-to-br from-[#211f24] via-[#1c1b1f] to-[#121114] p-6 text-white shadow-xl sm:p-8 md:p-10">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-[#dbe878]/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl" />
 
         <div className="relative flex flex-col items-center gap-6 sm:flex-row sm:items-end sm:gap-8">
           {/* Square Album Cover Artwork */}
@@ -171,12 +171,12 @@ export default function AlbumDetailPage() {
 
           {/* Album Information */}
           <div className="flex-1 text-center sm:text-left">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#dbe878] backdrop-blur-md">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-blue-400 backdrop-blur-md">
               <Disc3 className="h-3.5 w-3.5" />
               <span>Album</span>
             </div>
 
-            <h1 className="mt-3 font-serif text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
+            <h1 className="mt-3 font-sans text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
               {albumData.title}
             </h1>
 
@@ -184,7 +184,7 @@ export default function AlbumDetailPage() {
               By{" "}
               <Link
                 href={`/artists/${encodeURIComponent(albumData.artist)}`}
-                className="text-[#dbe878] hover:underline"
+                className="text-blue-400 hover:underline"
               >
                 {albumData.artist}
               </Link>
@@ -215,7 +215,7 @@ export default function AlbumDetailPage() {
                   <button
                     type="button"
                     onClick={handlePlayAll}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#dbe878] px-6 py-2.5 text-xs font-bold text-zinc-950 shadow-lg shadow-[#dbe878]/20 transition hover:bg-[#e4ef8f] hover:scale-105 active:scale-95"
+                    className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-400 hover:scale-105 active:scale-95"
                   >
                     <Play className="h-3.5 w-3.5 fill-current" />
                     <span>Play Album</span>
@@ -251,12 +251,12 @@ export default function AlbumDetailPage() {
                   >
                     {downloadingAll ? (
                       <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#dbe878]" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-400" />
                         <span>Downloading Album...</span>
                       </>
                     ) : albumData.songs.every((s) => isDownloaded(s.id)) ? (
                       <>
-                        <CheckCircle2 className="h-3.5 w-3.5 fill-[#dbe878] text-[#19181b]" />
+                        <CheckCircle2 className="h-3.5 w-3.5 fill-blue-500 text-white" />
                         <span>Album Downloaded</span>
                       </>
                     ) : (
@@ -277,7 +277,7 @@ export default function AlbumDetailPage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-serif text-xl font-bold text-zinc-900">Tracklist</h2>
+            <h2 className="font-sans text-xl font-bold text-white">Tracklist</h2>
             <p className="text-xs text-zinc-500">
               {albumData.songs.length} song{albumData.songs.length === 1 ? "" : "s"} in this album
             </p>
@@ -286,14 +286,14 @@ export default function AlbumDetailPage() {
             <button
               type="button"
               onClick={handlePlayAll}
-              className="text-xs font-semibold text-zinc-600 hover:text-zinc-900"
+              className="text-xs font-semibold text-zinc-400 hover:text-white"
             >
               Play all
             </button>
           ) : null}
         </div>
 
-        <div className="rounded-[28px] border border-black/5 bg-white p-3 shadow-xs space-y-1">
+        <div className="rounded-[28px] border border-white/5 bg-[#222224] p-3 shadow-xs space-y-1">
           {albumData.songs.map((song, index) => (
             <SongRow
               key={song.id}

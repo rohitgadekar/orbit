@@ -15,29 +15,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
-type TrackEditorContextType = {
-  editSong: (song: Song) => void;
-};
-
-const TrackEditorContext = createContext<TrackEditorContextType>({
-  editSong: () => { },
-});
-
+type TrackEditorContextType = { editSong: (song: Song) => void };
+const TrackEditorContext = createContext<TrackEditorContextType>({ editSong: () => { } });
 export function useTrackEditor() {
   return useContext(TrackEditorContext);
 }
 
-// ── Fullscreen (immersive) mode context ──────────────────────────────────────
-type FullscreenContextType = {
-  fullscreen: boolean;
-  setFullscreen: (v: boolean) => void;
-};
-
-const FullscreenContext = createContext<FullscreenContextType>({
-  fullscreen: false,
-  setFullscreen: () => { },
-});
-
+type FullscreenContextType = { fullscreen: boolean; setFullscreen: (v: boolean) => void };
+const FullscreenContext = createContext<FullscreenContextType>({ fullscreen: false, setFullscreen: () => { } });
 export function useFullscreen() {
   return useContext(FullscreenContext);
 }
@@ -55,12 +40,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
   const mainRef = useRef<HTMLElement | null>(null);
 
-  // Persist fullscreen preference across sessions
   function setFullscreen(v: boolean) {
     setFullscreenRaw(v);
     try {
       localStorage.setItem("orbit_fullscreen", String(v));
-    } catch {}
+    } catch { }
   }
 
   useEffect(() => {
@@ -86,13 +70,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!configured) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-[#19181b] p-6 text-white">
-        <div className="max-w-lg rounded-[32px] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-md">
+      <div className="grid min-h-dvh place-items-center bg-[#1a1a1c] p-6 text-white">
+        <div className="max-w-lg rounded-[32px] border border-white/10 bg-[#1a1a1c] p-8 shadow-2xl">
           <OrbitMark className="h-10 w-10" />
-          <h1 className="mt-4 font-serif text-3xl font-bold">Connect Supabase</h1>
+          <h1 className="mt-4 text-3xl font-bold">Connect Supabase</h1>
           <p className="mt-2 text-sm text-zinc-400">
-            Add <code className="text-[#dbe878]">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-            <code className="text-[#dbe878]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to{" "}
+            Add <code className="text-blue-400">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+            <code className="text-blue-400">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to{" "}
             <code>.env.local</code>, then run the SQL in <code>supabase/schema.sql</code>.
           </p>
         </div>
@@ -102,68 +86,62 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-[#19181b]">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-[#dbe878]" />
+      <div className="grid min-h-dvh place-items-center bg-[#1a1a1c]">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-blue-500" />
       </div>
     );
   }
 
   return (
     <FullscreenContext.Provider value={{ fullscreen, setFullscreen }}>
-    <TrackEditorContext.Provider value={{ editSong: (song) => setEditingSong(song) }}>
-      <div className="flex h-dvh min-h-0 w-full overflow-hidden bg-[#19181b]">
-        {/* Left Dark Sidebar with macOS Traffic Dots */}
-        <IconRail />
+      <TrackEditorContext.Provider value={{ editSong: (song) => setEditingSong(song) }}>
+        {/* Full-bleed app: no outer backdrop or rounded window */}
+        <div className="h-dvh w-full bg-[#1a1a1c]">
+          <div className="flex h-full min-h-0 w-full overflow-hidden bg-[#1a1a1c] text-zinc-200">
+            <IconRail />
 
-        {/* Center Main White/Ivory Canvas */}
-        <div className="md:m-4 flex min-w-0 flex-1 flex-col overflow-hidden md:rounded-[2em] bg-[#f7f6f3] shadow-2xl">
-          {/* Top Bar Header */}
-          <TopHeader />
+            {/* Center canvas */}
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-white/[0.04]">
+              <TopHeader />
 
-          {!isOnline ? (
-            <div className="mx-4 mb-2.5 flex items-center justify-between rounded-2xl bg-[#dbe878]/25 border border-[#dbe878]/40 px-4 py-2 text-xs font-semibold text-zinc-900 md:mx-8">
-              <div className="flex items-center gap-2">
-                <WifiOff className="h-3.5 w-3.5 text-zinc-900" />
-                <span>Offline Mode — Downloaded songs are ready to play; un-downloaded tracks are dimmed</span>
-              </div>
-              <Link href="/music" className="underline font-bold hover:text-black shrink-0 ml-2">
-                Browse Songs
-              </Link>
+              {!isOnline ? (
+                <div className="mx-4 mb-2.5 flex items-center justify-between rounded-xl bg-blue-500/10 px-4 py-2 text-xs font-semibold text-blue-300 md:mx-8">
+                  <div className="flex items-center gap-2">
+                    <WifiOff className="h-3.5 w-3.5" />
+                    <span>Offline mode — downloaded songs are ready to play; others are dimmed</span>
+                  </div>
+                  <Link href="/music" className="ml-2 shrink-0 font-bold underline hover:text-white">
+                    Browse songs
+                  </Link>
+                </div>
+              ) : null}
+
+              {error ? <p className="px-8 pb-2 text-xs font-medium text-rose-400">Notice: {error}</p> : null}
+
+              <main
+                ref={mainRef}
+                className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-58 md:px-8 md:pb-6"
+              >
+                {children}
+              </main>
+
+              <PlayerBar />
+              <MobileTabBar />
             </div>
-          ) : null}
 
-          {error ? (
-            <p className="px-8 pb-2 text-xs font-medium text-rose-500">
-              Notice: {error}
-            </p>
-          ) : null}
+            {/* Right "Play queue" panel — full height, inset from the window edge */}
+            <div className="hidden p-3 lg:flex">
+              <NowPlayingPanel onEditTrack={(song) => setEditingSong(song)} />
+            </div>
 
-          {/* Canvas layout with Right 'Now Playing' panel matching screenshot */}
-          <div className="flex min-h-0 flex-1 gap-6 overflow-hidden px-4 pb-4 md:px-8">
-            <main
-              ref={mainRef}
-              className="no-scrollbar min-h-0 flex-1 overflow-y-auto pr-1 pb-58 md:pb-1"
-            >
-              {children}
-            </main>
-
-            {/* Right Panel Card from Screenshot */}
-            <NowPlayingPanel onEditTrack={(song) => setEditingSong(song)} />
+            <EditTrackModal
+              song={editingSong}
+              isOpen={Boolean(editingSong)}
+              onClose={() => setEditingSong(null)}
+            />
           </div>
-
-          {/* Bottom Player for Mobile & Global Ambient Full-screen trigger */}
-          <PlayerBar />
-          <MobileTabBar />
         </div>
-
-        {/* Global Track Edit Modal */}
-        <EditTrackModal
-          song={editingSong}
-          isOpen={Boolean(editingSong)}
-          onClose={() => setEditingSong(null)}
-        />
-      </div>
-    </TrackEditorContext.Provider>
+      </TrackEditorContext.Provider>
     </FullscreenContext.Provider>
   );
 }

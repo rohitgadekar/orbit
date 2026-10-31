@@ -15,11 +15,12 @@ import { generateSmartMixes } from "@/lib/mixes";
 import type { Song } from "@/lib/types";
 import {
   ArrowRight,
-  Clock,
   Heart,
   Play,
   Shuffle,
-  Lens,
+  ListMusic,
+  Disc,
+  EighthNote,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -29,7 +30,7 @@ export default function HomePage() {
     useMusic();
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile, user } = useAuth();
   const [selectedForPlaylist, setSelectedForPlaylist] = useState<Song | null>(null);
 
   // ─── Derived personalisation signals ───────────────────────────────────────
@@ -42,6 +43,20 @@ export default function HomePage() {
     }
     return map;
   }, [recentlyPlayed]);
+
+  const displayName = profile?.display_name || user?.email?.split("@")[0] || "there";
+  const firstName = displayName.split(" ")[0];
+
+  const shuffleAll = () => {
+    const shuffled = [...songs].sort(() => Math.random() - 0.5);
+    if (shuffled[0]) playSong(shuffled[0], shuffled);
+  };
+  const hour = new Date().getHours();
+
+  const greeting =
+    hour < 5 ? "Good night" : hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const albumCount = useMemo(() => new Set(songs.map((s) => s.album?.title).filter(Boolean)).size, [songs]);
+
 
   // Artist affinity: weighted from history + favourites
   const artistAffinity = useMemo(() => {
@@ -80,9 +95,9 @@ export default function HomePage() {
     return result;
   }, [recentlyPlayed]);
 
-  // 2. Smart Mixes — top 2 only for the home preview
+  // 2. Smart Mixes — home preview (up to 6; the grid fills 1/2/3 columns by screen width)
   const smartMixes = useMemo(
-    () => generateSmartMixes(songs, recentlyPlayed, favouriteIds).slice(0, 2),
+    () => generateSmartMixes(songs, recentlyPlayed, favouriteIds).slice(0, 6),
     [songs, recentlyPlayed, favouriteIds],
   );
 
@@ -162,9 +177,9 @@ export default function HomePage() {
   if (loading && songs.length === 0) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-64 rounded-[32px] bg-zinc-200" />
-        <div className="h-28 rounded-2xl bg-zinc-200" />
-        <div className="h-64 rounded-2xl bg-zinc-200" />
+        <div className="h-64 rounded-[32px] bg-[#2c2c2f]" />
+        <div className="h-28 rounded-2xl bg-[#2c2c2f]" />
+        <div className="h-64 rounded-2xl bg-[#2c2c2f]" />
       </div>
     );
   }
@@ -177,7 +192,7 @@ export default function HomePage() {
         action={
           <Link
             href="/settings"
-            className="rounded-full bg-[#19181b] px-6 py-2.5 text-xs font-semibold text-[#dbe878] shadow-md transition hover:scale-105"
+            className="rounded-full bg-blue-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-400 hover:scale-105"
           >
             Add a track
           </Link>
@@ -189,38 +204,60 @@ export default function HomePage() {
   return (
     <div className="space-y-10 pb-10">
 
+      {/* ── 1. Greeting + library snapshot ────────────────────────────────── */}
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            {greeting}, {firstName}
+          </h1>
+          <p className="mt-1 text-xs text-zinc-500">
+            {songs.length} songs · {individualArtists.length} artists · {albumCount} albums
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={shuffleAll}
+          className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95 sm:self-auto"
+        >
+          <Shuffle className="h-3.5 w-3.5" />
+          Shuffle
+        </button>
+      </section>
+
       {/* ── 1. Hero ─ Last played / Most personal ────────────────────────── */}
-      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#9c3e17] via-[#a8441c] to-[#6d270e] p-6 text-white shadow-xl shadow-[#9c3e17]/25 sm:p-8 md:p-10">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-80 w-80 rounded-full bg-amber-500/20 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[36px] border border-white/5 bg-gradient-to-br from-[#19181b] via-[#242228] to-[#121114] p-6 text-white shadow-xl sm:p-8 md:p-10">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl" />
 
         <div className="flex flex-col-reverse justify-between gap-6 md:flex-row md:items-center">
           <div className="max-w-md">
-            <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-amber-200/90">
+            <span className="text-xs font-semibold text-blue-400">
               {recentlyPlayed.length > 0 ? "Pick up where you left off" : "Featured Track"}
             </span>
-            <h1 className="mt-2 font-sans text-3xl font-black uppercase tracking-tight text-white sm:text-4xl md:text-5xl line-clamp-2">
+            <h1 className="mt-2 font-sans text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl line-clamp-2">
               {heroSong?.title ?? "Orbit Music"}
             </h1>
-            <p className="mt-1.5 text-sm font-medium text-amber-200/80">
+            <p className="mt-1.5 text-sm font-medium text-zinc-300">
               {heroSong?.artist?.name ?? ""}
             </p>
-            <p className="mt-2 text-xs leading-relaxed text-amber-100/70 sm:text-sm">
+            <p className="mt-2 text-xs leading-relaxed text-zinc-400 sm:text-sm">
               {heroSong?.album?.title
                 ? `From the album "${heroSong.album.title}"`
                 : "Your personal music, right where you left it."}
             </p>
 
             <div className="mt-5 flex items-center gap-3">
-              <span className="flex items-center gap-1.5 rounded-full bg-black/25 px-3 py-1 text-xs font-medium text-amber-200 backdrop-blur-md">
-                <Heart className="h-3.5 w-3.5 fill-current text-amber-300" />
+              <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-zinc-200 backdrop-blur-md">
+                <Heart className="h-3.5 w-3.5 fill-current text-rose-500" />
                 <span>
                   {favouriteIds.size > 0
                     ? `${favouriteIds.size} loved track${favouriteIds.size === 1 ? "" : "s"}`
                     : "Curated for you"}
                 </span>
               </span>
-              <span className="text-xs font-medium text-amber-200/80">
-                • {songs.length} Songs
+
+              <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-zinc-200 backdrop-blur-md">
+                <EighthNote className="h-3.5 w-3.5" />
+                {songs.length} Songs
               </span>
             </div>
 
@@ -228,29 +265,17 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => heroSong && playSong(heroSong, jumpBackIn.length > 0 ? jumpBackIn : songs)}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-xs font-bold text-zinc-950 shadow-lg shadow-black/20 transition hover:bg-amber-100 hover:scale-105 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-400 hover:scale-105 active:scale-95"
               >
                 <Play className="h-3.5 w-3.5 fill-current" />
                 {recentlyPlayed.length > 0 ? "Resume" : "Listen Now"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const shuffled = [...songs].sort(() => Math.random() - 0.5);
-                  if (shuffled[0]) playSong(shuffled[0], shuffled);
-                }}
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-4 py-2.5 text-xs font-medium text-white backdrop-blur-md transition hover:bg-white/10 active:scale-95"
-              >
-                <Shuffle className="h-3.5 w-3.5" />
-                Shuffle
               </button>
 
               {isAdmin && heroSong && (
                 <button
                   type="button"
                   onClick={() => editSong(heroSong)}
-                  className="hidden rounded-full border border-white/20 bg-black/20 px-4 py-2.5 text-xs font-medium text-white backdrop-blur-md transition hover:bg-white/10 sm:inline-flex"
+                  className="hidden rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 sm:inline-flex"
                 >
                   Edit
                 </button>
@@ -259,7 +284,7 @@ export default function HomePage() {
           </div>
 
           <div className="relative shrink-0">
-            <div className="relative aspect-video w-full max-w-xs overflow-hidden rounded-[24px] shadow-2xl sm:aspect-square sm:h-52 sm:w-52 md:h-64 md:w-64">
+            <div className="relative aspect-video w-full max-w-xs overflow-hidden rounded-[28px] shadow-2xl ring-1 ring-white/10 sm:aspect-square sm:h-52 sm:w-52 md:h-64 md:w-64">
               <Cover
                 src={heroCover}
                 title={heroSong?.title ?? "Featured"}
@@ -267,7 +292,7 @@ export default function HomePage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-3 right-3 text-right">
-                <span className="rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-bold tracking-widest text-[#dbe878] backdrop-blur-md">
+                <span className="rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-bold tracking-widest text-blue-400 backdrop-blur-md">
                   {recentlyPlayed.length > 0 ? "LAST PLAYED" : "FEATURED"}
                 </span>
               </div>
@@ -281,21 +306,18 @@ export default function HomePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-zinc-900">
-                <Clock className="h-4 w-4 text-zinc-400" />
-                Jump Back In
-              </h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">Jump Back In</h2>
               <p className="text-xs text-zinc-500">Pick up from your recent listening</p>
             </div>
             <Link
               href="/music"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400 hover:text-white"
             >
               See all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-black/5 bg-white p-2 shadow-xs space-y-1">
+          <div className="rounded-[28px] border border-white/5 bg-[#222224] p-2 space-y-1">
             {jumpBackIn.map((song, index) => (
               <SongRow
                 key={song.id}
@@ -315,48 +337,39 @@ export default function HomePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-zinc-900">
-                <Lens className="h-4 w-4 text-[#dbe878]" />
-                Made For You
-              </h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">Made For You</h2>
               <p className="text-xs text-zinc-500">Daily mixes from your listening habits</p>
             </div>
             <Link
               href="/music"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400 hover:text-white"
             >
               All mixes <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {smartMixes.map((mix) => (
               <Link
                 key={mix.id}
                 href={`/music/mix/${mix.id}`}
-                className="group relative overflow-hidden rounded-2xl border border-black/5 bg-white p-3 shadow-2xs transition hover:border-black/15 hover:shadow-md"
+                className="group flex items-center gap-3.5 rounded-2xl border border-white/5 bg-[#222224] p-2.5 transition hover:border-white/15 hover:bg-[#262628]"
               >
-                {/* Artwork */}
-                <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-zinc-900">
+                {/* Compact artwork */}
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#2c2c2f]">
                   {mix.coverUrl ? (
                     <Cover
                       src={mix.coverUrl}
                       title={mix.title}
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      className="h-full w-full rounded-xl object-cover"
                     />
                   ) : (
                     <div
-                      className={`h-full w-full bg-gradient-to-br ${mix.gradient} flex flex-col justify-between p-3 text-white`}
+                      className={`grid h-full w-full place-items-center bg-gradient-to-br ${mix.gradient} text-white`}
                     >
-                      <span className="text-[9px] font-black tracking-widest uppercase opacity-75">
-                        {mix.badge}
-                      </span>
-                      <span className="font-serif text-lg font-bold">{mix.title}</span>
+                      <ListMusic className="h-6 w-6 opacity-80" />
                     </div>
                   )}
-                  <span className="absolute top-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[8px] font-black tracking-wider uppercase text-white backdrop-blur-md">
-                    {mix.badge}
-                  </span>
                   {/* Play overlay on hover */}
                   <button
                     type="button"
@@ -365,17 +378,20 @@ export default function HomePage() {
                       e.stopPropagation();
                       if (mix.songs[0]) playSong(mix.songs[0], mix.songs);
                     }}
-                    className="absolute right-2.5 bottom-2.5 grid h-9 w-9 place-items-center rounded-full bg-[#19181b] text-[#dbe878] shadow-lg opacity-0 transition group-hover:opacity-100 hover:scale-110 active:scale-95"
+                    className="absolute inset-0 grid place-items-center bg-black/50 opacity-0 transition group-hover:opacity-100"
                     aria-label={`Play ${mix.title}`}
                   >
-                    <Play className="h-4 w-4 translate-x-0.5 fill-current" />
+                    <Play className="h-5 w-5 translate-x-0.5 fill-white text-white" />
                   </button>
                 </div>
+
                 {/* Metadata */}
-                <div className="mt-2.5">
-                  <p className="truncate text-xs font-bold text-zinc-900">{mix.title}</p>
-                  <p className="truncate text-[11px] text-zinc-500">{mix.subtitle}</p>
-                  <p className="text-[10px] text-zinc-400">{mix.songs.length} tracks</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-white">{mix.title}</p>
+                  <p className="truncate text-xs text-zinc-400">{mix.subtitle}</p>
+                  <p className="mt-0.5 text-[11px] text-zinc-500">
+                    {mix.badge} · {mix.songs.length} tracks
+                  </p>
                 </div>
               </Link>
             ))}
@@ -388,12 +404,12 @@ export default function HomePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-zinc-900">Your Top Artists</h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">Your Top Artists</h2>
               <p className="text-xs text-zinc-500">Based on your listening history</p>
             </div>
             <Link
               href="/music?view=artists"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400 hover:text-white"
             >
               See all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -421,21 +437,21 @@ export default function HomePage() {
                     className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 opacity-0 transition group-hover:opacity-100 cursor-pointer"
                     title={`Play ${artist.name}`}
                   >
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-zinc-950 shadow-md">
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-blue-500 text-white shadow-md">
                       <Play className="h-3.5 w-3.5 translate-x-0.5 fill-current" />
                     </span>
                   </div>
                 </div>
                 <p
-                  className="mt-2 w-full truncate px-1 text-[11px] font-bold text-zinc-800 transition group-hover:text-zinc-950"
+                  className="mt-2 w-full truncate px-1 text-[11px] font-bold text-zinc-200 transition group-hover:text-white"
                   title={artist.name}
                 >
                   {artist.name}
                 </p>
                 {artist.affinity > 0 ? (
-                  <p className="text-[10px] text-zinc-400 font-medium">{artist.songs.length} tracks</p>
+                  <p className="text-[10px] text-zinc-500 font-medium">{artist.songs.length} tracks</p>
                 ) : (
-                  <p className="text-[10px] text-zinc-400 font-medium">{artist.plays} plays</p>
+                  <p className="text-[10px] text-zinc-500 font-medium">{artist.plays} plays</p>
                 )}
               </Link>
             ))}
@@ -448,21 +464,18 @@ export default function HomePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-zinc-900">
-                <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
-                Loved Tracks
-              </h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">Loved Tracks</h2>
               <p className="text-xs text-zinc-500">Songs you've hearted, most recent first</p>
             </div>
             <Link
               href="/favourites"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400 hover:text-white"
             >
               See all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-black/5 bg-white p-2 shadow-xs space-y-1">
+          <div className="rounded-[28px] border border-white/5 bg-[#222224] p-2 space-y-1">
             {lovedTracks.map((song, index) => (
               <SongRow
                 key={song.id}
@@ -482,7 +495,7 @@ export default function HomePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-zinc-900">Heavy Rotation</h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">Heavy Rotation</h2>
               <p className="text-xs text-zinc-500">Your most replayed tracks</p>
             </div>
             <button
@@ -490,13 +503,13 @@ export default function HomePage() {
               onClick={() => {
                 if (heavyRotation[0]) playSong(heavyRotation[0], heavyRotation);
               }}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400 hover:text-white"
             >
               <Play className="h-3.5 w-3.5 fill-current" /> Play all
             </button>
           </div>
 
-          <div className="rounded-2xl border border-black/5 bg-white p-2 shadow-xs space-y-1">
+          <div className="rounded-[28px] border border-white/5 bg-[#222224] p-2 space-y-1">
             {heavyRotation.map((song, index) => (
               <SongRow
                 key={song.id}
@@ -516,12 +529,12 @@ export default function HomePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-zinc-900">Recommended Albums</h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">Recommended Albums</h2>
               <p className="text-xs text-zinc-500">Based on the artists you listen to most</p>
             </div>
             <Link
               href="/music?view=albums"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-zinc-900"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400 hover:text-white"
             >
               See all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -532,9 +545,9 @@ export default function HomePage() {
               <Link
                 key={album.title}
                 href={`/albums/${encodeURIComponent(album.title)}`}
-                className="group block rounded-2xl border border-black/5 bg-white p-2.5 shadow-2xs transition hover:shadow-md focus:outline-none"
+                className="group block rounded-[28px] border border-white/5 bg-[#222224] p-2.5 transition hover:border-white/15 hover:bg-[#262628] focus:outline-none"
               >
-                <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-zinc-100">
+                <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[#2c2c2f]">
                   <Cover
                     src={album.cover}
                     title={album.title}
@@ -549,12 +562,12 @@ export default function HomePage() {
                     className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100 cursor-pointer"
                     title={`Play ${album.title}`}
                   >
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-zinc-950 shadow-md transition hover:scale-110">
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-blue-500 text-white shadow-md transition hover:scale-110">
                       <Play className="h-3.5 w-3.5 translate-x-0.5 fill-current" />
                     </span>
                   </div>
                 </div>
-                <p className="mt-2 truncate text-xs font-bold text-zinc-900 group-hover:text-black transition">
+                <p className="mt-2 truncate text-xs font-bold text-white transition">
                   {album.title}
                 </p>
                 <p className="truncate text-[11px] text-zinc-500">

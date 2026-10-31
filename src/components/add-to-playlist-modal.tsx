@@ -3,7 +3,7 @@
 import { Cover } from "@/components/cover";
 import { useMusic } from "@/context/music-context";
 import type { Song } from "@/lib/types";
-import { Check, FolderPlus, Loader2, Music2, Plus, X } from "lucide-react";
+import { Check, FolderPlus, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function AddToPlaylistModal({
@@ -63,7 +63,7 @@ function AddToPlaylistForm({
               if (songsInPl.some((s) => s.id === song.id)) {
                 idsWithSong.add(pl.id);
               }
-            } catch {}
+            } catch { }
           }),
         );
       }
@@ -85,7 +85,7 @@ function AddToPlaylistForm({
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(10);
-      } catch {}
+      } catch { }
     }
     setTimeout(() => setSuccessMsg(null), 2500);
 
@@ -128,27 +128,25 @@ function AddToPlaylistForm({
   }
 
   return (
-    <div className="relative w-full max-w-md rounded-[32px] border border-white/20 bg-[#1c1b1f] p-6 text-white shadow-2xl sm:p-7">
+    <div className="relative w-full max-w-md rounded-[32px] border border-white/10 bg-[#1a1a1c] p-6 text-white shadow-2xl sm:p-7">
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 rounded-full p-2 text-zinc-400 hover:bg-white/10 hover:text-white"
+        className="absolute right-5 top-5 rounded-full p-2 text-zinc-400 transition hover:bg-white/10 hover:text-white"
         aria-label="Close"
       >
         <X className="h-4 w-4" />
       </button>
 
       {/* Header & Target Song */}
-      <div className="flex items-center gap-3.5 border-b border-white/10 pb-4">
+      <div className="flex items-center gap-3.5 border-b border-white/10 pb-4 pr-8">
         <Cover
           src={song.cover_url || song.album?.cover_url}
           title={song.title}
-          className="h-12 w-12 rounded-xl ring-1 ring-white/10"
+          className="h-12 w-12 shrink-0 rounded-xl ring-1 ring-white/10"
         />
         <div className="min-w-0 flex-1">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#dbe878]">
-            Add to Playlist
-          </span>
+          <span className="text-xs font-semibold text-blue-400">Add to playlist</span>
           <h3 className="truncate font-sans text-base font-bold text-white">{song.title}</h3>
           <p className="truncate text-xs text-zinc-400">{song.artist?.name || "Unknown Artist"}</p>
         </div>
@@ -156,8 +154,8 @@ function AddToPlaylistForm({
 
       {/* Success toast */}
       {successMsg ? (
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-[#dbe878]/15 px-3.5 py-2 text-xs font-semibold text-[#dbe878]">
-          <Check className="h-4 w-4" />
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-blue-500/10 px-3.5 py-2 text-xs font-semibold text-blue-300">
+          <Check className="h-4 w-4 shrink-0" />
           <span className="truncate">{successMsg}</span>
         </div>
       ) : null}
@@ -167,13 +165,13 @@ function AddToPlaylistForm({
         <input
           value={newPlaylistName}
           onChange={(e) => setNewPlaylistName(e.target.value)}
-          placeholder="Create new playlist name..."
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white placeholder-zinc-500 outline-none transition focus:border-[#dbe878] focus:bg-white/10"
+          placeholder="New playlist name..."
+          className="flex-1 rounded-full border border-white/10 bg-[#222224] px-4 py-2.5 text-xs text-white outline-none transition placeholder:text-zinc-500 focus:border-blue-500"
         />
         <button
           type="submit"
           disabled={isCreating || !newPlaylistName.trim()}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-[#dbe878] px-4 py-2 text-xs font-bold text-zinc-950 transition hover:bg-[#eaf48c] active:scale-95 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full bg-blue-500 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-400 active:scale-95 disabled:opacity-50"
         >
           {isCreating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FolderPlus className="h-3.5 w-3.5" />}
           <span>Create</span>
@@ -182,14 +180,13 @@ function AddToPlaylistForm({
 
       {/* Existing Playlists List */}
       <div className="mt-5">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-          Select Playlist ({playlists.length})
+        <p className="text-xs font-semibold text-zinc-400">
+          Your playlists ({playlists.length})
         </p>
 
-        <div className="mt-2.5 max-h-56 space-y-1.5 overflow-y-auto pr-1">
+        <div className="no-scrollbar mt-2.5 max-h-56 space-y-1.5 overflow-y-auto">
           {playlists.length === 0 ? (
-            <div className="rounded-2xl border border-white/5 bg-white/5 p-6 text-center text-xs text-zinc-400">
-              <Music2 className="mx-auto mb-2 h-6 w-6 text-zinc-500" />
+            <div className="rounded-2xl border border-white/5 bg-[#222224] p-6 text-center text-xs text-zinc-400">
               <p>No playlists yet.</p>
               <p className="mt-1 text-[11px] text-zinc-500">Create your first playlist using the box above.</p>
             </div>
@@ -203,34 +200,30 @@ function AddToPlaylistForm({
                   key={pl.id}
                   type="button"
                   onClick={() => handleAddToPlaylist(pl.id, pl.name)}
-                  className={`flex w-full items-center justify-between gap-3 rounded-2xl p-2.5 text-left transition ${
-                    alreadyInPlaylist
-                      ? "bg-[#dbe878]/10 text-white ring-1 ring-[#dbe878]/30"
-                      : "bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
-                  }`}
+                  className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-2.5 text-left transition ${alreadyInPlaylist
+                      ? "border-blue-500/30 bg-blue-500/10 text-white"
+                      : "border-white/5 bg-[#222224] text-zinc-300 hover:border-white/15 hover:bg-[#262628] hover:text-white"
+                    }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Cover
                       src={pl.cover_url}
                       title={pl.name}
-                      className="h-10 w-10 rounded-xl"
+                      className="h-10 w-10 shrink-0 rounded-xl"
                     />
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-bold text-white">{pl.name}</p>
-                      <p className="text-[10px] text-zinc-400">Playlist Collection</p>
-                    </div>
+                    <p className="truncate text-sm font-bold text-white">{pl.name}</p>
                   </div>
 
                   <div className="shrink-0">
                     {isAdding ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-[#dbe878]" />
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
                     ) : alreadyInPlaylist ? (
-                      <span className="flex items-center gap-1 rounded-full bg-[#dbe878]/20 px-2.5 py-1 text-[10px] font-bold text-[#dbe878]">
+                      <span className="flex items-center gap-1 rounded-full bg-blue-500/20 px-2.5 py-1 text-[11px] font-bold text-blue-300">
                         <Check className="h-3 w-3" />
                         <span>Added</span>
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-zinc-300 hover:bg-white/20">
+                      <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-zinc-300">
                         <Plus className="h-3 w-3" />
                         <span>Add</span>
                       </span>
@@ -248,7 +241,7 @@ function AddToPlaylistForm({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white"
+          className="rounded-full px-4 py-2 text-xs font-semibold text-zinc-400 transition hover:bg-white/10 hover:text-white"
         >
           Done
         </button>

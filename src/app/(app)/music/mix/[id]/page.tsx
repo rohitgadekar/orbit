@@ -9,20 +9,19 @@ import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import { generateSmartMixes } from "@/lib/mixes";
 import {
-  ArrowLeft,
   Check,
   FolderPlus,
+  ListMusic,
   Loader2,
   Play,
   Shuffle,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
 export default function MixDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { songs, recentlyPlayed, favouriteIds, createPlaylistWithSongs } =
     useMusic();
   const { playSong } = usePlayer();
@@ -71,22 +70,21 @@ export default function MixDetailPage() {
   if (songs.length === 0) {
     return (
       <div className="space-y-6 pb-20 animate-pulse">
-        <div className="h-4 w-24 rounded-full bg-zinc-200" />
-        <div className="flex flex-col gap-5 rounded-[32px] border border-black/5 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
-          <div className="h-24 w-24 rounded-2xl bg-zinc-200 shrink-0" />
-          <div className="space-y-2 flex-1">
-            <div className="h-3 w-16 rounded bg-zinc-100" />
-            <div className="h-7 w-48 rounded bg-zinc-200" />
-            <div className="h-3 w-32 rounded bg-zinc-100" />
+        <div className="flex flex-col gap-5 rounded-[36px] border border-white/5 bg-[#222224] p-6 sm:flex-row sm:items-center">
+          <div className="h-28 w-28 shrink-0 rounded-2xl bg-[#2c2c2f]" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-16 rounded bg-[#2c2c2f]" />
+            <div className="h-7 w-48 rounded bg-[#2c2c2f]" />
+            <div className="h-3 w-32 rounded bg-[#2c2c2f]" />
           </div>
         </div>
-        <div className="rounded-2xl border border-black/5 bg-white p-3 shadow-2xs space-y-2">
+        <div className="space-y-2 rounded-[28px] border border-white/5 bg-[#222224] p-3">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="flex items-center gap-3.5 px-3 py-2.5">
-              <div className="h-11 w-11 rounded-xl bg-zinc-200 shrink-0" />
+              <div className="h-11 w-11 shrink-0 rounded-xl bg-[#2c2c2f]" />
               <div className="flex-1 space-y-1.5">
-                <div className="h-3.5 w-40 rounded bg-zinc-200" />
-                <div className="h-2.5 w-24 rounded bg-zinc-100" />
+                <div className="h-3.5 w-40 rounded bg-[#2c2c2f]" />
+                <div className="h-2.5 w-24 rounded bg-[#2c2c2f]" />
               </div>
             </div>
           ))}
@@ -104,7 +102,7 @@ export default function MixDetailPage() {
         action={
           <Link
             href="/music"
-            className="text-xs font-semibold text-zinc-900 underline"
+            className="rounded-full bg-blue-500 px-5 py-2 text-xs font-bold text-white transition hover:bg-blue-400"
           >
             Back to Curated Mixes
           </Link>
@@ -116,130 +114,111 @@ export default function MixDetailPage() {
   const coverUrl = mix.coverUrl;
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Back Link */}
-      <button
-        type="button"
-        onClick={() => router.back()}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        <span>Back</span>
-      </button>
-
+    <div className="space-y-8 pb-20">
       {/* Hero Banner */}
-      <div className="overflow-hidden rounded-[32px] border border-black/5 bg-white shadow-sm">
-        {/* Gradient accent strip behind the cover */}
-        <div className={`bg-gradient-to-br ${mix.gradient} p-6`}>
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-            {/* Cover art */}
-            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl shadow-xl sm:h-36 sm:w-36">
-              {coverUrl ? (
-                <Cover
-                  src={coverUrl}
-                  title={mix.title}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div
-                  className={`h-full w-full bg-gradient-to-br ${mix.gradient} flex flex-col justify-between p-3 text-white`}
-                >
-                  <span className="text-[8px] font-black tracking-widest uppercase opacity-75">
-                    {mix.badge}
-                  </span>
-                  <span className="font-serif text-xl font-bold leading-tight">
-                    {mix.title}
-                  </span>
-                </div>
-              )}
-              {/* Badge overlay */}
-              <span className="absolute top-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[8px] font-black tracking-wider uppercase text-white backdrop-blur-md">
-                {mix.badge}
-              </span>
-            </div>
+      <section className="relative overflow-hidden rounded-[36px] border border-white/5 bg-gradient-to-br from-[#19181b] via-[#242228] to-[#121114] p-6 text-white shadow-xl sm:p-8">
+        {/* Mix colour wash + soft glow */}
+        <div
+          className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${mix.gradient} opacity-25`}
+        />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
 
-            {/* Text metadata */}
-            <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">
-                Smart Mix
-              </span>
-              <h1 className="font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                {mix.title}
-              </h1>
-              <p className="mt-1 text-xs text-white/75 leading-relaxed line-clamp-2">
-                {mix.subtitle}
-              </p>
-              <p className="mt-1 text-[11px] text-white/60">
-                {mix.songs.length} track{mix.songs.length === 1 ? "" : "s"}
-              </p>
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end">
+          {/* Cover art */}
+          <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-[24px] shadow-2xl ring-1 ring-white/10 sm:h-40 sm:w-40">
+            {coverUrl ? (
+              <Cover
+                src={coverUrl}
+                title={mix.title}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div
+                className={`grid h-full w-full place-items-center bg-gradient-to-br ${mix.gradient} text-white`}
+              >
+                <ListMusic className="h-10 w-10 opacity-80" />
+              </div>
+            )}
+          </div>
+
+          {/* Text metadata */}
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-blue-400 backdrop-blur-md">
+              {mix.badge}
+            </span>
+            <h1 className="mt-3 font-sans text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
+              {mix.title}
+            </h1>
+            <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-zinc-300">
+              {mix.subtitle}
+            </p>
+            <p className="mt-1 text-xs text-zinc-400">
+              {mix.songs.length} track{mix.songs.length === 1 ? "" : "s"}
+            </p>
+
+            {/* Actions */}
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              {mix.songs[0] && (
+                <button
+                  type="button"
+                  onClick={() => playSong(mix.songs[0], mix.songs)}
+                  className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-400 active:scale-95"
+                >
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                  <span>Play All</span>
+                </button>
+              )}
+
+              {mix.songs.length > 1 && (
+                <button
+                  type="button"
+                  onClick={handleShuffle}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+                >
+                  <Shuffle className="h-3.5 w-3.5" />
+                  <span>Shuffle</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => void handleSaveAsPlaylist()}
+                disabled={savingMix || savedMix}
+                className={`inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-xs font-semibold backdrop-blur-md transition active:scale-95 ${savedMix
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                  : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+                  }`}
+              >
+                {savingMix ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : savedMix ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" />
+                    <span>Saved to Playlists</span>
+                  </>
+                ) : (
+                  <>
+                    <FolderPlus className="h-3.5 w-3.5" />
+                    <span>Save as Playlist</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3 border-t border-black/5 px-6 py-4">
-          {/* Play All */}
-          {mix.songs[0] && (
-            <button
-              type="button"
-              onClick={() => playSong(mix.songs[0], mix.songs)}
-              className="inline-flex items-center gap-2 rounded-full bg-[#19181b] px-6 py-2.5 text-xs font-bold text-[#dbe878] shadow-md transition hover:scale-105 active:scale-95"
-            >
-              <Play className="h-3.5 w-3.5 fill-current" />
-              <span>Play All</span>
-            </button>
-          )}
-
-          {/* Shuffle */}
-          {mix.songs.length > 1 && (
-            <button
-              type="button"
-              onClick={handleShuffle}
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-zinc-900 hover:text-black active:scale-95"
-            >
-              <Shuffle className="h-3.5 w-3.5" />
-              <span>Shuffle</span>
-            </button>
-          )}
-
-          {/* Save as Playlist */}
-          <button
-            type="button"
-            onClick={() => void handleSaveAsPlaylist()}
-            disabled={savingMix || savedMix}
-            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-semibold transition active:scale-95 ${savedMix
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-zinc-200 bg-white text-zinc-700 shadow-2xs hover:border-zinc-900 hover:text-black"
-              }`}
-          >
-            {savingMix ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : savedMix ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Saved to Playlists</span>
-              </>
-            ) : (
-              <>
-                <FolderPlus className="h-3.5 w-3.5" />
-                <span>Save as Playlist</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+      </section>
 
       {/* Track List */}
-      <section className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-bold text-zinc-900">Tracks in this mix</h2>
+      <section className="space-y-3">
+        <div className="flex items-end justify-between px-1">
+          <h2 className="text-lg font-bold tracking-tight text-white">Tracks in this mix</h2>
           <p className="text-xs text-zinc-500">{mix.songs.length} songs</p>
         </div>
 
-        <div className="rounded-2xl border border-black/5 bg-white p-2 shadow-2xs space-y-1">
+        <div className="space-y-1 rounded-[28px] border border-white/5 bg-[#222224] p-2">
           {mix.songs.map((song, index) => (
             <SongRow
               key={song.id}
@@ -254,4 +233,3 @@ export default function MixDetailPage() {
     </div>
   );
 }
-

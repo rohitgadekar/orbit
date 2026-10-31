@@ -63,8 +63,8 @@ export function SongRow({
       className={cn(
         "group flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 transition duration-200",
         active
-          ? "bg-[#edeae3] shadow-xs"
-          : "hover:bg-[#f2efe9]/70",
+          ? "bg-[#2c2c2f]"
+          : "hover:bg-[#2c2c2f]/60",
         isUnavailableOffline && "opacity-40 grayscale-[85%] hover:bg-transparent",
       )}
       title={isUnavailableOffline ? `"${song.title}" is not available offline` : undefined}
@@ -75,7 +75,7 @@ export function SongRow({
           <Cover
             src={cover}
             title={song.title}
-            className="h-11 w-11 rounded-xl shadow-xs"
+            className="h-11 w-11 rounded-xl"
             playing={active && isPlaying}
           />
           <button
@@ -83,7 +83,7 @@ export function SongRow({
             onClick={handlePlay}
             disabled={isUnavailableOffline}
             className={cn(
-              "absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 backdrop-blur-[1px] transition group-hover:opacity-100",
+              "absolute inset-0 flex items-center justify-center rounded-xl bg-black/50 opacity-0 backdrop-blur-[1px] transition group-hover:opacity-100",
               isUnavailableOffline && "cursor-not-allowed opacity-0 group-hover:opacity-30",
             )}
             aria-label={active && isPlaying ? "Pause" : "Play"}
@@ -102,28 +102,28 @@ export function SongRow({
             type="button"
             onClick={handlePlay}
             className={cn(
-              "flex items-center gap-1.5 w-full text-left text-sm font-bold tracking-tight text-zinc-900 transition focus:outline-none",
+              "flex items-center gap-1.5 w-full text-left text-sm font-bold tracking-tight text-white transition focus:outline-none",
               isUnavailableOffline && "cursor-not-allowed",
             )}
           >
-            <span className={cn("truncate", active && "text-[#bf5b30]")}>{song.title}</span>
+            <span className={cn("truncate", active && "text-blue-400")}>{song.title}</span>
             {downloaded && (
               <span title="Available offline" className="shrink-0 inline-flex items-center">
-                <CheckCircle2 className="h-3.5 w-3.5 fill-[#dbe878] text-[#3b4707]" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
               </span>
             )}
             {isUnavailableOffline && (
-              <span className="shrink-0 rounded-md bg-zinc-200 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-500">
+              <span className="shrink-0 rounded-md bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-400">
                 Unavailable
               </span>
             )}
           </button>
-          <div className="truncate text-xs font-medium text-zinc-500">
+          <div className="truncate text-xs font-medium text-zinc-400">
             {splitArtistNames(song.artist?.name).map((name, i, arr) => (
               <span key={name}>
                 <Link
                   href={`/artists/${encodeURIComponent(name)}`}
-                  className="hover:text-zinc-950 hover:underline transition"
+                  className="hover:text-white hover:underline transition"
                 >
                   {name}
                 </Link>
@@ -139,7 +139,7 @@ export function SongRow({
         {song.album?.title ? (
           <Link
             href={`/albums/${encodeURIComponent(song.album.title)}`}
-            className="hidden max-w-[140px] truncate !text-[12px] text-zinc-400 hover:text-zinc-900 hover:underline transition lg:block"
+            className="hidden max-w-[140px] truncate !text-[12px] text-zinc-500 hover:text-white hover:underline transition lg:block"
             title={song.album.title}
           >
             {song.album.title}
@@ -156,10 +156,10 @@ export function SongRow({
           onClick={() => void toggleDownloadSong(song)}
           disabled={isDownloading}
           className={cn(
-            "rounded-full p-1.5 transition hover:bg-black/5 active:scale-90",
+            "rounded-full p-1.5 transition hover:bg-white/10 active:scale-90",
             downloaded
-              ? "text-[#657319] hover:text-[#4e5812]"
-              : "text-zinc-400 hover:text-zinc-800",
+              ? "text-blue-500 hover:text-blue-400"
+              : "text-zinc-500 hover:text-white",
           )}
           title={
             downloaded
@@ -171,9 +171,9 @@ export function SongRow({
           aria-label={downloaded ? "Remove offline download" : "Save track offline"}
         >
           {isDownloading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-zinc-600" />
+            <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
           ) : downloaded ? (
-            <CheckCircle2 className="h-4 w-4 fill-[#dbe878]/50 text-[#54620f]" />
+            <CheckCircle2 className="h-4 w-4 text-blue-500" />
           ) : (
             <ArrowDownToLine className="h-4 w-4" />
           )}
@@ -186,13 +186,13 @@ export function SongRow({
             e.stopPropagation();
             void toggleFavourite(song.id);
           }}
-          className="rounded-full p-1.5 text-zinc-400 transition hover:bg-black/5 hover:text-rose-500 active:scale-75"
+          className="rounded-full p-1.5 text-zinc-500 transition hover:bg-white/10 hover:text-white active:scale-75"
           aria-label={fav ? "Remove favorite" : "Add to favorites"}
         >
           <Heart
             className={cn(
               "h-4 w-4 transition-all duration-200",
-              fav ? "fill-rose-500 text-rose-500 scale-110" : "hover:scale-110",
+              fav ? "fill-blue-500 text-blue-500 scale-110" : "hover:scale-110",
             )}
           />
         </button>
@@ -202,7 +202,7 @@ export function SongRow({
           <button
             type="button"
             onClick={onMore}
-            className="hidden md:block rounded-full p-1.5 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900"
+            className="hidden md:block rounded-full p-1.5 text-zinc-500 transition hover:bg-white/10 hover:text-white"
             title="Add to folder"
           >
             <Plus className="h-4 w-4" />
@@ -214,7 +214,7 @@ export function SongRow({
           <button
             type="button"
             onClick={() => onEdit(song)}
-            className="hidden md:block rounded-full p-1.5 text-zinc-400 transition group-hover:opacity-100 hover:bg-black/5 hover:text-zinc-900"
+            className="hidden md:block rounded-full p-1.5 text-zinc-500 transition hover:bg-white/10 hover:text-white"
             title="Edit track"
           >
             <MoreHorizontal className="h-4 w-4" />

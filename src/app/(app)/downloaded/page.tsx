@@ -53,8 +53,8 @@ export default function DownloadedPage() {
     <div className="space-y-6 pb-12">
       {/* Offline Status Badge Banner */}
       {!isOnline ? (
-        <div className="flex items-center gap-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 px-4 py-3 text-xs font-semibold text-amber-900">
-          <WifiOff className="h-4 w-4 shrink-0 text-amber-600" />
+        <div className="flex items-center gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs font-semibold text-amber-200">
+          <WifiOff className="h-4 w-4 shrink-0 text-amber-400" />
           <div className="min-w-0 flex-1">
             <span className="font-bold">Offline Mode Active:</span> You are currently disconnected
             from the internet. All tracks listed below are stored locally on your device and can be
@@ -66,19 +66,19 @@ export default function DownloadedPage() {
       {/* Hero Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-[0.2em] uppercase text-[#677717]">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-400">
             <ArrowDownToLine className="h-3.5 w-3.5" />
             <span>Cached Offline Library</span>
           </div>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">
             Downloaded Music
           </h1>
-          <p className="mt-1 text-xs text-zinc-500 flex items-center gap-2">
+          <p className="mt-1.5 flex items-center gap-2 text-xs text-zinc-500">
             <span>
               {songs.length} track{songs.length === 1 ? "" : "s"} cached locally
             </span>
             <span>•</span>
-            <span className="inline-flex items-center gap-1 font-mono text-zinc-600">
+            <span className="inline-flex items-center gap-1 font-mono text-zinc-400">
               <HardDrive className="h-3 w-3" />
               {stats.formattedSize}
             </span>
@@ -90,7 +90,7 @@ export default function DownloadedPage() {
             <button
               type="button"
               onClick={handlePlayAll}
-              className="inline-flex items-center gap-2 rounded-full bg-[#19181b] px-5 py-2.5 text-xs font-bold text-[#dbe878] shadow-md transition hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-400 active:scale-95"
             >
               <Play className="h-3.5 w-3.5 fill-current" />
               <span>Play All</span>
@@ -99,7 +99,7 @@ export default function DownloadedPage() {
             <button
               type="button"
               onClick={handleShuffle}
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-800 transition hover:border-zinc-900 shadow-2xs"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95"
             >
               <Shuffle className="h-3.5 w-3.5" />
               <span>Shuffle</span>
@@ -108,7 +108,7 @@ export default function DownloadedPage() {
             <button
               type="button"
               onClick={handleClearAll}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-2.5 text-xs font-medium text-rose-600 transition hover:border-rose-300 hover:bg-rose-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-transparent px-3.5 py-2.5 text-xs font-medium text-rose-400 transition hover:border-rose-400/40 hover:bg-rose-500/10"
               title="Remove all offline cached tracks to free storage"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -126,14 +126,14 @@ export default function DownloadedPage() {
           action={
             <Link
               href="/music"
-              className="rounded-full bg-[#19181b] px-5 py-2 text-xs font-bold text-[#dbe878]"
+              className="rounded-full bg-blue-500 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:scale-105 hover:bg-blue-400"
             >
               Explore Music Catalog
             </Link>
           }
         />
       ) : (
-        <div className="rounded-2xl border border-black/5 bg-white p-2 shadow-xs space-y-1">
+        <div className="space-y-1 rounded-[28px] border border-white/5 bg-[#222224] p-2">
           {songs.map((song, index) => (
             <SongRow
               key={song.id}

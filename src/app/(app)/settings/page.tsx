@@ -13,19 +13,13 @@ import { detectAudioMetadata } from "@/lib/audio-metadata";
 import {
   ArrowRight,
   Check,
-  Disc3,
-  Layers,
   Loader2,
   LogOut,
   Pencil,
   Plus,
-  PlusCircle,
   Search,
-  Shield,
-  Sparkles,
+  RefreshCw,
   Trash2,
-  User,
-  Users2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -136,7 +130,7 @@ export default function SettingsPage() {
       }
       if (meta.title || meta.artist) {
         setTrackStatus(
-          `✨ Detected: ${meta.title ? `"${meta.title}"` : ""}${meta.artist ? ` by ${meta.artist}` : ""}${meta.album ? ` (${meta.album})` : ""}`,
+          `Detected: ${meta.title ? `"${meta.title}"` : ""}${meta.artist ? ` by ${meta.artist}` : ""}${meta.album ? ` (${meta.album})` : ""}`,
         );
         setTimeout(() => setTrackStatus(null), 4500);
       }
@@ -318,8 +312,8 @@ export default function SettingsPage() {
       const parts = line.includes("|")
         ? line.split("|").map((p) => p.trim())
         : line.includes("\t")
-        ? line.split("\t").map((p) => p.trim())
-        : [line];
+          ? line.split("\t").map((p) => p.trim())
+          : [line];
 
       let trackTitle = "";
       let trackAudioUrl = "";
@@ -411,26 +405,21 @@ export default function SettingsPage() {
     <div className="space-y-6 pb-12">
       {/* Header */}
       <div>
-        <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-500">
-          Preferences & Controls
-        </p>
-        <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+        <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
           Settings
         </h1>
       </div>
 
       {/* Luxury Tabs Bar - Only admin sees catalog & batch album upload tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-black/5 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/5 pb-4">
         <button
           type="button"
           onClick={() => setActiveTab("account")}
-          className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${
-            activeTab === "account"
-              ? "bg-[#19181b] text-[#dbe878] shadow-sm"
-              : "text-zinc-600 hover:bg-black/5 hover:text-zinc-900"
-          }`}
+          className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${activeTab === "account"
+            ? "bg-blue-500 text-white shadow-sm"
+            : "bg-[#222224] text-zinc-400 hover:bg-[#2c2c2f] hover:text-white"
+            }`}
         >
-          <User className="h-3.5 w-3.5" />
           <span>Account & Profile</span>
         </button>
 
@@ -439,52 +428,44 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => setActiveTab("add-album")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${
-                activeTab === "add-album"
-                  ? "bg-[#19181b] text-[#dbe878] shadow-sm"
-                  : "text-zinc-600 hover:bg-black/5 hover:text-zinc-900"
-              }`}
+              className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${activeTab === "add-album"
+                ? "bg-blue-500 text-white shadow-sm"
+                : "bg-[#222224] text-zinc-400 hover:bg-[#2c2c2f] hover:text-white"
+                }`}
             >
-              <Layers className="h-3.5 w-3.5" />
-              <span>Add Entire Album (Batch)</span>
+              <span>Add Album</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("add-track")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${
-                activeTab === "add-track"
-                  ? "bg-[#19181b] text-[#dbe878] shadow-sm"
-                  : "text-zinc-600 hover:bg-black/5 hover:text-zinc-900"
-              }`}
+              className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${activeTab === "add-track"
+                ? "bg-blue-500 text-white shadow-sm"
+                : "bg-[#222224] text-zinc-400 hover:bg-[#2c2c2f] hover:text-white"
+                }`}
             >
-              <PlusCircle className="h-3.5 w-3.5" />
               <span>Add Single Track</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("catalog")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${
-                activeTab === "catalog"
-                  ? "bg-[#19181b] text-[#dbe878] shadow-sm"
-                  : "text-zinc-600 hover:bg-black/5 hover:text-zinc-900"
-              }`}
+              className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${activeTab === "catalog"
+                ? "bg-blue-500 text-white shadow-sm"
+                : "bg-[#222224] text-zinc-400 hover:bg-[#2c2c2f] hover:text-white"
+                }`}
             >
-              <Disc3 className="h-3.5 w-3.5" />
               <span>Manage Tracks ({songs.length})</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("artists")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${
-                activeTab === "artists"
-                  ? "bg-[#19181b] text-[#dbe878] shadow-sm"
-                  : "text-zinc-600 hover:bg-black/5 hover:text-zinc-900"
-              }`}
+              className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${activeTab === "artists"
+                ? "bg-blue-500 text-white shadow-sm"
+                : "bg-[#222224] text-zinc-400 hover:bg-[#2c2c2f] hover:text-white"
+                }`}
             >
-              <Users2 className="h-3.5 w-3.5" />
               <span>Artist Profiles ({individualArtists.length})</span>
             </button>
           </>
@@ -495,44 +476,38 @@ export default function SettingsPage() {
       {activeTab === "account" ? (
         <div className="grid gap-6 lg:grid-cols-12">
           {/* Live Preview Card */}
-          <div className="rounded-[32px] bg-gradient-to-br from-[#19181b] to-[#252428] p-6 text-white shadow-xl lg:col-span-4 flex flex-col justify-between">
+          <div className="rounded-[36px] border border-white/5 bg-gradient-to-br from-[#19181b] via-[#242228] to-[#121114] p-6 text-white shadow-xl lg:col-span-4 flex flex-col justify-between">
             <div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#dbe878]">
-                <Sparkles className="h-3 w-3" />
-                Live Identity Preview
-              </span>
+              <span className="text-xs font-semibold text-blue-400">Preview</span>
 
               <div className="mt-6 flex flex-col items-center text-center">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={displayName}
-                    className="h-24 w-24 rounded-full object-cover ring-4 ring-[#dbe878]/30 shadow-xl"
+                    className="h-24 w-24 rounded-full object-cover ring-4 ring-white/10 shadow-xl"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = "none";
                     }}
                   />
                 ) : (
-                  <div className="grid h-24 w-24 place-items-center rounded-full bg-[#2a292d] text-2xl font-bold text-[#dbe878] ring-2 ring-white/10">
+                  <div className="grid h-24 w-24 place-items-center rounded-full bg-[#2c2c2f] text-2xl font-bold text-white ring-2 ring-white/10">
                     {initials(displayName || user?.email || "U")}
                   </div>
                 )}
 
-                <h3 className="mt-4 font-serif text-xl font-bold text-white">
+                <h3 className="mt-4 text-xl font-bold text-white">
                   {displayName || "Listener"}
                 </h3>
                 <p className="text-xs text-zinc-400 font-mono">{user?.email}</p>
 
-                <div className="mt-3 flex items-center gap-1.5 rounded-full bg-[#dbe878]/20 px-3 py-1 text-[10px] font-bold tracking-widest text-[#dbe878]">
-                  <Shield className="h-3 w-3" />
-                  <span>ROLE: {role.toUpperCase()}</span>
-                </div>
+                <div className="mt-3 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold capitalize text-blue-400">{role}</div>
               </div>
             </div>
 
             <div className="mt-8 border-t border-white/10 pt-4 text-xs text-zinc-400">
               {isAdmin ? (
-                <p className="text-emerald-300 font-medium">
+                <p className="font-medium">
                   Administrator role enabled. You have permission to add albums, import tracks, edit metadata, delete tracks, and customize artist profiles.
                 </p>
               ) : (
@@ -546,68 +521,62 @@ export default function SettingsPage() {
           {/* Form */}
           <form
             onSubmit={handleSaveProfile}
-            className="rounded-[32px] border border-black/5 bg-white p-6 shadow-sm sm:p-8 lg:col-span-8"
+            className="rounded-[36px] border border-white/5 bg-[#222224] p-6 sm:p-8 lg:col-span-8"
           >
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-xl font-bold text-zinc-900">Profile Details</h2>
+                <h2 className="text-lg font-bold tracking-tight text-white">Profile Details</h2>
                 <p className="mt-1 text-xs text-zinc-500">
                   Update your display name and avatar image.
                 </p>
               </div>
 
-              <span
-                className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
-                  isAdmin
-                    ? "bg-[#19181b] text-[#dbe878]"
-                    : "bg-zinc-100 text-zinc-600"
-                }`}
-              >
-                {isAdmin ? "Admin Role" : "Listener Role"}
+              <span className={`rounded-full bg-white/10 px-3 py-1 text-xs font-semibold ${isAdmin ? "text-blue-400" : "text-zinc-300"}`}>
+                {isAdmin ? "Administrator" : "Listener"}
               </span>
             </div>
 
             <div className="mt-6 space-y-4">
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
+              <label className="block text-xs font-semibold text-zinc-400">
                 Display Name
                 <input
                   required
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="e.g. The Creator, Miles Davis, etc."
-                  className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                  className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
                 />
               </label>
 
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
+              <label className="block text-xs font-semibold text-zinc-400">
                 Avatar Image URL
                 <input
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   placeholder="https://images.unsplash.com/... or https://res.cloudinary.com/..."
-                  className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                  className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
                 />
               </label>
 
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400">
+              <label className="block text-xs font-semibold text-zinc-400">
                 Registered Email (Read-only)
                 <input
                   disabled
                   value={user?.email ?? ""}
-                  className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-500 outline-none cursor-not-allowed"
+                  className="mt-1.5 w-full rounded-full border border-white/5 bg-[#1a1a1c]/50 px-5 py-3 text-sm font-medium text-zinc-500 outline-none cursor-not-allowed"
                 />
               </label>
             </div>
 
             {profileSuccess ? (
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-700">
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-500/10 px-4 py-2.5 text-xs font-semibold text-emerald-400">
                 <Check className="h-4 w-4" />
                 <span>Display name and profile updated successfully!</span>
               </div>
             ) : null}
 
             {profileError ? (
-              <div className="mt-4 rounded-xl bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600">
+              <div className="mt-4 rounded-xl bg-rose-500/10 px-4 py-2.5 text-xs font-medium text-rose-400">
                 {profileError}
               </div>
             ) : null}
@@ -616,7 +585,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={profileBusy}
-                className="inline-flex items-center gap-2 rounded-full bg-[#19181b] px-6 py-3 text-xs font-bold text-[#dbe878] shadow-md transition hover:scale-105 active:scale-95 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-6 py-3 text-xs font-bold text-white shadow-md transition hover:scale-105 active:scale-95 disabled:opacity-60"
               >
                 {profileBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Save Profile Changes
@@ -628,7 +597,7 @@ export default function SettingsPage() {
                   await signOut();
                   router.replace("/login");
                 }}
-                className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2.5 text-xs font-medium text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-900"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2.5 text-xs font-medium text-zinc-400 transition hover:border-white/30 hover:text-white"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
@@ -642,14 +611,10 @@ export default function SettingsPage() {
       {isAdmin && activeTab === "add-album" ? (
         <form
           onSubmit={handleSaveBatchAlbum}
-          className="rounded-[32px] border border-black/5 bg-white p-6 shadow-sm sm:p-8 space-y-8"
+          className="rounded-[36px] border border-white/5 bg-[#222224] p-6 sm:p-8 space-y-8"
         >
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#dbe878]/25 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#576412]">
-              <Layers className="h-3.5 w-3.5" />
-              <span>Studio Batch Importer</span>
-            </div>
-            <h2 className="mt-2 font-serif text-2xl font-bold text-zinc-900">
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">
               Add Entire Album at Once
             </h2>
             <p className="mt-1 text-xs text-zinc-500 max-w-2xl">
@@ -662,37 +627,37 @@ export default function SettingsPage() {
           <div className="grid gap-6 lg:grid-cols-12">
             <div className="space-y-4 lg:col-span-8">
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">
+                <label className="block text-xs font-semibold text-zinc-400">
                   Album Title *
                   <input
                     required
                     value={batchAlbumTitle}
                     onChange={(e) => setBatchAlbumTitle(e.target.value)}
                     placeholder="e.g. Random Access Memories"
-                    className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                    className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
                   />
                 </label>
 
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">
+                <label className="block text-xs font-semibold text-zinc-400">
                   Album Artist *
                   <input
                     required
                     value={batchArtistName}
                     onChange={(e) => setBatchArtistName(e.target.value)}
                     placeholder="e.g. Daft Punk"
-                    className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                    className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
                   />
                 </label>
               </div>
 
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">
+              <label className="block text-xs font-semibold text-zinc-400">
                 Common Cover Artwork Image URL *
                 <input
                   required
                   value={batchCoverUrl}
                   onChange={(e) => setBatchCoverUrl(e.target.value)}
                   placeholder="https://res.cloudinary.com/.../album_cover.jpg or https://images.unsplash.com/..."
-                  className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                  className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
                 />
                 <span className="mt-1 block text-[11px] normal-case font-normal text-zinc-500">
                   This artwork URL will automatically be shared across the album and every track in this batch.
@@ -701,13 +666,13 @@ export default function SettingsPage() {
             </div>
 
             {/* Live Album Cover Art Preview */}
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-200/80 bg-zinc-50 p-4 lg:col-span-4 text-center">
+            <div className="flex flex-col items-center justify-center rounded-[28px] border border-white/5 bg-[#1a1a1c] p-4 lg:col-span-4 text-center">
               <Cover
                 src={batchCoverUrl}
                 title={batchAlbumTitle || "Album Cover"}
-                className="h-32 w-32 rounded-2xl shadow-md ring-1 ring-black/10"
+                className="h-32 w-32 rounded-2xl shadow-md ring-1 ring-white/10"
               />
-              <p className="mt-2.5 font-bold text-xs text-zinc-900 truncate max-w-[200px]">
+              <p className="mt-2.5 font-bold text-xs text-white truncate max-w-[200px]">
                 {batchAlbumTitle || "Album Title Preview"}
               </p>
               <p className="text-[11px] text-zinc-500 truncate max-w-[200px]">
@@ -717,10 +682,10 @@ export default function SettingsPage() {
           </div>
 
           {/* Tracks Section Header & Quick-Paste Toggle */}
-          <div className="border-t border-zinc-200 pt-6">
+          <div className="border-t border-white/10 pt-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="font-serif text-lg font-bold text-zinc-900">
+                <h3 className="text-base font-bold text-white">
                   Album Tracklist ({batchTracks.length} tracks)
                 </h3>
                 <p className="text-xs text-zinc-500">
@@ -733,27 +698,27 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => void detectAllMissingMetadata()}
                   disabled={batchDetectingAll}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#2c2c2f] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-white/30 disabled:opacity-50"
                   title="Auto-detect title, artist, and duration for all tracks"
                 >
                   {batchDetectingAll ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+                    <Loader2 className="h-3 w-3 animate-spin text-blue-400" />
                   ) : (
-                    <Sparkles className="h-3 w-3 text-amber-600" />
+                    <RefreshCw className="h-3 w-3 text-blue-400" />
                   )}
-                  <span>{batchDetectingAll ? "Detecting..." : "Auto-detect All"}</span>
+                  <span>{batchDetectingAll ? "Detecting..." : "Fetch"}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowBulkPaste(!showBulkPaste)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#2c2c2f] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-white/30"
                 >
                   <span>{showBulkPaste ? "Hide Text Paste" : "Quick Text Paste"}</span>
                 </button>
                 <button
                   type="button"
                   onClick={addTrackRow}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#19181b] px-3.5 py-1.5 text-xs font-semibold text-[#dbe878] transition hover:scale-105"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-500 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:scale-105"
                 >
                   <Plus className="h-3 w-3" />
                   <span>Add Track Row</span>
@@ -763,24 +728,24 @@ export default function SettingsPage() {
 
             {/* Bulk Paste Box (Optional) */}
             {showBulkPaste ? (
-              <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 space-y-2">
-                <p className="text-xs font-bold text-zinc-800">
+              <div className="mt-4 rounded-2xl border border-white/5 bg-[#1a1a1c] p-4 space-y-2">
+                <p className="text-xs font-bold text-zinc-200">
                   Paste multi-track list (one line per track):
                 </p>
                 <p className="text-[11px] text-zinc-500">
-                  Format: <code className="bg-zinc-200 px-1 py-0.5 rounded">Audio Stream URL</code> OR <code className="bg-zinc-200 px-1 py-0.5 rounded">Title | Audio URL | Optional Artist Override | Optional Duration</code>
+                  Format: <code className="bg-white/10 text-zinc-200 px-1 py-0.5 rounded">Audio Stream URL</code> OR <code className="bg-white/10 text-zinc-200 px-1 py-0.5 rounded">Title | Audio URL | Optional Artist Override | Optional Duration</code>
                 </p>
                 <textarea
                   rows={4}
                   value={bulkPasteText}
                   onChange={(e) => setBulkPasteText(e.target.value)}
                   placeholder={`https://res.cloudinary.com/.../01%20-%20God's%20Plan.mp3\nhttps://res.cloudinary.com/.../02%20-%20Poetic%20Justice%20ft.%20Kendrick%20Lamar.mp3`}
-                  className="w-full rounded-xl border border-zinc-200 bg-white p-3 font-mono text-xs text-zinc-900 outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#222224] p-3 font-mono text-xs text-white outline-none focus:border-blue-500"
                 />
                 <button
                   type="button"
                   onClick={parseBulkPaste}
-                  className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-black"
+                  className="rounded-full bg-blue-500 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-blue-400"
                 >
                   Parse & Auto-Fill Tracks
                 </button>
@@ -788,9 +753,9 @@ export default function SettingsPage() {
             ) : null}
 
             {/* Track Rows Table */}
-            <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
+            <div className="mt-4 overflow-x-auto rounded-2xl border border-white/5 bg-[#1a1a1c]">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600 font-semibold uppercase tracking-wider text-[10px]">
+                <thead className="border-b border-white/5 bg-white/[0.03] text-zinc-400 font-semibold text-[11px]">
                   <tr>
                     <th className="py-3 px-3 w-10 text-center">#</th>
                     <th className="py-3 px-3 min-w-[180px]">Track Title *</th>
@@ -800,9 +765,9 @@ export default function SettingsPage() {
                     <th className="py-3 px-3 w-12 text-center"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100">
+                <tbody className="divide-y divide-white/5">
                   {batchTracks.map((row, idx) => (
-                    <tr key={row.id} className="hover:bg-zinc-50/70 transition">
+                    <tr key={row.id} className="hover:bg-white/[0.03] transition">
                       <td className="py-2.5 px-3 font-mono font-bold text-zinc-400 text-center">
                         {idx + 1}
                       </td>
@@ -812,7 +777,7 @@ export default function SettingsPage() {
                           value={row.title}
                           onChange={(e) => updateTrackRow(row.id, "title", e.target.value)}
                           placeholder={`Track ${idx + 1} title`}
-                          className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
+                          className="w-full rounded-xl border border-white/10 bg-[#1a1a1c] px-3 py-2 text-xs font-medium text-white outline-none placeholder:text-zinc-400 focus:border-blue-500"
                         />
                       </td>
                       <td className="py-2.5 px-3">
@@ -838,20 +803,20 @@ export default function SettingsPage() {
                               }
                             }}
                             placeholder="https://res.cloudinary.com/.../audio.mp3"
-                            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 pr-7 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
+                            className="w-full rounded-xl border border-white/10 bg-[#1a1a1c] px-3 py-2 pr-7 text-xs font-medium text-white outline-none placeholder:text-zinc-400 focus:border-blue-500"
                           />
                           {detectingRowIds.has(row.id) ? (
-                            <span className="absolute right-2 top-2.5 text-amber-600" title="Detecting track metadata...">
+                            <span className="absolute right-2 top-2.5 text-blue-400" title="Detecting track metadata...">
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             </span>
                           ) : row.audioUrl.trim().startsWith("http") ? (
                             <button
                               type="button"
                               onClick={() => void detectRowMetadata(row.id, undefined, true)}
-                              className="absolute right-2 top-2.5 text-zinc-400 hover:text-amber-600 transition"
+                              className="absolute right-2 top-2.5 text-zinc-400 hover:text-blue-400 transition"
                               title="Auto-detect title, artist, and duration from audio URL"
                             >
-                              <Sparkles className="h-3.5 w-3.5" />
+                              <RefreshCw className="h-3.5 w-3.5" />
                             </button>
                           ) : null}
                         </div>
@@ -861,7 +826,7 @@ export default function SettingsPage() {
                           value={row.artistName}
                           onChange={(e) => updateTrackRow(row.id, "artistName", e.target.value)}
                           placeholder={batchArtistName || "Defaults to Album Artist"}
-                          className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
+                          className="w-full rounded-xl border border-white/10 bg-[#1a1a1c] px-3 py-2 text-xs font-medium text-white outline-none placeholder:text-zinc-400 focus:border-blue-500"
                         />
                       </td>
                       <td className="py-2.5 px-3">
@@ -871,7 +836,7 @@ export default function SettingsPage() {
                             value={row.durationSeconds}
                             onChange={(e) => updateTrackRow(row.id, "durationSeconds", e.target.value)}
                             placeholder="e.g. 210"
-                            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-zinc-900"
+                            className="w-full rounded-xl border border-white/10 bg-[#1a1a1c] px-3 py-2 text-xs font-medium text-white outline-none placeholder:text-zinc-400 focus:border-blue-500"
                           />
                         </div>
                         {row.durationSeconds && Number(row.durationSeconds) > 0 ? (
@@ -884,7 +849,7 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => removeTrackRow(row.id)}
-                          className="rounded-full p-1.5 text-zinc-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                          className="rounded-full p-1.5 text-zinc-400 hover:bg-rose-500/10 hover:text-rose-400 transition"
                           title="Remove row"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -902,7 +867,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={addTrackRow}
-                  className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 hover:border-zinc-900 transition"
+                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#2c2c2f] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 hover:border-white/30 transition"
                 >
                   <Plus className="h-3 w-3" />
                   <span>Add Another Track</span>
@@ -910,7 +875,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={addFiveRows}
-                  className="rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-600 hover:border-zinc-900 transition"
+                  className="rounded-full border border-white/10 bg-[#2c2c2f] px-3.5 py-1.5 text-xs font-semibold text-zinc-400 hover:border-white/30 transition"
                 >
                   + Add 5 Rows
                 </button>
@@ -918,13 +883,13 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => void detectAllMissingMetadata()}
                   disabled={batchDetectingAll}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50/80 px-3.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#2c2c2f] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 hover:border-white/30 hover:text-white transition disabled:opacity-50"
                   title="Auto-detect titles, artists, and duration for all tracks"
                 >
                   {batchDetectingAll ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
-                    <Sparkles className="h-3 w-3 text-amber-600" />
+                    <RefreshCw className="h-3 w-3 text-blue-400" />
                   )}
                   <span>Auto-Detect All Details</span>
                 </button>
@@ -939,7 +904,7 @@ export default function SettingsPage() {
 
           {/* Feedback & Submit Button */}
           {albumStatus ? (
-            <div className="flex items-center justify-between rounded-xl bg-[#dbe878]/30 px-4 py-3 text-xs font-semibold text-zinc-900">
+            <div className="flex items-center justify-between rounded-xl bg-blue-500/10 px-4 py-3 text-xs font-semibold text-blue-300">
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4" />
                 <span>{albumStatus}</span>
@@ -947,7 +912,7 @@ export default function SettingsPage() {
               {albumCreatedTitle ? (
                 <Link
                   href={`/albums/${encodeURIComponent(albumCreatedTitle)}`}
-                  className="inline-flex items-center gap-1 font-bold underline hover:text-black"
+                  className="inline-flex items-center gap-1 font-bold underline hover:text-white"
                 >
                   <span>View Album Page</span>
                   <ArrowRight className="h-3 w-3" />
@@ -960,9 +925,9 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={albumBusy}
-              className="inline-flex items-center gap-2 rounded-full bg-[#19181b] px-8 py-3.5 text-xs font-bold text-[#dbe878] shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-8 py-3.5 text-xs font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-60"
             >
-              {albumBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+              {albumBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               <span>Import Entire Album ({batchTracks.filter((t) => t.title.trim()).length} tracks)</span>
             </button>
           </div>
@@ -973,10 +938,10 @@ export default function SettingsPage() {
       {isAdmin && activeTab === "add-track" ? (
         <form
           onSubmit={handleSaveTrack}
-          className="rounded-[32px] border border-black/5 bg-white p-6 shadow-sm sm:p-8"
+          className="rounded-[36px] border border-white/5 bg-[#222224] p-6 sm:p-8"
         >
           <div className="max-w-xl">
-            <h2 className="font-serif text-xl font-bold text-zinc-900">Add a Cloudinary Track</h2>
+            <h2 className="text-lg font-bold tracking-tight text-white">Add a Cloudinary Track</h2>
             <p className="mt-1 text-xs text-zinc-500">
               Paste direct audio and artwork HTTPS URLs from Cloudinary or external hosting. Tracks are
               stored directly in your database.
@@ -984,42 +949,42 @@ export default function SettingsPage() {
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
+            <label className="block text-xs font-semibold text-zinc-400">
               Song Title *
               <input
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Starboy"
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
               />
             </label>
 
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
+            <label className="block text-xs font-semibold text-zinc-400">
               Artist Name(s) *
               <input
                 required
                 value={artistName}
                 onChange={(e) => setArtistName(e.target.value)}
                 placeholder="e.g. Calvin Harris, Ayah Marar"
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
               />
               <span className="mt-1 block text-[11px] normal-case font-normal text-zinc-500">
                 Multiple artists can be comma-separated (e.g. &ldquo;Calvin Harris, Ayah Marar&rdquo;)
               </span>
             </label>
 
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
+            <label className="block text-xs font-semibold text-zinc-400">
               Album Title
               <input
                 value={albumTitle}
                 onChange={(e) => setAlbumTitle(e.target.value)}
                 placeholder="e.g. Starboy (Deluxe)"
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
               />
             </label>
 
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600">
+            <label className="block text-xs font-semibold text-zinc-400">
               <div className="flex items-center justify-between">
                 <span>Duration in Seconds</span>
                 {durationSeconds && Number(durationSeconds) > 0 ? (
@@ -1034,20 +999,20 @@ export default function SettingsPage() {
                   value={durationSeconds}
                   onChange={(e) => setDurationSeconds(e.target.value)}
                   placeholder="e.g. 230"
-                  className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 pr-24 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                  className="w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 pr-24 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
                 />
                 {audioUrl.trim().startsWith("http") ? (
                   <button
                     type="button"
                     onClick={() => void autoDetectSingleTrackMetadata(undefined, true)}
                     disabled={detectingSingleMetadata}
-                    className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 shadow-2xs hover:border-zinc-900 transition disabled:opacity-50"
+                    className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#2c2c2f] px-2.5 py-1 text-[11px] font-semibold text-zinc-200 hover:border-white/30 transition disabled:opacity-50"
                     title="Auto-detect song details from audio URL"
                   >
                     {detectingSingleMetadata ? (
-                      <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+                      <Loader2 className="h-3 w-3 animate-spin text-blue-400" />
                     ) : (
-                      <Sparkles className="h-3 w-3 text-amber-600" />
+                      <RefreshCw className="h-3 w-3 text-blue-400" />
                     )}
                     <span>Auto-detect</span>
                   </button>
@@ -1055,20 +1020,20 @@ export default function SettingsPage() {
               </div>
             </label>
 
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 sm:col-span-2">
+            <label className="block text-xs font-semibold text-zinc-400 sm:col-span-2">
               <div className="flex items-center justify-between">
                 <span>Audio Stream URL *</span>
                 {detectingSingleMetadata ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 lowercase tracking-normal">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 lowercase tracking-normal">
                     <Loader2 className="h-3 w-3 animate-spin" /> detecting metadata & duration...
                   </span>
                 ) : audioUrl.trim().startsWith("http") ? (
                   <button
                     type="button"
                     onClick={() => void autoDetectSingleTrackMetadata(undefined, true)}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 lowercase tracking-normal hover:text-amber-700 transition"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 lowercase tracking-normal hover:text-blue-300 transition"
                   >
-                    <Sparkles className="h-3 w-3" /> re-detect all
+                    <RefreshCw className="h-3 w-3" /> re-detect all
                   </button>
                 ) : null}
               </div>
@@ -1092,23 +1057,23 @@ export default function SettingsPage() {
                   }
                 }}
                 placeholder="https://res.cloudinary.com/.../video/upload/....mp3"
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
               />
             </label>
 
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 sm:col-span-2">
+            <label className="block text-xs font-semibold text-zinc-400 sm:col-span-2">
               Artwork Image URL
               <input
                 value={coverUrl}
                 onChange={(e) => setCoverUrl(e.target.value)}
                 placeholder="https://res.cloudinary.com/.../image/upload/....jpg"
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                className="mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-400 focus:border-blue-500"
               />
             </label>
           </div>
 
           {trackStatus ? (
-            <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#dbe878]/30 px-4 py-2.5 text-xs font-semibold text-zinc-900">
+            <div className="mt-4 flex items-center gap-2 rounded-xl bg-blue-500/10 px-4 py-2.5 text-xs font-semibold text-blue-300">
               <Check className="h-4 w-4" />
               <span>{trackStatus}</span>
             </div>
@@ -1117,7 +1082,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={trackBusy}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#19181b] px-6 py-3 text-xs font-bold text-[#dbe878] shadow-md transition hover:scale-105 active:scale-95 disabled:opacity-60"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-blue-500 px-6 py-3 text-xs font-bold text-white shadow-md transition hover:scale-105 active:scale-95 disabled:opacity-60"
           >
             {trackBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Add Track to Library
@@ -1130,7 +1095,7 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-xl font-bold text-zinc-900">Manage Tracks</h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">Manage Tracks</h2>
               <p className="text-xs text-zinc-500">
                 Click the edit button on any track to change metadata, title, artist, audio or cover art.
               </p>
@@ -1139,31 +1104,29 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("add-album")}
-                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-800 hover:border-zinc-900"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#2c2c2f] px-3.5 py-2 text-xs font-semibold text-zinc-200 hover:border-white/30"
               >
-                <Layers className="h-3.5 w-3.5" />
                 Add Album
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("add-track")}
-                className="inline-flex items-center gap-2 rounded-full bg-[#19181b] px-4 py-2 text-xs font-semibold text-[#dbe878]"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-2 text-xs font-semibold text-white"
               >
-                <PlusCircle className="h-3.5 w-3.5" />
                 Add Single Track
               </button>
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-black/5 bg-white p-4 shadow-sm">
+          <div className="rounded-[36px] border border-white/5 bg-[#222224] p-4">
             {songs.length === 0 ? (
               <p className="py-8 text-center text-xs text-zinc-500">No tracks in library yet.</p>
             ) : (
-              <div className="divide-y divide-zinc-100">
+              <div className="divide-y divide-white/5">
                 {songs.map((song) => (
                   <div
                     key={song.id}
-                    className="flex items-center justify-between py-3 px-2 transition hover:bg-zinc-50 rounded-xl"
+                    className="flex items-center justify-between py-3 px-2 transition hover:bg-white/[0.04] rounded-xl"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <Cover
@@ -1172,7 +1135,7 @@ export default function SettingsPage() {
                         className="h-10 w-10 rounded-xl"
                       />
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-bold text-zinc-900">{song.title}</p>
+                        <p className="truncate text-xs font-bold text-white">{song.title}</p>
                         <p className="truncate text-[11px] text-zinc-500">
                           {song.artist?.name} {song.album?.title ? `• ${song.album.title}` : ""}
                         </p>
@@ -1182,7 +1145,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => editSong(song)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900 hover:text-zinc-900"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-white/30 hover:text-white"
                     >
                       <Pencil className="h-3 w-3" />
                       <span>Edit</span>
@@ -1200,7 +1163,7 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="font-serif text-xl font-bold text-zinc-900">Artist Profiles & Photos</h2>
+              <h2 className="text-lg font-bold tracking-tight text-white">Artist Profiles & Photos</h2>
               <p className="text-xs text-zinc-500">
                 Manage profile pictures for all individual artists in your catalog ({individualArtists.length} artists).
               </p>
@@ -1211,13 +1174,13 @@ export default function SettingsPage() {
                 value={artistSearch}
                 onChange={(e) => setArtistSearch(e.target.value)}
                 placeholder="Search artists..."
-                className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2 pl-9 text-xs font-medium text-zinc-900 outline-none transition focus:border-zinc-900"
+                className="w-full rounded-full border border-white/10 bg-[#2c2c2f] px-4 py-2 pl-9 text-xs font-medium text-white outline-none transition focus:border-blue-500"
               />
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-400" />
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-black/5 bg-white p-6 shadow-sm">
+          <div className="rounded-[36px] border border-white/5 bg-[#222224] p-6">
             {filteredArtists.length === 0 ? (
               <p className="py-8 text-center text-xs text-zinc-500">
                 {artistSearch ? `No artists matching "${artistSearch}".` : "No artists in catalog yet."}
@@ -1227,13 +1190,13 @@ export default function SettingsPage() {
                 {filteredArtists.map((artist) => (
                   <div
                     key={artist.name}
-                    className="group relative flex flex-col items-center rounded-2xl border border-zinc-200/70 bg-white p-3.5 text-center shadow-2xs transition hover:border-zinc-400 hover:shadow-xs"
+                    className="group relative flex flex-col items-center rounded-[28px] border border-white/5 bg-[#1a1a1c] p-3.5 text-center transition hover:border-white/15 hover:bg-[#262628]"
                   >
                     {/* Compact Top-Right Edit Button */}
                     <button
                       type="button"
                       onClick={() => setEditingArtist(artist)}
-                      className="absolute right-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-[#19181b] hover:text-[#dbe878]"
+                      className="absolute right-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full bg-white/10 text-zinc-300 transition hover:bg-blue-500 hover:text-white"
                       title={`Edit profile picture and bio for ${artist.name}`}
                     >
                       <Pencil className="h-3 w-3" />
@@ -1249,7 +1212,7 @@ export default function SettingsPage() {
                         sizeClassName="w-16 h-16 sm:w-18 sm:h-18"
                       />
                       <p
-                        className="mt-2.5 w-full max-w-[120px] truncate px-1 text-xs font-bold text-zinc-900 hover:text-black transition"
+                        className="mt-2.5 w-full max-w-[120px] truncate px-1 text-xs font-bold text-white hover:text-white transition"
                         title={artist.name}
                       >
                         {artist.name}
@@ -1263,7 +1226,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => setEditingArtist(artist)}
-                      className="mt-2 inline-flex items-center gap-1 rounded-full bg-zinc-50 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600 ring-1 ring-black/5 transition hover:bg-[#19181b] hover:text-[#dbe878]"
+                      className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-300 transition hover:bg-blue-500 hover:text-white"
                     >
                       <Pencil className="h-2.5 w-2.5" />
                       <span>Edit</span>

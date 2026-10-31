@@ -1,185 +1,175 @@
 "use client";
 
-import { useAuth } from "@/context/auth-context";
-import { initials } from "@/lib/utils";
+import { useMusic } from "@/context/music-context";
+import { getIndividualArtists } from "@/lib/artists";
 import {
-  ArrowDownToLine,
-  Compass,
   Disc3,
   FolderArchive,
   Heart,
-  History,
+  Home,
   ListMusic,
-  Music,
-  Radio,
-  Settings,
-  Users2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 export function IconRail() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentView = searchParams.get("view");
-  const { profile, user, isAdmin, role } = useAuth();
+  const { songs, artists: catalogArtists } = useMusic();
 
-  const displayName = profile?.display_name || user?.email?.split("@")[0] || "Listener";
+  // Collapsed state is remembered across sessions
+  const [collapsed, setCollapsedRaw] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("orbit_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+  function toggleCollapsed() {
+    setCollapsedRaw((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("orbit_sidebar_collapsed", String(next));
+      } catch { }
+      return next;
+    });
+  }
 
-  const libraryItems = [
-    {
-      href: "/home",
-      label: "Browse",
-      icon: Compass,
-      isActive: pathname === "/home" || pathname === "/",
-    },
-    {
-      href: "/music",
-      label: "Songs",
-      icon: Music,
-      isActive: pathname === "/music" && !currentView,
-    },
-    {
-      href: "/music?view=albums",
-      label: "Albums",
-      icon: Disc3,
-      isActive: pathname === "/music" && currentView === "albums",
-    },
-    {
-      href: "/music?view=artists",
-      label: "Artists",
-      icon: Users2,
-      isActive: pathname === "/music" && currentView === "artists",
-    },
-    {
-      href: "/music?view=radio",
-      label: "Radio",
-      icon: Radio,
-      isActive: pathname === "/music" && currentView === "radio",
-    },
+  const menuItems = [
+    { href: "/home", label: "Home", icon: Home, isActive: pathname === "/home" || pathname === "/" },
+    { href: "/music?view=albums", label: "Albums", icon: Disc3, isActive: pathname === "/music" && currentView === "albums" },
+    { href: "/downloaded", label: "Local Files", icon: FolderArchive, isActive: pathname === "/downloaded" },
+    { href: "/favourites", label: "Favorites", icon: Heart, isActive: pathname === "/favourites" },
+    { href: "/folders", label: "Playlists", icon: ListMusic, isActive: pathname === "/folders" || pathname.startsWith("/folders/") },
   ];
 
-  const myMusicItems = [
-    {
-      href: "/home#recently-played",
-      label: "Last Played",
-      icon: History,
-      isActive: false,
-    },
-    {
-      href: "/favourites",
-      label: "Favorite Songs",
-      icon: Heart,
-      isActive: pathname === "/favourites",
-    },
-    {
-      href: "/folders",
-      label: "Playlists",
-      icon: ListMusic,
-      isActive: pathname === "/folders" || pathname.startsWith("/folders/"),
-    },
-    {
-      href: "/downloaded",
-      label: "Downloaded",
-      icon: ArrowDownToLine,
-      isActive: pathname === "/downloaded",
-    },
-  ];
+  type RailItem = { key: string; href: string; title: string; image: string; sub: string; round: boolean };
+
+  // Only artists that actually have a photo, most-played first
+  const artists = useMemo<RailItem[]>(
+    () =>
+      getIndividualArtists(songs, catalogArtists)
+        .filter((a) => Boolean(a.image_url))
+        .sort((a, b) => b.plays - a.plays || b.trackCount - a.trackCount)
+        .slice(0, 8)
+        .map((a) => ({
+          key: a.name,
+          href: `/artists/${encodeURIComponent(a.name)}`,
+          title: a.name,
+          image: a.image_url as string,
+          sub: `${a.trackCount} track${a.trackCount === 1 ? "" : "s"}`,
+          round: true,
+        })),
+    [songs, catalogArtists],
+  );
+
+  // Fallback when no artist has a photo yet: show album covers from the library instead
+  const albums = useMemo<RailItem[]>(() => {
+    const map = new Map<string, RailItem>();
+    for (const song of songs) {
+      const title = song.album?.title;
+      const image = song.cover_url || song.album?.cover_url;
+      if (!title || !image || map.has(title)) continue;
+      map.set(title, {
+        key: title,
+        href: `/albums/${encodeURIComponent(title)}`,
+        title,
+        image,
+        sub: song.artist?.name ?? "Various Artists",
+        round: false,
+      });
+      if (map.size >= 8) break;
+    }
+    return Array.from(map.values());
+  }, [songs]);
+
+  const showingArtists = artists.length > 0;
+  const rail = showingArtists ? artists : albums;
+  const railHeading = showingArtists ? "Artists" : "From your library";
 
   return (
-    <aside className="hidden h-full w-52 shrink-0 flex-col justify-between bg-[#19181b] px-4 py-5 text-zinc-300 md:flex lg:w-62">
-      <div className="flex flex-col">
-
-
-        {/* Library Section */}
-        <div>
-          <h3 className="mt-8 px-2 text-xs font-semibold tracking-wider text-zinc-400">Library</h3>
-          <nav className="mt-2.5 space-y-1">
-            {libraryItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  prefetch={true}
-                  onClick={(e) => {
-                    if (item.isActive) e.preventDefault();
-                  }}
-                  className={`group flex items-center gap-3 rounded-full px-3.5 py-2 text-xs font-medium transition ${item.isActive
-                    ? "bg-[#2d2c2f] font-semibold text-[#dbe878] shadow-sm"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    }`}
-                >
-                  <Icon className={`h-4 w-4 ${item.isActive ? "text-[#dbe878]" : "text-zinc-400 group-hover:text-white"}`} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* My Music Section */}
-        <div className="mt-7">
-          <h3 className="px-2 text-xs font-semibold tracking-wider text-zinc-400">My music</h3>
-          <nav className="mt-2.5 space-y-1">
-            {myMusicItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  prefetch={true}
-                  onClick={(e) => {
-                    if (item.isActive) e.preventDefault();
-                  }}
-                  className={`group flex items-center gap-3 rounded-full px-3.5 py-2 text-xs font-medium transition ${item.isActive
-                    ? "bg-[#2d2c2f] font-semibold text-[#dbe878] shadow-sm"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    }`}
-                >
-                  <Icon className={`h-4 w-4 ${item.isActive ? "text-[#dbe878]" : "text-zinc-400 group-hover:text-white"}`} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+    <aside
+      className={`hidden h-full shrink-0 flex-col bg-[#1a1a1c] py-7 text-zinc-300 transition-[width] duration-200 md:flex ${collapsed ? "w-[72px] items-center px-3" : "w-56 px-5 lg:w-60"
+        }`}
+    >
+      <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between px-1"}`}>
+        {!collapsed && <h2 className="text-[22px] font-bold tracking-tight text-white">Menu</h2>}
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? "Show sidebar" : "Hide sidebar"}
+          title={collapsed ? "Show sidebar" : "Hide sidebar"}
+          className="grid h-8 w-8 place-items-center rounded-lg text-zinc-400 transition hover:bg-white/10 hover:text-white"
+        >
+          {collapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
+        </button>
       </div>
 
-      {/* User Footer Profile & Settings */}
-      <div className="flex items-center justify-between border-t border-white/5 pt-4">
-        <Link
-          href="/profile"
-          className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-2 transition hover:bg-white/5"
-        >
-          {profile?.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt={displayName}
-              className="h-9 w-9 rounded-full object-cover ring-2 ring-[#dbe878]/30"
-            />
+      <nav className={`mt-5 space-y-1 ${collapsed ? "w-full" : ""}`}>
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              prefetch
+              onClick={(e) => {
+                if (item.isActive) e.preventDefault();
+              }}
+              className={`group flex items-center rounded-2xl text-[13px] font-semibold transition ${collapsed ? "h-11 w-full justify-center" : "gap-3 px-3 py-2.5"} ${item.isActive ? "bg-[#2c2c2f] text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                }`}
+            >
+              <Icon
+                className={`h-[18px] w-[18px] ${item.isActive ? "text-blue-500" : "text-zinc-600 group-hover:text-zinc-300"
+                  }`}
+              />
+              {!collapsed && <span>{item.label}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {rail.length > 0 && (
+        <>
+          {!collapsed ? (
+            <h2 className="mt-8 px-1 text-[22px] font-bold tracking-tight text-white">{railHeading}</h2>
           ) : (
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-[#2d2c2f] text-xs font-bold text-[#dbe878] ring-1 ring-white/10">
-              {initials(displayName)}
-            </div>
+            <div className="mt-6 h-px w-8 bg-white/10" />
           )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-white group-hover:text-[#dbe878]">
-              {displayName}
-            </p>
-            <p className="truncate text-[10px] text-zinc-400 capitalize">
-              {isAdmin ? "Studio Admin" : "Listener"}
-            </p>
+          <div
+            className={`no-scrollbar min-h-0 flex-1 overflow-y-auto ${collapsed ? "mt-4 space-y-3" : "mt-3 space-y-1"
+              }`}
+          >
+            {rail.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                title={collapsed ? item.title : undefined}
+                className={`group flex items-center rounded-2xl transition ${collapsed ? "justify-center" : "gap-3 p-2 hover:bg-white/5"
+                  }`}
+              >
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className={`h-10 w-10 shrink-0 object-cover ring-1 ring-white/10 ${item.round ? "rounded-full" : "rounded-xl"
+                    }`}
+                />
+                {!collapsed && (
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-zinc-200 group-hover:text-white">{item.title}</p>
+                    <p className="truncate text-[10px] text-zinc-500">{item.sub}</p>
+                  </div>
+                )}
+              </Link>
+            ))}
           </div>
-        </Link>
-        <Link
-          href="/settings"
-          className="rounded-full p-1.5 text-zinc-500 hover:bg-white/10 hover:text-white"
-          title="Settings"
-        >
-          <Settings className="h-4 w-4" />
-        </Link>
-      </div>
+        </>
+      )}
     </aside>
   );
 }
@@ -187,8 +177,8 @@ export function IconRail() {
 export function OrbitMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <circle cx="16" cy="16" r="4" fill="#dbe878" />
-      <circle cx="16" cy="16" r="8" fill="none" stroke="#dbe878" strokeWidth="1.4" opacity="0.6" />
+      <circle cx="16" cy="16" r="4" fill="#3b82f6" />
+      <circle cx="16" cy="16" r="8" fill="none" stroke="#3b82f6" strokeWidth="1.4" opacity="0.6" />
       <ellipse
         cx="16"
         cy="16"

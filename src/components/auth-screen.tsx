@@ -3,10 +3,13 @@
 import { OrbitMark } from "@/components/icon-rail";
 import { createClient } from "@/lib/supabase/client";
 import { isConfigured } from "@/lib/utils";
-import { Disc3, Loader2, Sparkles } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+const inputClass =
+  "mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-600 focus:border-blue-500";
 
 export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -51,93 +54,76 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
   }
 
   return (
-    <div className="grid min-h-dvh w-full lg:grid-cols-12 bg-[#19181b]">
-      {/* Left Luxury Editorial Panel */}
-      <aside className="relative hidden overflow-hidden bg-gradient-to-br from-[#19181b] via-[#211f24] to-[#121113] p-12 text-white lg:col-span-6 lg:flex lg:flex-col lg:justify-between xl:col-span-7">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-[#dbe878]/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-96 w-96 rounded-full bg-amber-600/15 blur-3xl" />
+    <div className="grid min-h-dvh w-full bg-[#1a1a1c] lg:grid-cols-12">
+      {/* Left brand panel */}
+      <aside className="relative hidden overflow-hidden border-r border-white/5 bg-gradient-to-br from-[#19181b] via-[#242228] to-[#121114] p-12 text-white lg:col-span-6 lg:flex lg:flex-col lg:justify-between xl:col-span-7">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
 
         <div className="relative z-10 flex items-center gap-3">
-          <OrbitMark className="h-9 w-9" />
-          <span className="font-serif text-2xl font-bold tracking-tight text-white">Orbit</span>
-          <span className="rounded-full bg-[#dbe878]/15 px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-[#dbe878]">
-            STUDIO
-          </span>
+          <span className="text-2xl font-bold tracking-tight text-white">Orbit</span>
         </div>
 
         <div className="relative z-10 my-auto py-12">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold tracking-wider uppercase text-[#dbe878]">
-            <Sparkles className="h-3.5 w-3.5" />
-            High Fidelity Listening Room
-          </span>
-          <h2 className="mt-5 font-serif text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
-            Where audio artistry meets luxury design.
+          <h2 className="max-w-xl text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
+            Your music, beautifully in orbit.
           </h2>
-          <p className="mt-4 max-w-lg text-sm leading-relaxed text-zinc-300">
-            Stream your curated Cloudinary collection in full-screen ambient glory with studio quality sound and custom catalog controls.
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-zinc-400">
+            Stream your curated collection with full-screen ambient playback, synced lyrics and
+            offline downloads.
           </p>
-
-          <div className="mt-8 flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-300 backdrop-blur-md">
-              <Disc3 className="h-4 w-4 text-[#dbe878]" />
-              <span>Lossless FLAC & 320kbps MP3</span>
-            </div>
-            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-300 backdrop-blur-md">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span>Dynamic Ambient Visualizer</span>
-            </div>
-          </div>
         </div>
 
-        <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-6 text-xs text-zinc-400">
-          <span>© 2026 Orbit Audio Studio</span>
-          <span>Crafted for Connoisseurs</span>
+        <div className="relative z-10 border-t border-white/10 pt-6 text-xs text-zinc-500">
+          <span>© 2026 Orbit</span>
         </div>
       </aside>
 
-      {/* Right Form Container */}
-      <main className="flex items-center justify-center bg-[#f7f6f3] p-6 lg:col-span-6 xl:col-span-5">
-        <form onSubmit={onSubmit} className="w-full max-w-md rounded-[32px] border border-black/5 bg-white p-8 shadow-xl sm:p-10">
+      {/* Right form container */}
+      <main className="flex items-center justify-center p-6 lg:col-span-6 xl:col-span-5">
+        <form
+          onSubmit={onSubmit}
+          className="w-full max-w-md rounded-[36px] border border-white/5 bg-[#222224] p-8 shadow-2xl sm:p-10"
+        >
           <div className="mb-6 flex items-center gap-2.5 lg:hidden">
             <OrbitMark className="h-8 w-8" />
-            <span className="font-serif text-2xl font-bold text-zinc-900">Orbit</span>
+            <span className="text-2xl font-bold text-white">Orbit</span>
           </div>
 
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900">
+          <h1 className="text-3xl font-black tracking-tight text-white">
             {mode === "login" ? "Welcome back" : "Join Orbit"}
           </h1>
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-zinc-400">
             {mode === "login"
-              ? "Sign in to access your curated library, folders, and favourites."
-              : "Create an account to start curating your Cloudinary catalog."}
+              ? "Sign in to access your library, playlists and favourites."
+              : "Create an account to start building your library."}
           </p>
 
           {mode === "signup" ? (
-            <label className="mt-6 block text-xs font-bold uppercase tracking-wider text-zinc-600">
-              Your Name
+            <label className="mt-6 block text-xs font-semibold text-zinc-400">
+              Your name
               <input
                 required
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder="e.g. Miles Davis"
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+                className={inputClass}
               />
             </label>
           ) : null}
 
-          <label className="mt-4 block text-xs font-bold uppercase tracking-wider text-zinc-600">
-            Email Address
+          <label className={`${mode === "signup" ? "mt-4" : "mt-6"} block text-xs font-semibold text-zinc-400`}>
+            Email address
             <input
               required
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@domain.com"
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+              className={inputClass}
             />
           </label>
 
-          <label className="mt-4 block text-xs font-bold uppercase tracking-wider text-zinc-600">
+          <label className="mt-4 block text-xs font-semibold text-zinc-400">
             Password
             <input
               required
@@ -146,36 +132,36 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:bg-white"
+              className={inputClass}
             />
           </label>
 
           {message ? (
-            <p className="mt-4 rounded-xl bg-amber-50 p-2.5 text-xs font-medium text-amber-800">
+            <p className="mt-4 rounded-2xl bg-blue-500/10 px-4 py-2.5 text-xs font-medium text-blue-300">
               {message}
             </p>
           ) : null}
 
           <button
             disabled={busy}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#19181b] py-3.5 text-xs font-bold text-[#dbe878] shadow-md transition hover:scale-[1.02] active:scale-98 disabled:opacity-60"
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 py-3.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-400 active:scale-[0.98] disabled:opacity-60"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            <span>{mode === "login" ? "Sign In to Studio" : "Create Studio Account"}</span>
+            <span>{mode === "login" ? "Sign In" : "Create Account"}</span>
           </button>
 
-          <p className="mt-6 text-center text-xs text-zinc-500">
+          <p className="mt-6 text-center text-xs text-zinc-400">
             {mode === "login" ? (
               <>
                 New here?{" "}
-                <Link href="/signup" className="font-bold text-zinc-900 hover:underline">
+                <Link href="/signup" className="font-bold text-white hover:underline">
                   Create an account
                 </Link>
               </>
             ) : (
               <>
                 Already a member?{" "}
-                <Link href="/login" className="font-bold text-zinc-900 hover:underline">
+                <Link href="/login" className="font-bold text-white hover:underline">
                   Sign in
                 </Link>
               </>

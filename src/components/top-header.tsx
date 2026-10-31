@@ -2,30 +2,22 @@
 
 import { useFullscreen } from "@/components/app-shell";
 import { SearchCommandModal } from "@/components/search-command-modal";
-import { useAuth } from "@/context/auth-context";
-import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
-import { initials } from "@/lib/utils";
-import { Bell, ChevronRight, Search, Settings, Shuffle } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { ChevronLeft, Search, Volume2, VolumeX } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export function TopHeader() {
-  const pathname = usePathname();
-  const { profile, user } = useAuth();
-  const { songs } = useMusic();
-  const { playSong } = usePlayer();
+  const router = useRouter();
+  const { isPlaying, volume, setVolume } = usePlayer();
   const { fullscreen } = useFullscreen();
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [isMac] = useState(() => {
-    return (
+  const [isMac] = useState(
+    () =>
       typeof navigator !== "undefined" &&
-      /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent)
-    );
-  });
+      /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent),
+  );
 
-  // Global Command+K or Ctrl+K shortcut to search
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -37,147 +29,75 @@ export function TopHeader() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const displayName = profile?.display_name || user?.email?.split("@")[0] || "Listener";
-
-  // Dynamic breadcrumb matching screenshot "Artists > Top 2023"
-  function getBreadcrumb() {
-    if (pathname === "/home" || pathname === "/") {
-      return { parent: "Artists", current: "Top 2026" };
-    }
-    if (pathname.startsWith("/music")) {
-      return { parent: "Library", current: "All Songs" };
-    }
-    if (pathname.startsWith("/folders")) {
-      return { parent: "Collections", current: "Local Folders" };
-    }
-    if (pathname === "/favourites") {
-      return { parent: "My Music", current: "Favorites" };
-    }
-    if (pathname === "/profile") {
-      return { parent: "Account", current: "Profile" };
-    }
-    if (pathname === "/settings") {
-      return { parent: "Preferences", current: "Settings" };
-    }
-    return { parent: "Library", current: "Browse" };
-  }
-
-  const breadcrumb = getBreadcrumb();
-
-  function handleShufflePlay() {
-    if (songs.length === 0) return;
-    const randomIndex = Math.floor(Math.random() * songs.length);
-    playSong(songs[randomIndex], songs);
-  }
+  // NOTE: assumes volume is 0..1. If yours is 0..100, change max/step and the % maths below.
+  const pct = Math.round((volume ?? 1) * 100);
 
   return (
     <>
-      <header className={`flex items-center justify-between gap-4 px-6 pt-5 pb-3 md:px-8${fullscreen ? " min-h-[64px]" : ""}`}>
-      {/* Breadcrumb Navigation matching screenshot */}
-      <div className={`items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-500${fullscreen ? " hidden md:flex" : " flex"}`}>
-        <span className="text-zinc-600 hover:text-zinc-900">{breadcrumb.parent}</span>
-        <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />
-        <span className="font-bold text-zinc-900">{breadcrumb.current}</span>
-      </div>
-
-      {/* Middle & Right Header Elements */}
-      <div className={`items-center gap-3 sm:gap-4${fullscreen ? " hidden md:flex" : " flex"}`}>
-        {/* Desktop Command K Search Button */}
+      <header
+        className={`flex items-center gap-4 px-5 pt-6 pb-4 md:px-8${fullscreen ? " min-h-[64px]" : ""}`}
+      >
+        {/* Back */}
         <button
           type="button"
-          onClick={() => setIsSearchModalOpen(true)}
-          className="hidden md:flex items-center gap-2.5 rounded-full border border-black/10 bg-white/90 backdrop-blur-md px-3.5 py-1.5 text-xs text-zinc-500 shadow-2xs hover:border-black/25 hover:text-zinc-900 transition active:scale-95 cursor-pointer"
-          title={`Search songs, albums, and artists (${isMac ? "⌘K" : "Ctrl+K"})`}
+          onClick={() => router.back()}
+          aria-label="Go back"
+          className="grid h-7 w-14 place-items-center rounded-full border border-white/15 text-zinc-400 transition hover:border-white/30 hover:text-white"
         >
-          <Search className="h-3.5 w-3.5 text-zinc-400" />
-          <span className="font-medium text-zinc-500">Search library...</span>
-          <kbd className="ml-1 flex items-center gap-0.5 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-zinc-600 shadow-2xs">
-            {isMac ? "⌘K" : "Ctrl+K"}
-          </kbd>
+          <ChevronLeft className="h-4 w-4" />
         </button>
 
-        {/* Mobile Search Icon Button */}
+        <div className="flex-1" />
+
+        {/* Search pill */}
         <button
           type="button"
           onClick={() => setIsSearchModalOpen(true)}
-          className="md:hidden rounded-full p-2 text-zinc-600 transition hover:bg-black/5 hover:text-zinc-900"
-          title="Search library"
-          aria-label="Search library"
+          title={`Search (${isMac ? "⌘K" : "Ctrl+K"})`}
+          className="flex w-52 items-center justify-between rounded-full bg-[#2a2a2d] px-4 py-2.5 text-xs text-zinc-400 transition hover:text-white md:w-72"
         >
+          <span>Search library...</span>
           <Search className="h-4 w-4" />
         </button>
 
-        {/* Quick Nav Tabs matching screenshot: "New Releases", "New Feed", "Shuffle Play" */}
-        <div className="hidden items-center gap-5 text-xs font-semibold text-zinc-600 md:flex">
-          <Link
-            href="/home"
-            className="transition hover:text-zinc-950 hover:underline hover:underline-offset-4"
-          >
-            New Releases
-          </Link>
-          <Link
-            href="/music"
-            className="transition hover:text-zinc-950 hover:underline hover:underline-offset-4"
-          >
-            New Feed
-          </Link>
-          <button
-            type="button"
-            onClick={handleShufflePlay}
-            className="flex items-center gap-1.5 text-zinc-600 transition hover:text-zinc-950"
-          >
-            <Shuffle className="h-3 w-3" />
-            <span>Shuffle Play</span>
-          </button>
+        {/* Equalizer */}
+        <div className="hidden items-end gap-[3px] md:flex" aria-hidden>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span
+              key={i}
+              className={`w-[3px] rounded-full bg-zinc-600 ${isPlaying ? `eq-bar-${(i % 4) + 1}` : ""}`}
+              style={isPlaying ? undefined : { height: [10, 16, 22, 14, 8][i] }}
+            />
+          ))}
         </div>
 
-        {/* Action icons: Settings & Notification & Avatar */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/settings"
-            className="rounded-full p-2 text-zinc-600 transition hover:bg-black/5 hover:text-zinc-900"
-            title="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Link>
-
+        {/* Volume */}
+        <div className="hidden items-center gap-2.5 md:flex">
           <button
             type="button"
-            onClick={() => alert("All streams are up to date.")}
-            className="relative rounded-full p-2 text-zinc-600 transition hover:bg-black/5 hover:text-zinc-900"
-            title="Notifications"
+            onClick={() => setVolume(volume > 0 ? 0 : 1)}
+            aria-label={volume > 0 ? "Mute" : "Unmute"}
+            className="text-zinc-500 transition hover:text-white"
           >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#dbe878] ring-1 ring-white" />
+            {volume > 0 ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </button>
-
-          {/* User Profile Avatar */}
-          <Link
-            href="/profile"
-            className="group relative ml-1 block"
-            title={`View Profile: ${displayName}`}
-          >
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={displayName}
-                className="h-8 w-8 rounded-full object-cover ring-2 ring-zinc-300 transition group-hover:ring-zinc-900"
-              />
-            ) : (
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-[#19181b] text-[11px] font-bold text-[#dbe878] ring-1 ring-black/10 transition group-hover:scale-105">
-                {initials(displayName)}
-              </div>
-            )}
-          </Link>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={volume}
+            onChange={(e) => setVolume(Number(e.target.value))}
+            aria-label="Volume"
+            className="h-1 w-20 cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+            style={{
+              background: `linear-gradient(to right,#3b82f6 ${pct}%,#3a3a3d ${pct}%)`,
+            }}
+          />
         </div>
-      </div>
-    </header>
+      </header>
 
-    {/* Command K / Ctrl K Search Modal */}
-    <SearchCommandModal
-      isOpen={isSearchModalOpen}
-      onClose={() => setIsSearchModalOpen(false)}
-    />
-  </>
+      <SearchCommandModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} />
+    </>
   );
 }

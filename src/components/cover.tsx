@@ -13,7 +13,7 @@ export function Cover({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-lilac ${className}`}
+      className={`relative overflow-hidden ${className.includes("rounded") ? "" : "rounded-2xl"} bg-lilac ${className}`}
       style={!src ? { backgroundImage: coverFallback(title) } : undefined}
     >
       {src ? (
