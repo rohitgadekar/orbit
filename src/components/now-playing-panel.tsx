@@ -34,7 +34,7 @@ export function NowPlayingPanel({ onEditTrack }: { onEditTrack?: (song: Song) =>
     toggle, next, prev, seek, shuffle, repeat,
     toggleShuffle, cycleRepeat, setExpanded, playSong,
   } = usePlayer();
-  const { favouriteIds, toggleFavourite, songs } = useMusic();
+  const { favouriteIds, toggleFavourite, songs, loading } = useMusic();
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "Listener";
   const activeSong = current ?? songs[0] ?? null;
@@ -85,7 +85,50 @@ export function NowPlayingPanel({ onEditTrack }: { onEditTrack?: (song: Song) =>
         </span>
       </div>
 
-      {!activeSong ? (
+      {loading && songs.length === 0 ? (
+        /* Loading skeleton — mirrors the track card + queue rows */
+        <div className="animate-pulse" aria-hidden>
+          {/* Current track card */}
+          <div className="relative mt-10">
+            <div className="absolute -top-7 left-1/2 z-20 h-14 w-14 -translate-x-1/2 rounded-full bg-[#38383b] ring-4 ring-[#222224]" />
+            <div className="rounded-[28px] border border-white/5 bg-[#2c2c2f] px-4 pb-5 pt-10">
+              <div className="mx-auto h-3.5 w-32 rounded-full bg-[#38383b]" />
+              <div className="mx-auto mt-2 h-2.5 w-20 rounded-full bg-[#38383b]" />
+              <div className="mt-5 flex items-center justify-center gap-5">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className={`rounded-full bg-[#38383b] ${i === 2 ? "h-6 w-6" : "h-4 w-4"}`}
+                  />
+                ))}
+              </div>
+              <div className="mt-5 h-1 w-full rounded-full bg-[#38383b]" />
+              <div className="mt-2 flex justify-between">
+                <div className="h-2 w-6 rounded-full bg-[#38383b]" />
+                <div className="h-2 w-6 rounded-full bg-[#38383b]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Queue rows */}
+          <div className="mt-4 space-y-3">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 rounded-2xl border border-white/5 bg-[#2c2c2f] px-3 py-3"
+                style={{ opacity: Math.max(0.35, 1 - i * 0.12) }}
+              >
+                <div className="h-9 w-9 shrink-0 rounded-xl bg-[#38383b]" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="h-2.5 w-3/4 rounded-full bg-[#38383b]" />
+                  <div className="h-2 w-1/2 rounded-full bg-[#38383b]" />
+                </div>
+                <div className="h-2 w-6 rounded-full bg-[#38383b]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : !activeSong ? (
         <p className="mt-10 text-center text-sm text-zinc-500">Select a song to start listening</p>
       ) : (
         <>

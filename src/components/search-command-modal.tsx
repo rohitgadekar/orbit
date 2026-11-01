@@ -174,7 +174,7 @@ export function SearchCommandModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-[#2c2c2f] px-2 py-0.5 text-[11px] font-semibold text-zinc-500 hover:bg-white/10"
+            className="rounded-full bg-[#2c2c2f] px-2 py-0.5 !text-[10px] font-semibold text-zinc-500 hover:bg-white/10"
           >
             ESC
           </button>

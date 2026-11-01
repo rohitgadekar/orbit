@@ -233,7 +233,7 @@ export default function HomePage() {
             <span className="text-xs font-semibold text-blue-400">
               {recentlyPlayed.length > 0 ? "Pick up where you left off" : "Featured Track"}
             </span>
-            <h1 className="mt-2 font-sans text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl line-clamp-2">
+            <h1 className="mt-2 py-2 font-sans text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl line-clamp-2">
               {heroSong?.title ?? "Orbit Music"}
             </h1>
             <p className="mt-1.5 text-sm font-medium text-zinc-300">
