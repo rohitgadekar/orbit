@@ -53,14 +53,14 @@ export function MobileTabBar() {
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 md:hidden">
       {/* Mini player — floats just above the tab bar */}
       {current ? (
-        <div className="pointer-events-auto mx-4 mb-2 overflow-hidden rounded-3xl border border-white/15 bg-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur-2xl backdrop-saturate-[1.8]">
+        <div className="pointer-events-auto mx-4 mb-2 overflow-hidden rounded-full border border-white/15 bg-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur-2xl backdrop-saturate-[1.8]">
           <div className="flex items-center justify-between gap-3 px-2.5 py-2">
             <button
               type="button"
               onClick={() => setExpanded(true)}
               className="flex min-w-0 flex-1 items-center gap-2.5 text-left transition-transform focus:outline-none active:scale-[0.98]"
             >
-              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg ring-1 ring-white/10">
+              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
                 <Cover
                   src={cover}
                   title={current.title}

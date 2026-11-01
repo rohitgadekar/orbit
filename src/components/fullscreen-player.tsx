@@ -740,18 +740,6 @@ export function FullscreenPlayer({
                     <div className="h-32" />
                   </div>
                 )}
-
-                {/* Mobile close lyrics pill button */}
-                <div className="mt-4 flex justify-center md:hidden shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowLyrics(false)}
-                    className="flex items-center gap-1.5 rounded-full border border-white/15 bg-[#2a2a2d]/80 px-4 py-2 text-xs font-semibold text-zinc-300 backdrop-blur-md transition hover:bg-white/20 hover:text-white active:scale-95"
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" />
-                    <span>Back to player</span>
-                  </button>
-                </div>
               </div>
             )}
           </div>
