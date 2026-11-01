@@ -35,7 +35,7 @@ export function TopHeader() {
   return (
     <>
       <header
-        className={`flex items-center gap-4 px-5 pt-6 pb-4 md:px-8${fullscreen ? " min-h-[64px]" : ""}`}
+        className={`flex items-center gap-4 px-5 pt-[calc(var(--safe-top)+0.75rem)] pb-4 md:px-8 md:pt-6${fullscreen ? " min-h-[64px]" : ""}`}
       >
         {/* Back */}
         <button
@@ -89,7 +89,7 @@ export function TopHeader() {
             value={volume}
             onChange={(e) => setVolume(Number(e.target.value))}
             aria-label="Volume"
-            className="h-1 w-20 cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+            className="h-1 w-20 cursor-pointer appearance-none rounded-full accent-blue-500"
             style={{
               background: `linear-gradient(to right,#3b82f6 ${pct}%,#3a3a3d ${pct}%)`,
             }}
