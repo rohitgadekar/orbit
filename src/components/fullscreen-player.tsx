@@ -646,16 +646,6 @@ export function FullscreenPlayer({
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                     playing={isPlaying}
                   />
-
-                  {/* Animated Equalizer Overlay when playing */}
-                  {isPlaying ? (
-                    <div className="absolute bottom-4 right-4 flex items-end gap-1 rounded-full px-3 py-2">
-                      <span className="eq-bar-1 inline-block w-1 rounded-full bg-blue-500" />
-                      <span className="eq-bar-2 inline-block w-1 rounded-full bg-blue-500" />
-                      <span className="eq-bar-3 inline-block w-1 rounded-full bg-blue-500" />
-                      <span className="eq-bar-4 inline-block w-1 rounded-full bg-blue-500" />
-                    </div>
-                  ) : null}
                 </div>
               </div>
             ) : (
