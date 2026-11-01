@@ -102,15 +102,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 0 5px rgba(219, 232, 120, 0.6);
 }
 
-.fullscreen-range input[type="range"] {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.fullscreen-range input[type="range"]::-webkit-slider-thumb {
-  background: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-}
-
 /* YouTube style ambient mesh gradient animation */
 @keyframes ambientGlow {
   0% {

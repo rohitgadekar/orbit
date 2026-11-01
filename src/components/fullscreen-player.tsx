@@ -325,6 +325,10 @@ export function FullscreenPlayer({
   const isSavedOffline = current ? isDownloaded(current.id) : false;
   const isCurrentlyDownloading = current ? downloadingSongIds[current.id] !== undefined : false;
 
+  const trackTotal = duration || current?.duration_seconds || 0;
+  const trackPct = trackTotal ? Math.min(100, (progress / trackTotal) * 100) : 0;
+  const volPct = Math.round((volume ?? 1) * 100);
+
   // Dynamic colors strictly extracted from album/track cover image
   const [colors, setColors] = useState<ExtractedColors>(() =>
     getFallbackColors(current?.title || "Orbit")
@@ -815,19 +819,23 @@ export function FullscreenPlayer({
               </div>
 
               {/* Scrubber Progress Bar */}
-              <div className={`fullscreen-range ${showLyrics ? "mt-5" : "mt-8"} w-full space-y-2`}>
+              <div className={`${showLyrics ? "mt-5" : "mt-8"} w-full space-y-2`}>
                 <input
                   type="range"
                   min={0}
-                  max={duration || current.duration_seconds || 1}
+                  max={trackTotal || 1}
                   step={0.1}
-                  value={Math.min(progress, duration || progress)}
+                  value={Math.min(progress, trackTotal || progress)}
                   onChange={(e) => seek(Number(e.target.value))}
-                  className="w-full"
+                  aria-label="Seek"
+                  className="h-1 w-full cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+                  style={{
+                    background: `linear-gradient(to right,#3b82f6 ${trackPct}%,rgba(255,255,255,0.25) ${trackPct}%)`,
+                  }}
                 />
                 <div className="flex justify-between text-xs tabular-nums font-semibold text-zinc-400">
                   <span>{formatTime(progress)}</span>
-                  <span>{formatTime(duration || current.duration_seconds || 0)}</span>
+                  <span>{formatTime(trackTotal)}</span>
                 </div>
               </div>
 
@@ -895,7 +903,7 @@ export function FullscreenPlayer({
                 >
                   {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                 </button>
-                <div className="fullscreen-range w-32 sm:w-44">
+                <div className="w-32 sm:w-44">
                   <input
                     type="range"
                     min={0}
@@ -903,7 +911,11 @@ export function FullscreenPlayer({
                     step={0.01}
                     value={volume}
                     onChange={(e) => setVolume(Number(e.target.value))}
-                    className="w-full"
+                    aria-label="Volume"
+                    className="h-1 w-full cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+                    style={{
+                      background: `linear-gradient(to right,#3b82f6 ${volPct}%,rgba(255,255,255,0.25) ${volPct}%)`,
+                    }}
                   />
                 </div>
               </div>

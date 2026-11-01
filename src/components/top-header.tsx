@@ -89,9 +89,9 @@ export function TopHeader() {
             value={volume}
             onChange={(e) => setVolume(Number(e.target.value))}
             aria-label="Volume"
-            className="h-1 w-20 cursor-pointer appearance-none rounded-full accent-blue-500"
+            className="h-1 w-20 cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
             style={{
-              background: `linear-gradient(to right,#3b82f6 ${pct}%,#3a3a3d ${pct}%)`,
+              background: `linear-gradient(to right,#3b82f6 ${pct}%,rgba(255,255,255,0.25) ${pct}%)`,
             }}
           />
         </div>
