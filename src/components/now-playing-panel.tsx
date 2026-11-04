@@ -4,6 +4,7 @@ import { Cover } from "@/components/cover";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { useOffline } from "@/context/offline-context";
+import { usePip } from "@/context/pip-context";
 import { usePlayer } from "@/context/player-context";
 import { splitArtistNames } from "@/lib/artists";
 import type { Song } from "@/lib/types";
@@ -14,6 +15,7 @@ import {
   Heart,
   Loader2,
   Maximize2,
+  PictureInPicture2,
   Pause,
   Pencil,
   Play,
@@ -28,6 +30,7 @@ import Link from "next/link";
 
 export function NowPlayingPanel({ onEditTrack }: { onEditTrack?: (song: Song) => void }) {
   const { isAdmin, profile, user } = useAuth();
+  const pip = usePip();
   const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
   const {
     current, isPlaying, progress, duration, queue,
@@ -180,6 +183,17 @@ export function NowPlayingPanel({ onEditTrack }: { onEditTrack?: (song: Song) =>
                     <ArrowDownToLine className="h-3.5 w-3.5" />
                   )}
                 </button>
+                {pip.supported ? (
+                  <button
+                    type="button"
+                    onClick={pip.toggle}
+                    title={pip.isOpen ? "Close picture-in-picture" : "Picture-in-picture"}
+                    aria-label="Picture-in-picture"
+                    className={`transition hover:text-white ${pip.isOpen ? "text-blue-400" : ""}`}
+                  >
+                    <PictureInPicture2 className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
                 <button type="button" onClick={openFullscreen} title="Full screen" className="transition hover:text-white">
                   <Maximize2 className="h-3.5 w-3.5" />
                 </button>

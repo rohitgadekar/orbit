@@ -3,6 +3,7 @@
 import { Cover } from "@/components/cover";
 import { useMusic } from "@/context/music-context";
 import { useOffline } from "@/context/offline-context";
+import { usePip } from "@/context/pip-context";
 import type { RepeatMode, Song } from "@/lib/types";
 import { useLyrics } from "@/lib/use-lyrics";
 import { formatTime } from "@/lib/utils";
@@ -19,6 +20,7 @@ import {
   Music2,
   Pause,
   Pencil,
+  PictureInPicture2,
   Play,
   Repeat,
   Repeat1,
@@ -140,6 +142,7 @@ export function FullscreenPlayer({
 }) {
   const { favouriteIds, toggleFavourite } = useMusic();
   const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
+  const pip = usePip();
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
@@ -599,6 +602,22 @@ export function FullscreenPlayer({
           >
             <ListMusic className="h-4 w-4" />
           </button>
+
+          {pip.supported ? (
+            <button
+              type="button"
+              onClick={() => {
+                pip.toggle();
+                if (!pip.isOpen) onClose();
+              }}
+              className={`hidden rounded-full p-2.5 backdrop-blur-md transition hover:border-white/30 hover:bg-white/10 hover:text-white sm:block ${pip.isOpen ? "text-blue-400" : "text-zinc-300"
+                }`}
+              title={pip.isOpen ? "Close picture-in-picture" : "Picture-in-picture"}
+              aria-label="Picture-in-picture"
+            >
+              <PictureInPicture2 className="h-4 w-4" />
+            </button>
+          ) : null}
 
           <button
             type="button"

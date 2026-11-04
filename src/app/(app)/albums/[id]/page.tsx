@@ -2,6 +2,7 @@
 
 import { useTrackEditor } from "@/components/app-shell";
 import { Cover } from "@/components/cover";
+import { EditAlbumModal } from "@/components/edit-album-modal";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
 import { useAuth } from "@/context/auth-context";
@@ -16,6 +17,7 @@ import {
   CheckCircle2,
   Disc3,
   Loader2,
+  Pencil,
   Play,
   Shuffle,
 } from "lucide-react";
@@ -34,6 +36,7 @@ export default function AlbumDetailPage() {
   const { isAdmin } = useAuth();
   const { isDownloaded, toggleDownloadSong, downloadingSongIds } = useOffline();
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [editingAlbum, setEditingAlbum] = useState(false);
 
   // Find all songs that belong to this album by id or title
   const albumData = useMemo(() => {
@@ -230,6 +233,18 @@ export default function AlbumDetailPage() {
                     <span>Shuffle</span>
                   </button>
 
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => setEditingAlbum(true)}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
+                      title="Update cover and title for every track in this album"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Edit album</span>
+                    </button>
+                  ) : null}
+
                   {/* Batch Download Album button */}
                   <button
                     type="button"
@@ -305,6 +320,12 @@ export default function AlbumDetailPage() {
           ))}
         </div>
       </section>
+
+      <EditAlbumModal
+        album={editingAlbum ? albumData : null}
+        isOpen={editingAlbum}
+        onClose={() => setEditingAlbum(false)}
+      />
     </div>
   );
 }

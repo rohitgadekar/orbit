@@ -50,6 +50,12 @@ type MusicContextValue = {
   addTrack: (input: TrackInput) => Promise<void>;
   addAlbum: (input: BatchAlbumInput) => Promise<string>;
   updateTrack: (songId: string, input: TrackInput) => Promise<void>;
+  updateAlbum: (input: {
+    albumId?: string | null;
+    songIds: string[];
+    title?: string;
+    coverUrl?: string;
+  }) => Promise<void>;
   deleteTrack: (songId: string) => Promise<void>;
   recordPlay: (songId: string) => Promise<void>;
   updateProfile: (displayName: string, avatarUrl?: string) => Promise<void>;
@@ -391,7 +397,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined" && "vibrate" in navigator) {
         try {
           navigator.vibrate(12);
-        } catch {}
+        } catch { }
       }
 
       // Background DB sync without blocking the UI or triggering slow full refreshes
@@ -565,7 +571,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined" && "vibrate" in navigator) {
         try {
           navigator.vibrate(10);
-        } catch {}
+        } catch { }
       }
 
       // 2. Background DB deletion without slow refresh()
@@ -620,7 +626,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined" && "vibrate" in navigator) {
         try {
           navigator.vibrate(10);
-        } catch {}
+        } catch { }
       }
 
       // 2. Background DB upsert without blocking UI or triggering slow full refresh()
@@ -679,7 +685,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined" && "vibrate" in navigator) {
         try {
           navigator.vibrate(10);
-        } catch {}
+        } catch { }
       }
 
       // 2. Background DB deletion without slow refresh()
@@ -844,7 +850,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       for (const track of validTracks) {
         const trackArtist =
           track.artistName?.trim() &&
-          track.artistName.trim().toLowerCase() !== input.artistName.trim().toLowerCase()
+            track.artistName.trim().toLowerCase() !== input.artistName.trim().toLowerCase()
             ? await resolveArtist(supabase, track.artistName)
             : mainArtist;
 
@@ -950,6 +956,64 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       await refresh();
     },
     [isAdmin, refresh, songs],
+  );
+
+  // Bulk-edit an album: cover (and optionally title) applied to the album row and every track in it
+  const updateAlbum = useCallback(
+    async (input: {
+      albumId?: string | null;
+      songIds: string[];
+      title?: string;
+      coverUrl?: string;
+    }) => {
+      if (!isAdmin) throw new Error("Administrator role required to edit albums.");
+      if (input.songIds.length === 0) throw new Error("This album has no tracks to update.");
+
+      const supabase = createClient();
+      const coverUrl = input.coverUrl?.trim() || null;
+      const title = input.title?.trim();
+
+      if (input.albumId) {
+        const patch: { cover_url: string | null; title?: string } = { cover_url: coverUrl };
+        if (title) patch.title = title;
+        const { error: albumError } = await supabase
+          .from("albums")
+          .update(patch)
+          .eq("id", input.albumId);
+        if (albumError) throw albumError;
+      }
+
+      const { data: updatedSongs, error: songError } = await supabase
+        .from("songs")
+        .update({ cover_url: coverUrl })
+        .in("id", input.songIds)
+        .select("id");
+      if (songError) throw songError;
+      if (!updatedSongs || updatedSongs.length === 0) {
+        throw new Error(
+          "Tracks could not be updated. Please verify your Supabase RLS policies permit update on public.songs.",
+        );
+      }
+
+      // Optimistic local update so every view changes instantly
+      const ids = new Set(input.songIds);
+      setSongs((current) =>
+        current.map((s) =>
+          ids.has(s.id)
+            ? {
+              ...s,
+              cover_url: coverUrl,
+              album: s.album
+                ? { ...s.album, cover_url: coverUrl, ...(title ? { title } : {}) }
+                : s.album,
+            }
+            : s,
+        ),
+      );
+
+      await refresh();
+    },
+    [isAdmin, refresh],
   );
 
   const updateArtistProfile = useCallback(
@@ -1105,6 +1169,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       addTrack,
       addAlbum,
       updateTrack,
+      updateAlbum,
       deleteTrack,
       recordPlay,
       updateProfile,
@@ -1132,6 +1197,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       addTrack,
       addAlbum,
       updateTrack,
+      updateAlbum,
       deleteTrack,
       recordPlay,
       updateProfile,

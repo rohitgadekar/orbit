@@ -4,6 +4,7 @@ import { AddToPlaylistModal } from "@/components/add-to-playlist-modal";
 import { useTrackEditor } from "@/components/app-shell";
 import { ArtistAvatar } from "@/components/artist-avatar";
 import { Cover } from "@/components/cover";
+import { EditAlbumModal, type EditableAlbum } from "@/components/edit-album-modal";
 import { EditArtistModal } from "@/components/edit-artist-modal";
 import { EmptyState } from "@/components/empty-state";
 import { SongRow } from "@/components/song-row";
@@ -59,6 +60,7 @@ export default function MusicPage() {
   const { playSong } = usePlayer();
   const { editSong } = useTrackEditor();
   const { isAdmin } = useAuth();
+  const [editingAlbum, setEditingAlbum] = useState<EditableAlbum | null>(null);
 
   const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
@@ -607,6 +609,21 @@ export default function MusicPage() {
                     <Play className="h-3.5 w-3.5 translate-x-0.5 fill-current" />
                   </span>
                 </div>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setEditingAlbum(album);
+                    }}
+                    className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white opacity-0 backdrop-blur-md transition hover:bg-blue-500 group-hover:opacity-100"
+                    title="Edit album cover for all tracks"
+                    aria-label={`Edit ${album.title}`}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
               </div>
               <p className="mt-2 truncate text-xs font-bold text-white transition">
                 {album.title}
@@ -788,6 +805,12 @@ export default function MusicPage() {
         song={selectedForFolder}
         isOpen={Boolean(selectedForFolder)}
         onClose={() => setSelectedForFolder(null)}
+      />
+
+      <EditAlbumModal
+        album={editingAlbum}
+        isOpen={Boolean(editingAlbum)}
+        onClose={() => setEditingAlbum(null)}
       />
 
       {/* Edit Artist Profile Picture Modal */}

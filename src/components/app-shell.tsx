@@ -9,6 +9,7 @@ import { TopHeader } from "@/components/top-header";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { useOffline } from "@/context/offline-context";
+import { PipProvider } from "@/context/pip-context";
 import type { Song } from "@/lib/types";
 import { WifiOff } from "lucide-react";
 import Link from "next/link";
@@ -95,52 +96,54 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <FullscreenContext.Provider value={{ fullscreen, setFullscreen }}>
       <TrackEditorContext.Provider value={{ editSong: (song) => setEditingSong(song) }}>
-        {/* Full-bleed app: no outer backdrop or rounded window */}
-        <div className="h-dvh w-full bg-[#1a1a1c]">
-          <div className="flex h-full min-h-0 w-full overflow-hidden bg-[#1a1a1c] text-zinc-200">
-            <IconRail />
+        <PipProvider>
+          {/* Full-bleed app: no outer backdrop or rounded window */}
+          <div className="h-dvh w-full bg-[#1a1a1c]">
+            <div className="flex h-full min-h-0 w-full overflow-hidden bg-[#1a1a1c] text-zinc-200">
+              <IconRail />
 
-            {/* Center canvas */}
-            <div className="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-white/[0.04]">
-              <TopHeader />
+              {/* Center canvas */}
+              <div className="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-white/[0.04]">
+                <TopHeader />
 
-              {!isOnline ? (
-                <div className="mx-4 mb-2.5 flex items-center justify-between rounded-xl bg-blue-500/10 px-4 py-2 text-xs font-semibold text-blue-300 md:mx-8">
-                  <div className="flex items-center gap-2">
-                    <WifiOff className="h-3.5 w-3.5" />
-                    <span>Offline mode — downloaded songs are ready to play; others are dimmed</span>
+                {!isOnline ? (
+                  <div className="mx-4 mb-2.5 flex items-center justify-between rounded-xl bg-blue-500/10 px-4 py-2 text-xs font-semibold text-blue-300 md:mx-8">
+                    <div className="flex items-center gap-2">
+                      <WifiOff className="h-3.5 w-3.5" />
+                      <span>Offline mode — downloaded songs are ready to play; others are dimmed</span>
+                    </div>
+                    <Link href="/music" className="ml-2 shrink-0 font-bold underline hover:text-white">
+                      Browse songs
+                    </Link>
                   </div>
-                  <Link href="/music" className="ml-2 shrink-0 font-bold underline hover:text-white">
-                    Browse songs
-                  </Link>
-                </div>
-              ) : null}
+                ) : null}
 
-              {error ? <p className="px-8 pb-2 text-xs font-medium text-rose-400">Notice: {error}</p> : null}
+                {error ? <p className="px-8 pb-2 text-xs font-medium text-rose-400">Notice: {error}</p> : null}
 
-              <main
-                ref={mainRef}
-                className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-58 md:px-8 md:pb-6"
-              >
-                {children}
-              </main>
+                <main
+                  ref={mainRef}
+                  className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-58 md:px-8 md:pb-6"
+                >
+                  {children}
+                </main>
 
-              <PlayerBar />
-              <MobileTabBar />
+                <PlayerBar />
+                <MobileTabBar />
+              </div>
+
+              {/* Right "Play queue" panel — full height, inset from the window edge */}
+              <div className="hidden p-3 lg:flex">
+                <NowPlayingPanel onEditTrack={(song) => setEditingSong(song)} />
+              </div>
+
+              <EditTrackModal
+                song={editingSong}
+                isOpen={Boolean(editingSong)}
+                onClose={() => setEditingSong(null)}
+              />
             </div>
-
-            {/* Right "Play queue" panel — full height, inset from the window edge */}
-            <div className="hidden p-3 lg:flex">
-              <NowPlayingPanel onEditTrack={(song) => setEditingSong(song)} />
-            </div>
-
-            <EditTrackModal
-              song={editingSong}
-              isOpen={Boolean(editingSong)}
-              onClose={() => setEditingSong(null)}
-            />
           </div>
-        </div>
+        </PipProvider>
       </TrackEditorContext.Provider>
     </FullscreenContext.Provider>
   );
