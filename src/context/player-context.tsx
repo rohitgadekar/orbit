@@ -24,6 +24,8 @@ type PlayerContextValue = {
   shuffle: boolean;
   repeat: RepeatMode;
   expanded: boolean;
+  crossfade: number;
+  setCrossfade: (value: number) => void;
   setExpanded: (value: boolean) => void;
   playSong: (song: Song, queue?: Song[]) => void;
   toggle: () => void;
@@ -31,11 +33,42 @@ type PlayerContextValue = {
   prev: () => void;
   seek: (time: number) => void;
   setVolume: (value: number) => void;
+  toggleMute: () => void;
   toggleShuffle: () => void;
   cycleRepeat: () => void;
 };
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
+
+function fadeAudio(
+  audio: HTMLAudioElement,
+  from: number,
+  to: number,
+  durationMs: number,
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (durationMs <= 0) {
+      audio.volume = Math.max(0, Math.min(1, to));
+      resolve();
+      return;
+    }
+    const steps = 10;
+    const stepTime = Math.max(10, durationMs / steps);
+    const stepDelta = (to - from) / steps;
+    let step = 0;
+    audio.volume = Math.max(0, Math.min(1, from));
+    const interval = setInterval(() => {
+      step++;
+      const nextVol = from + stepDelta * step;
+      audio.volume = Math.max(0, Math.min(1, nextVol));
+      if (step >= steps) {
+        clearInterval(interval);
+        audio.volume = Math.max(0, Math.min(1, to));
+        resolve();
+      }
+    }, stepTime);
+  });
+}
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const { recordPlay } = useMusic();
@@ -52,14 +85,66 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [expanded, setExpanded] = useState(false);
   const recordedRef = useRef<string | null>(null);
 
+  const [crossfade, setCrossfadeState] = useState<number>(() => {
+    if (typeof window === "undefined") return 2;
+    try {
+      const saved = localStorage.getItem("orbit_crossfade");
+      return saved !== null ? Number(saved) : 2;
+    } catch {
+      return 2;
+    }
+  });
+
+  const setCrossfade = useCallback((seconds: number) => {
+    setCrossfadeState(seconds);
+    try {
+      localStorage.setItem("orbit_crossfade", String(seconds));
+    } catch {}
+  }, []);
+
+  const prevVolumeRef = useRef(0.85);
+  const fadingOutRef = useRef(false);
+  const crossfadeRef = useRef(crossfade);
+  useEffect(() => {
+    crossfadeRef.current = crossfade;
+  }, [crossfade]);
+
+  const toggleMute = useCallback(() => {
+    setVolumeState((prev) => {
+      const audio = audioRef.current;
+      if (prev > 0) {
+        prevVolumeRef.current = prev;
+        if (audio) audio.volume = 0;
+        return 0;
+      } else {
+        const restored = prevVolumeRef.current > 0 ? prevVolumeRef.current : 0.85;
+        if (audio) audio.volume = restored;
+        return restored;
+      }
+    });
+  }, []);
+
   useEffect(() => {
     const audio = new Audio();
     audio.preload = "metadata";
     audioRef.current = audio;
     audio.setAttribute("referrerpolicy", "no-referrer");
 
-
-    const onTime = () => setProgress(audio.currentTime);
+    const onTime = () => {
+      setProgress(audio.currentTime);
+      // Auto-crossfade fadeout when reaching the end of the song
+      if (
+        crossfadeRef.current > 0 &&
+        audio.duration > 15 &&
+        audio.duration - audio.currentTime <= crossfadeRef.current &&
+        !fadingOutRef.current
+      ) {
+        fadingOutRef.current = true;
+        void fadeAudio(audio, audio.volume, 0, crossfadeRef.current * 1000).finally(() => {
+          fadingOutRef.current = false;
+        });
+      }
+    };
     const onMeta = () => setDuration(audio.duration || 0);
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
@@ -86,6 +171,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const song = list[index];
       const audio = audioRef.current;
       if (!song || !audio) return;
+
+      // Smooth ramp down if audio is currently playing and crossfade is enabled
+      if (!audio.paused && audio.currentTime > 0 && crossfade > 0) {
+        await fadeAudio(audio, audio.volume, 0, Math.min(crossfade * 200, 350));
+      }
+
       setQueue(list);
       setCurrent(song);
       setProgress(0);
@@ -118,10 +209,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         audio.src = song.audio_url;
       }
 
-      audio.volume = volume;
-      void audio.play().catch(() => setIsPlaying(false));
+      if (crossfade > 0) {
+        audio.volume = 0;
+        try {
+          await audio.play();
+          await fadeAudio(audio, 0, volume, Math.min(crossfade * 250, 450));
+        } catch {
+          setIsPlaying(false);
+        }
+      } else {
+        audio.volume = volume;
+        void audio.play().catch(() => setIsPlaying(false));
+      }
     },
-    [volume],
+    [volume, crossfade],
   );
 
   const next = useCallback(() => {
@@ -330,19 +431,94 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const tag = (event.target as HTMLElement | null)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      // Guard against inputs, textareas, contenteditable elements
+      const active = document.activeElement as HTMLElement | null;
+      if (active) {
+        const tag = active.tagName;
+        if (
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          tag === "SELECT" ||
+          active.isContentEditable ||
+          active.getAttribute("role") === "textbox"
+        ) {
+          return;
+        }
+      }
+
+      const audio = audioRef.current;
+
+      // Space: Toggle Play / Pause
       if (event.code === "Space") {
         event.preventDefault();
-        const audio = audioRef.current;
         if (!audio || !current) return;
         if (audio.paused) void audio.play();
         else audio.pause();
+        return;
+      }
+
+      // Next / Previous: Shift + ArrowRight / ArrowLeft or Cmd/Ctrl + ArrowRight / ArrowLeft
+      if (
+        (event.shiftKey || event.metaKey || event.ctrlKey) &&
+        (event.key === "ArrowRight" || event.key === "ArrowLeft")
+      ) {
+        event.preventDefault();
+        if (event.key === "ArrowRight") next();
+        else prev();
+        return;
+      }
+
+      // Seek ±5s: ArrowRight / ArrowLeft
+      if (event.key === "ArrowRight" && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        if (!audio) return;
+        const target = Math.min(audio.currentTime + 5, audio.duration || 0);
+        audio.currentTime = target;
+        setProgress(target);
+        return;
+      }
+
+      if (event.key === "ArrowLeft" && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        if (!audio) return;
+        const target = Math.max(audio.currentTime - 5, 0);
+        audio.currentTime = target;
+        setProgress(target);
+        return;
+      }
+
+      // M: Toggle Mute
+      if (event.code === "KeyM" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        toggleMute();
+        return;
+      }
+
+      // F: Toggle Fullscreen
+      if (event.code === "KeyF" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        setExpanded((prev) => !prev);
+        return;
+      }
+
+      // S: Toggle Shuffle
+      if (event.code === "KeyS" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        setShuffle((v) => !v);
+        return;
+      }
+
+      // R: Cycle Repeat
+      if (event.code === "KeyR" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        setRepeat((mode) => (mode === "off" ? "all" : mode === "all" ? "one" : "off"));
+        return;
       }
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current]);
+  }, [current, next, prev, toggleMute]);
 
   const value = useMemo<PlayerContextValue>(
     () => ({
@@ -355,6 +531,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       shuffle,
       repeat,
       expanded,
+      crossfade,
+      setCrossfade,
       setExpanded,
       playSong: (song, list) => {
         const nextQueue = list && list.length > 0 ? list : [song];
@@ -380,8 +558,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       },
       setVolume: (value) => {
         setVolumeState(value);
+        if (value > 0) prevVolumeRef.current = value;
         if (audioRef.current) audioRef.current.volume = value;
       },
+      toggleMute,
       toggleShuffle: () => setShuffle((value) => !value),
       cycleRepeat: () =>
         setRepeat((mode) =>
@@ -398,9 +578,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       shuffle,
       repeat,
       expanded,
+      crossfade,
+      setCrossfade,
       playAtIndex,
       next,
       prev,
+      toggleMute,
     ],
   );
 

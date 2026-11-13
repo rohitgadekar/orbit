@@ -123,9 +123,9 @@ export default function MixDetailPage() {
         />
         <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
 
-        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end">
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
           {/* Cover art */}
-          <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-[24px] shadow-2xl ring-1 ring-white/10 sm:h-40 sm:w-40">
+          <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-[26px] shadow-2xl ring-1 ring-white/10 sm:h-48 sm:w-48 md:h-52 md:w-52">
             {coverUrl ? (
               <Cover
                 src={coverUrl}
@@ -136,17 +136,19 @@ export default function MixDetailPage() {
               <div
                 className={`grid h-full w-full place-items-center bg-gradient-to-br ${mix.gradient} text-white`}
               >
-                <ListMusic className="h-10 w-10 opacity-80" />
+                <ListMusic className="h-12 w-12 opacity-80" />
               </div>
             )}
           </div>
 
           {/* Text metadata */}
-          <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-blue-400 backdrop-blur-md">
-              {mix.badge}
-            </span>
-            <h1 className="mt-3 font-sans text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
+            <div>
+              <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-400 backdrop-blur-md">
+                {mix.badge}
+              </span>
+            </div>
+            <h1 className="mt-2.5 font-sans text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl line-clamp-2">
               {mix.title}
             </h1>
             <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-zinc-300">

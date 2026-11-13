@@ -8,22 +8,24 @@ import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
 import { getIndividualArtists, type ParsedArtist } from "@/lib/artists";
 import { formatTime, initials } from "@/lib/utils";
-import { getAudioDuration } from "@/lib/audio-duration";
 import { detectAudioMetadata } from "@/lib/audio-metadata";
 import {
   ArrowRight,
   Check,
+  Keyboard,
   Loader2,
   LogOut,
   Pencil,
+  Play,
   Plus,
   Search,
   RefreshCw,
   Trash2,
+  Volume2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type TrackRowState = {
   id: string;
@@ -38,6 +40,7 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab") as
     | "account"
+    | "shortcuts"
     | "add-album"
     | "add-track"
     | "catalog"
@@ -49,8 +52,44 @@ export default function SettingsPage() {
   const { editSong } = useTrackEditor();
 
   const [activeTab, setActiveTab] = useState<
-    "account" | "add-album" | "add-track" | "catalog" | "artists"
-  >(isAdmin && requestedTab ? requestedTab : "account");
+    "account" | "shortcuts" | "add-album" | "add-track" | "catalog" | "artists"
+  >(() => {
+    if (requestedTab === "shortcuts") return "shortcuts";
+    if (isAdmin && requestedTab) return requestedTab;
+    return "account";
+  });
+
+  const [lastKeyPressed, setLastKeyPressed] = useState<string | null>(null);
+
+  // Platform detection for Mac (⌘) vs Windows/Linux (Ctrl)
+  const isMac = useMemo(() => {
+    if (typeof navigator === "undefined") return true;
+    return /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent);
+  }, []);
+
+  // Listen to keyboard shortcut presses when on shortcuts tab
+  useEffect(() => {
+    if (activeTab !== "shortcuts") return;
+    const onKeyTest = (e: KeyboardEvent) => {
+      const parts: string[] = [];
+      if (e.metaKey) parts.push("⌘");
+      if (e.ctrlKey) parts.push("Ctrl");
+      if (e.shiftKey) parts.push("Shift");
+      if (e.altKey) parts.push("Alt");
+      if (e.code === "Space") parts.push("Space");
+      else if (e.key === "ArrowRight") parts.push("→");
+      else if (e.key === "ArrowLeft") parts.push("←");
+      else if (e.key === "ArrowUp") parts.push("↑");
+      else if (e.key === "ArrowDown") parts.push("↓");
+      else if (e.key === "Escape") parts.push("Esc");
+      else if (!["Meta", "Control", "Shift", "Alt"].includes(e.key)) {
+        parts.push(e.key.toUpperCase());
+      }
+      setLastKeyPressed(parts.join(" + "));
+    };
+    window.addEventListener("keydown", onKeyTest);
+    return () => window.removeEventListener("keydown", onKeyTest);
+  }, [activeTab]);
 
   const [artistSearch, setArtistSearch] = useState("");
   const [editingArtist, setEditingArtist] = useState<ParsedArtist | null>(null);
@@ -423,6 +462,18 @@ export default function SettingsPage() {
           <span>Account & Profile</span>
         </button>
 
+        <button
+          type="button"
+          onClick={() => setActiveTab("shortcuts")}
+          className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold transition ${activeTab === "shortcuts"
+            ? "bg-blue-500 text-white shadow-sm"
+            : "bg-[#222224] text-zinc-400 hover:bg-[#2c2c2f] hover:text-white"
+            }`}
+        >
+          <Keyboard className="h-3.5 w-3.5" />
+          <span>Keyboard Shortcuts</span>
+        </button>
+
         {isAdmin ? (
           <>
             <button
@@ -604,6 +655,207 @@ export default function SettingsPage() {
               </button>
             </div>
           </form>
+        </div>
+      ) : null}
+
+      {/* Tab: Keyboard Shortcuts */}
+      {activeTab === "shortcuts" ? (
+        <div className="space-y-6">
+          {/* Header banner */}
+          <div className="relative overflow-hidden rounded-[32px] border border-white/5 bg-gradient-to-br from-[#1d1b22] via-[#222127] to-[#161519] p-6 sm:p-8">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-400">
+                <Keyboard className="h-3.5 w-3.5" />
+                <span>Productivity & Control</span>
+              </div>
+              <h2 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                Keyboard Shortcuts
+              </h2>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400 sm:text-sm">
+                Control playback, scrub tracks, and navigate your Orbit library without leaving your keyboard.
+                Shortcuts are enabled anywhere on desktop when you are not typing into a search or text field.
+              </p>
+            </div>
+
+            {/* Interactive Key Detection Badge */}
+            <div className="mt-6 flex flex-wrap items-center gap-3 pt-2">
+              <span className="text-xs font-semibold text-zinc-500">Live Key Press Test:</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-mono font-bold text-white shadow-inner">
+                {lastKeyPressed ? (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-blue-400 animate-ping" />
+                    <span>{lastKeyPressed}</span>
+                  </>
+                ) : (
+                  <span className="text-zinc-500 font-sans font-normal">Press any key to test</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Shortcuts Grid: Categorized */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Category 1: Playback Controls */}
+            <div className="rounded-[28px] border border-white/5 bg-[#201f24] p-5 sm:p-6 space-y-4">
+              <div className="flex items-center gap-2.5 text-blue-400">
+                <Play className="h-4 w-4 fill-current" />
+                <h3 className="text-sm font-bold tracking-tight text-white">Playback & Scrubbing</h3>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Play / Pause</p>
+                    <p className="text-[11px] text-zinc-500">Toggle active track</p>
+                  </div>
+                  <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-bold font-mono text-zinc-200 shadow-sm">
+                    Space
+                  </kbd>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Next Track</p>
+                    <p className="text-[11px] text-zinc-500">Skip forward in queue</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs font-bold font-mono text-zinc-200">
+                      Shift
+                    </kbd>
+                    <span className="text-xs text-zinc-500">+</span>
+                    <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs font-bold font-mono text-zinc-200">
+                      →
+                    </kbd>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Previous Track</p>
+                    <p className="text-[11px] text-zinc-500">Restart or go to previous</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs font-bold font-mono text-zinc-200">
+                      Shift
+                    </kbd>
+                    <span className="text-xs text-zinc-500">+</span>
+                    <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs font-bold font-mono text-zinc-200">
+                      ←
+                    </kbd>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Seek ±5 Seconds</p>
+                    <p className="text-[11px] text-zinc-500">Jump forward or back</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs font-bold font-mono text-zinc-200">
+                      ←
+                    </kbd>
+                    <span className="text-xs text-zinc-500">/</span>
+                    <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs font-bold font-mono text-zinc-200">
+                      →
+                    </kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Category 2: Audio Modes & Controls */}
+            <div className="rounded-[28px] border border-white/5 bg-[#201f24] p-5 sm:p-6 space-y-4">
+              <div className="flex items-center gap-2.5 text-blue-400">
+                <Volume2 className="h-4 w-4" />
+                <h3 className="text-sm font-bold tracking-tight text-white">Modes & Audio</h3>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Mute / Unmute</p>
+                    <p className="text-[11px] text-zinc-500">Silences and remembers volume</p>
+                  </div>
+                  <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-bold font-mono text-zinc-200 shadow-sm">
+                    M
+                  </kbd>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Shuffle Mode</p>
+                    <p className="text-[11px] text-zinc-500">Randomize queue order</p>
+                  </div>
+                  <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-bold font-mono text-zinc-200 shadow-sm">
+                    S
+                  </kbd>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Cycle Repeat</p>
+                    <p className="text-[11px] text-zinc-500">Off → All → Repeat One</p>
+                  </div>
+                  <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-bold font-mono text-zinc-200 shadow-sm">
+                    R
+                  </kbd>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Toggle Fullscreen</p>
+                    <p className="text-[11px] text-zinc-500">Immersive vinyl & lyrics player</p>
+                  </div>
+                  <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-bold font-mono text-zinc-200 shadow-sm">
+                    F
+                  </kbd>
+                </div>
+              </div>
+            </div>
+
+            {/* Category 3: Navigation & Commands */}
+            <div className="rounded-[28px] border border-white/5 bg-[#201f24] p-5 sm:p-6 space-y-4 md:col-span-2 lg:col-span-1">
+              <div className="flex items-center gap-2.5 text-blue-400">
+                <Search className="h-4 w-4" />
+                <h3 className="text-sm font-bold tracking-tight text-white">Navigation & Search</h3>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Quick Search</p>
+                    <p className="text-[11px] text-zinc-500">Command palette for library</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs font-bold font-mono text-zinc-200">
+                      {isMac ? "⌘" : "Ctrl"}
+                    </kbd>
+                    <span className="text-xs text-zinc-500">+</span>
+                    <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2 py-1 text-xs font-bold font-mono text-zinc-200">
+                      K
+                    </kbd>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] p-3 border border-white/[0.04]">
+                  <div>
+                    <p className="text-xs font-bold text-white">Dismiss / Close</p>
+                    <p className="text-[11px] text-zinc-500">Close modals or fullscreen</p>
+                  </div>
+                  <kbd className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-bold font-mono text-zinc-200 shadow-sm">
+                    Esc
+                  </kbd>
+                </div>
+
+                <div className="rounded-2xl border border-blue-500/10 bg-blue-500/5 p-3.5">
+                  <p className="text-xs font-bold text-blue-300">Pro Tip</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">
+                    Press <kbd className="rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-zinc-300">F</kbd> anytime a song is playing to enter the cinema-grade full-screen player with live synced lyrics.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
 

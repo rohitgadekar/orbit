@@ -1,29 +1,24 @@
 import { Providers } from "@/components/providers";
 import type { Metadata, Viewport } from "next";
-import { Outfit, Playfair_Display, Plus_Jakarta_Sans, Syne } from "next/font/google";
+import { Instrument_Serif, Inter, Manrope } from "next/font/google";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-sans",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-serif",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const syne = Syne({
-  variable: "--font-syne",
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-});
-
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -59,9 +54,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${plusJakarta.variable} ${playfair.variable} ${syne.variable} ${outfit.variable} h-full antialiased`}
+      className={`${manrope.variable} ${inter.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
-      <body className="h-full min-h-dvh bg-[#18171a] font-sans text-ink selection:bg-[#dbe878]/30">
+      <body className="h-full min-h-dvh bg-[#18171a] font-sans text-ink selection:bg-blue-500/30">
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -115,11 +115,19 @@ export function generateSmartMixes(
   mix1Songs = deterministicShuffle(mix1Songs.slice(0, 25), mix1Seed);
 
   const mix1ArtistsNames = Array.from(
-    new Set(mix1Songs.slice(0, 3).map((s) => s.artist?.name).filter(Boolean)),
+    new Set(
+      mix1Songs
+        .flatMap((s) => splitArtistNames(s.artist?.name))
+        .map((n) => n.trim())
+        .filter(Boolean),
+    ),
   );
-  const mix1Subtitle = mix1ArtistsNames.length > 0
-    ? `${mix1ArtistsNames.join(", ")} and more`
-    : "Your daily soundtrack updated each morning";
+  const mix1Primary = mix1ArtistsNames[0];
+  const mix1Subtitle =
+    mix1ArtistsNames
+      .filter((n) => n.toLowerCase() !== mix1Primary?.toLowerCase())
+      .slice(0, 6)
+      .join(", ") || "Your daily soundtrack updated each morning";
 
   // --- MIX 2: Daily Mix 2 (Melodic / Alternate Vibes) ---
   const mix2Seed = pseudoRandom(`${todayStr}-dailymix-2`);
@@ -137,11 +145,19 @@ export function generateSmartMixes(
   mix2Songs = deterministicShuffle(mix2Songs.slice(0, 25), mix2Seed);
 
   const mix2ArtistsNames = Array.from(
-    new Set(mix2Songs.slice(0, 3).map((s) => s.artist?.name).filter(Boolean)),
+    new Set(
+      mix2Songs
+        .flatMap((s) => splitArtistNames(s.artist?.name))
+        .map((n) => n.trim())
+        .filter(Boolean),
+    ),
   );
-  const mix2Subtitle = mix2ArtistsNames.length > 0
-    ? `${mix2ArtistsNames.join(", ")} and more`
-    : "Deep cuts, discoveries, and alternate grooves";
+  const mix2Primary = mix2ArtistsNames[0];
+  const mix2Subtitle =
+    mix2ArtistsNames
+      .filter((n) => n.toLowerCase() !== mix2Primary?.toLowerCase())
+      .slice(0, 6)
+      .join(", ") || "Deep cuts, discoveries, and alternate grooves";
 
   // --- MIX 3: Most Listened / On Repeat ---
   // Rank catalog tracks by personal play history first, then play_count
@@ -160,8 +176,19 @@ export function generateSmartMixes(
     .slice(0, 25);
 
   const mostListenedArtists = Array.from(
-    new Set(mostListenedSongs.slice(0, 3).map((s) => s.artist?.name).filter(Boolean)),
+    new Set(
+      mostListenedSongs
+        .flatMap((s) => splitArtistNames(s.artist?.name))
+        .map((n) => n.trim())
+        .filter(Boolean),
+    ),
   );
+  const mix3Primary = mostListenedArtists[0];
+  const mix3Subtitle =
+    mostListenedArtists
+      .filter((n) => n.toLowerCase() !== mix3Primary?.toLowerCase())
+      .slice(0, 6)
+      .join(", ") || "Your most played tracks on Orbit";
 
   // --- MIX 4: Loved Rewind (Curated from user's favourites) ---
   const lovedSongs = catalogSongs.filter((s) => favouriteIds.has(s.id));
@@ -169,47 +196,59 @@ export function generateSmartMixes(
   const mixes: SmartMix[] = [
     {
       id: "mix-daily-1",
-      title: "Daily Mix 1",
+      title: mix1Primary || "Daily Mix 1",
       subtitle: mix1Subtitle,
       songs: mix1Songs,
-      coverUrl: mix1Songs[0]?.cover_url || mix1Songs[0]?.album?.cover_url || undefined,
+      coverUrl: mix1Songs[0]?.artist?.image_url || mix1Songs[0]?.cover_url || mix1Songs[0]?.album?.cover_url || undefined,
       gradient: "from-[#1e3c72] via-[#2a5298] to-[#111f3d]",
-      badge: "DAILY MIX",
+      badge: "MIX",
       accentColor: "#5dade2",
     },
     {
       id: "mix-daily-2",
-      title: "Daily Mix 2",
+      title: mix2Primary || "Daily Mix 2",
       subtitle: mix2Subtitle,
       songs: mix2Songs,
-      coverUrl: mix2Songs[0]?.cover_url || mix2Songs[0]?.album?.cover_url || undefined,
+      coverUrl: mix2Songs[0]?.artist?.image_url || mix2Songs[0]?.cover_url || mix2Songs[0]?.album?.cover_url || undefined,
       gradient: "from-[#6a11cb] via-[#2575fc] to-[#1a1c4b]",
-      badge: "DISCOVER",
+      badge: "MIX",
       accentColor: "#a569bd",
     },
     {
       id: "mix-most-listened",
-      title: "Most Listened",
-      subtitle: mostListenedArtists.length > 0
-        ? `Heavy rotation featuring ${mostListenedArtists.join(", ")}`
-        : "Your most played tracks on Orbit",
+      title: mix3Primary || "On Repeat",
+      subtitle: mix3Subtitle,
       songs: mostListenedSongs,
-      coverUrl: mostListenedSongs[0]?.cover_url || mostListenedSongs[0]?.album?.cover_url || undefined,
+      coverUrl: mostListenedSongs[0]?.artist?.image_url || mostListenedSongs[0]?.cover_url || mostListenedSongs[0]?.album?.cover_url || undefined,
       gradient: "from-[#b91d73] via-[#f953c6] to-[#40122e]",
-      badge: "ON REPEAT",
+      badge: "MIX",
       accentColor: "#ec407a",
     },
   ];
 
   if (lovedSongs.length > 0) {
+    const lovedArtists = Array.from(
+      new Set(
+        lovedSongs
+          .flatMap((s) => splitArtistNames(s.artist?.name))
+          .map((n) => n.trim())
+          .filter(Boolean),
+      ),
+    );
+    const lovedPrimary = lovedArtists[0];
+    const lovedSubtitle =
+      lovedArtists
+        .filter((n) => n.toLowerCase() !== lovedPrimary?.toLowerCase())
+        .slice(0, 6)
+        .join(", ") || `${lovedSongs.length} tracks you love`;
     mixes.push({
       id: "mix-loved",
-      title: "Loved Rewind",
-      subtitle: `${lovedSongs.length} tracks you love in continuous rotation`,
+      title: lovedPrimary || "Loved Rewind",
+      subtitle: lovedSubtitle,
       songs: lovedSongs,
-      coverUrl: lovedSongs[0]?.cover_url || lovedSongs[0]?.album?.cover_url || undefined,
+      coverUrl: lovedSongs[0]?.artist?.image_url || lovedSongs[0]?.cover_url || lovedSongs[0]?.album?.cover_url || undefined,
       gradient: "from-[#eb3349] via-[#f45c43] to-[#451009]",
-      badge: "FAVORITES",
+      badge: "MIX",
       accentColor: "#f87171",
     });
   }
