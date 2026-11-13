@@ -125,9 +125,9 @@ function PipPlayerView() {
                         value={Math.min(progress, total || progress)}
                         onChange={(e) => seek(Number(e.target.value))}
                         aria-label="Seek"
-                        className="h-1 w-full cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+                        className="h-1 w-full cursor-pointer appearance-none rounded-full accent-[var(--accent)] [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
                         style={{
-                            background: `linear-gradient(to right,#3b82f6 ${pct}%,rgba(255,255,255,0.25) ${pct}%)`,
+                            background: `linear-gradient(to right,var(--accent,#3b82f6) ${pct}%,rgba(255,255,255,0.25) ${pct}%)`,
                         }}
                     />
                     <div className="flex justify-between text-xs font-semibold tabular-nums text-zinc-400">

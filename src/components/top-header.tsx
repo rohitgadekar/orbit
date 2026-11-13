@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Sparkles,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -138,9 +137,9 @@ export function TopHeader() {
             value={volume}
             onChange={(e) => setVolume(Number(e.target.value))}
             aria-label="Volume"
-            className="h-1 w-20 cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+            className="h-1 w-20 cursor-pointer appearance-none rounded-full accent-[var(--accent)] [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
             style={{
-              background: `linear-gradient(to right,#3b82f6 ${pct}%,rgba(255,255,255,0.25) ${pct}%)`,
+              background: `linear-gradient(to right,var(--accent,#3b82f6) ${pct}%,rgba(255,255,255,0.25) ${pct}%)`,
             }}
           />
         </div>

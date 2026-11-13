@@ -39,6 +39,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("orbit_fullscreen") === "true";
   });
+  const [sidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("orbit_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
   const mainRef = useRef<HTMLElement | null>(null);
 
   function setFullscreen(v: boolean) {
@@ -71,8 +79,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!configured) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-[#1a1a1c] p-6 text-white">
-        <div className="max-w-lg rounded-[32px] border border-white/10 bg-[#1a1a1c] p-8 shadow-2xl">
+      <div className="grid min-h-dvh place-items-center bg-[var(--bg-app,#1a1a1c)] p-6 text-white">
+        <div className="max-w-lg rounded-[32px] border border-white/10 bg-[var(--bg-app,#1a1a1c)] p-8 shadow-2xl">
           <OrbitMark className="h-10 w-10" />
           <h1 className="mt-4 text-3xl font-bold">Connect Supabase</h1>
           <p className="mt-2 text-sm text-zinc-400">
@@ -91,56 +99,98 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isInitialLoading) {
     return (
-      <div className="h-dvh w-full bg-[#1a1a1c]">
-        <div className="flex h-full min-h-0 w-full overflow-hidden bg-[#1a1a1c] text-zinc-200">
-          {/* Sidebar / IconRail skeleton */}
-          <aside className="hidden h-full shrink-0 flex-col bg-[#1a1a1c] py-7 text-zinc-300 md:flex w-56 px-5 lg:w-60 animate-pulse">
+      <div className="h-dvh w-full bg-[var(--bg-app,#1a1a1c)]">
+        <div className="flex h-full min-h-0 w-full overflow-hidden bg-[var(--bg-app,#1a1a1c)] text-zinc-200">
+          {/* Sidebar / IconRail skeleton — exact dimensions matching icon-rail.tsx */}
+          <aside
+            className={`hidden h-full shrink-0 flex-col bg-[var(--bg-app,#1a1a1c)] py-7 text-zinc-300 md:flex ${
+              sidebarCollapsed ? "w-[72px] items-center px-3" : "w-56 px-5 lg:w-60"
+            } animate-pulse`}
+          >
             {/* Menu Header */}
-            <div className="flex items-center justify-between px-1">
-              <div className="h-6 w-16 rounded-md bg-[#2c2c2f]" />
-              <div className="h-8 w-8 rounded-lg bg-[#2c2c2f]" />
+            <div className={`flex items-center w-full ${sidebarCollapsed ? "justify-center" : "justify-between px-1"}`}>
+              {!sidebarCollapsed && <div className="h-7 w-16 rounded-lg bg-white/20" />}
+              <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/5 shrink-0" />
             </div>
 
-            {/* Nav items */}
-            <div className="mt-5 space-y-1">
-              {[0, 1, 2, 3, 4].map((i) => (
+            {/* Nav items (Home, Albums, Local Files, Favorites, Playlists) */}
+            <nav className={`mt-5 space-y-1 ${sidebarCollapsed ? "w-full" : ""}`}>
+              {[
+                { w: "w-11", active: true },
+                { w: "w-14", active: false },
+                { w: "w-20", active: false },
+                { w: "w-16", active: false },
+                { w: "w-14", active: false },
+              ].map((item, i) => (
                 <div
                   key={i}
-                  className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${i === 0 ? "bg-[#2c2c2f]" : "bg-transparent"
-                    }`}
+                  className={`flex items-center rounded-2xl ${
+                    sidebarCollapsed ? "h-11 w-full justify-center" : "gap-3 px-3 py-2.5"
+                  } ${item.active ? "bg-[#2c2c2f]" : "bg-transparent"}`}
                 >
-                  <div className="h-[18px] w-[18px] rounded-md bg-[#38383b]" />
                   <div
-                    className="h-3 rounded bg-[#38383b]"
-                    style={{ width: ["45%", "55%", "65%", "50%", "60%"][i] }}
+                    className={`h-[18px] w-[18px] rounded-md shrink-0 ${
+                      item.active ? "bg-blue-500/40" : "bg-white/10"
+                    }`}
                   />
+                  {!sidebarCollapsed && (
+                    <div className={`h-3.5 rounded-md ${item.w} bg-white/15`} />
+                  )}
                 </div>
               ))}
-            </div>
+            </nav>
 
-            {/* Library/Artists heading */}
-            <div className="mt-8 px-1">
-              <div className="h-5 w-20 rounded-md bg-[#2c2c2f]" />
-            </div>
+            {/* Suggested Artists heading */}
+            {!sidebarCollapsed ? (
+              <div className="mt-8 px-1">
+                <div className="h-7 w-28 rounded-lg bg-white/20" />
+              </div>
+            ) : (
+              <div className="mt-6 h-px w-8 bg-white/10" />
+            )}
 
-            {/* Artist items */}
-            <div className="mt-3 space-y-2">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center gap-3 px-2 py-1.5">
-                  <div className="h-8 w-8 rounded-full bg-[#2c2c2f]" />
-                  <div className="space-y-1.5 flex-1">
-                    <div className="h-3 w-20 rounded bg-[#2c2c2f]" />
-                    <div className="h-2 w-12 rounded bg-[#242426]" />
-                  </div>
+            {/* Artist items — full height scroll container matching real sidebar */}
+            <div
+              className={`no-scrollbar min-h-0 flex-1 overflow-hidden ${
+                sidebarCollapsed ? "mt-4 space-y-3" : "mt-3 space-y-1"
+              }`}
+            >
+              {[
+                { titleW: "w-24", subW: "w-14" },
+                { titleW: "w-20", subW: "w-12" },
+                { titleW: "w-28", subW: "w-16" },
+                { titleW: "w-16", subW: "w-10" },
+                { titleW: "w-26", subW: "w-14" },
+                { titleW: "w-22", subW: "w-12" },
+                { titleW: "w-32", subW: "w-16" },
+                { titleW: "w-18", subW: "w-10" },
+                { titleW: "w-24", subW: "w-14" },
+                { titleW: "w-28", subW: "w-12" },
+                { titleW: "w-20", subW: "w-14" },
+                { titleW: "w-24", subW: "w-10" },
+              ].map((row, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center rounded-2xl ${
+                    sidebarCollapsed ? "justify-center" : "gap-3 p-2"
+                  }`}
+                >
+                  <div className="h-10 w-10 shrink-0 rounded-full bg-white/10 ring-1 ring-white/10" />
+                  {!sidebarCollapsed && (
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className={`h-3.5 rounded-md ${row.titleW} bg-white/15`} />
+                      <div className={`h-2.5 rounded-md ${row.subW} bg-white/5`} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </aside>
 
           {/* Center Canvas */}
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden ">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-white/[0.04]">
             {/* TopHeader Skeleton */}
-            <header className="sticky top-0 z-30 flex items-center gap-3 px-5 pt-[calc(var(--safe-top)+0.75rem)] pb-3 md:gap-4 md:px-8 md:pt-4 backdrop-blur-xl bg-[#1a1a1c]/80 animate-pulse">
+            <header className="sticky top-0 z-30 flex items-center gap-3 px-5 pt-[calc(var(--safe-top)+0.75rem)] pb-3 md:gap-4 md:px-8 md:pt-4 backdrop-blur-xl bg-[var(--bg-app,#1a1a1c)]/80 animate-pulse">
               {/* Navigation History Pair */}
               <div className="flex items-center gap-1.5">
                 <div className="h-8 w-8 rounded-full border border-white/10 bg-white/5" />
@@ -336,8 +386,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <TrackEditorContext.Provider value={{ editSong: (song) => setEditingSong(song) }}>
         <PipProvider>
           {/* Full-bleed app: no outer backdrop or rounded window */}
-          <div className="h-dvh w-full bg-[#1a1a1c]">
-            <div className="flex h-full min-h-0 w-full overflow-hidden bg-[#1a1a1c] text-zinc-200">
+          <div className="h-dvh w-full bg-[var(--bg-app,#1a1a1c)]">
+            <div className="flex h-full min-h-0 w-full overflow-hidden bg-[var(--bg-app,#1a1a1c)] text-zinc-200">
               <IconRail />
 
               {/* Center canvas */}

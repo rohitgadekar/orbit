@@ -847,9 +847,9 @@ export function FullscreenPlayer({
                   value={Math.min(progress, trackTotal || progress)}
                   onChange={(e) => seek(Number(e.target.value))}
                   aria-label="Seek"
-                  className="h-1 w-full cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+                  className="h-1 w-full cursor-pointer appearance-none rounded-full accent-[var(--accent)] [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
                   style={{
-                    background: `linear-gradient(to right,#3b82f6 ${trackPct}%,rgba(255,255,255,0.25) ${trackPct}%)`,
+                    background: `linear-gradient(to right,var(--accent,#3b82f6) ${trackPct}%,rgba(255,255,255,0.25) ${trackPct}%)`,
                   }}
                 />
                 <div className="flex justify-between text-xs tabular-nums font-semibold text-zinc-400">
@@ -931,9 +931,9 @@ export function FullscreenPlayer({
                     value={volume}
                     onChange={(e) => setVolume(Number(e.target.value))}
                     aria-label="Volume"
-                    className="h-1 w-full cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+                    className="h-1 w-full cursor-pointer appearance-none rounded-full accent-[var(--accent)] [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
                     style={{
-                      background: `linear-gradient(to right,#3b82f6 ${volPct}%,rgba(255,255,255,0.25) ${volPct}%)`,
+                      background: `linear-gradient(to right,var(--accent,#3b82f6) ${volPct}%,rgba(255,255,255,0.25) ${volPct}%)`,
                     }}
                   />
                 </div>

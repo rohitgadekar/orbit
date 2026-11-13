@@ -1,17 +1,7 @@
 @import "tailwindcss";
+@import "../config/theme.css";
 
 :root {
-  --bg-sidebar: #19181b;
-  --bg-main: #f7f6f3;
-  --bg-card: #ffffff;
-  --bg-now-playing: #eeebe5;
-  --ink: #141316;
-  --muted: #78757f;
-  --accent-gold: #d4af37;
-  --accent-lime: #dbe878;
-  --accent-amber: #e58a36;
-  --accent: #19181b;
-  --surface: #ffffff;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -22,13 +12,27 @@
   --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
   --font-editorial: var(--font-instrument), Georgia, serif;
   --font-display: var(--font-manrope), sans-serif;
-  --color-ink: var(--ink);
-  --color-muted: var(--muted);
-  --color-sidebar: var(--bg-sidebar);
-  --color-main: var(--bg-main);
-  --color-gold: var(--accent-gold);
-  --color-lime: var(--accent-lime);
-  --color-surface: var(--surface);
+
+  /* Theme color tokens from src/config/theme.css */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-glow: var(--accent-glow);
+
+  --color-app: var(--bg-app);
+  --color-surface: var(--bg-surface);
+  --color-surface-elevated: var(--bg-surface-elevated);
+  --color-surface-hover: var(--bg-surface-hover);
+  --color-player: var(--bg-player);
+  --color-input: var(--bg-input);
+
+  /* Map standard blue utilities to accent tokens so existing markup updates instantly */
+  --color-blue-500: var(--accent);
+  --color-blue-400: var(--accent-hover);
+  --color-blue-300: var(--accent-light);
+  --color-blue-600: var(--accent-dark);
 }
 
 * {
@@ -40,8 +44,8 @@ html,
 body {
   min-height: 100%;
   height: 100%;
-  background: var(--bg-sidebar);
-  color: var(--ink);
+  background: var(--bg-app);
+  color: #e4e4e7;
 }
 
 body {
@@ -94,14 +98,14 @@ input[type="range"]::-webkit-slider-thumb {
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: #19181b;
-  box-shadow: 0 0 0 3px rgba(219, 232, 120, 0.4);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--accent-subtle);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 0 0 5px rgba(219, 232, 120, 0.6);
+  box-shadow: 0 0 0 5px var(--accent-subtle);
 }
 
 /* YouTube style ambient mesh gradient animation */

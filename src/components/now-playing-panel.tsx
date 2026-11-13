@@ -246,8 +246,8 @@ export function NowPlayingPanel({ onEditTrack }: { onEditTrack?: (song: Song) =>
                     value={Math.min(progress, total || progress)}
                     onChange={(e) => seek(Number(e.target.value))}
                     aria-label="Seek"
-                    className="h-1 w-full cursor-pointer appearance-none rounded-full accent-blue-500 [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
-                    style={{ background: `linear-gradient(to right,#3b82f6 ${pct}%,rgba(255,255,255,0.25) ${pct}%)` }}
+                    className="h-1 w-full cursor-pointer appearance-none rounded-full accent-[var(--accent)] [&::-webkit-slider-thumb]:bg-white! [&::-webkit-slider-thumb]:shadow-none! [&::-webkit-slider-thumb:hover]:shadow-none!"
+                    style={{ background: `linear-gradient(to right,var(--accent,#3b82f6) ${pct}%,rgba(255,255,255,0.25) ${pct}%)` }}
                   />
                   <div className="mt-1 flex justify-between text-[9px] text-zinc-300">
                     <span>{formatTime(progress)}</span>

@@ -222,8 +222,8 @@ export function IconRail() {
 export function OrbitMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <circle cx="16" cy="16" r="4" fill="#3b82f6" />
-      <circle cx="16" cy="16" r="8" fill="none" stroke="#3b82f6" strokeWidth="1.4" opacity="0.6" />
+      <circle cx="16" cy="16" r="4" fill="var(--accent, #3b82f6)" />
+      <circle cx="16" cy="16" r="8" fill="none" stroke="var(--accent, #3b82f6)" strokeWidth="1.4" opacity="0.6" />
       <ellipse
         cx="16"
         cy="16"

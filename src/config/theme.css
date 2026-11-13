@@ -1,0 +1,47 @@
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ORBIT THEME CONFIGURATION
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Edit this ONE file to change accent or background colors across the entire app.
+ *
+ * Examples of accents you can try in the future:
+ * - Purple:  --accent: #a855f7; --accent-hover: #c084fc; --accent-light: #e9d5ff; --accent-subtle: rgba(168, 85, 247, 0.15);
+ * - Emerald: --accent: #10b981; --accent-hover: #34d399; --accent-light: #a7f3d0; --accent-subtle: rgba(16, 185, 129, 0.15);
+ * - Amber:   --accent: #f59e0b; --accent-hover: #fbbf24; --accent-light: #fde68a; --accent-subtle: rgba(245, 158, 11, 0.15);
+ * - Rose:    --accent: #f43f5e; --accent-hover: #fb7185; --accent-light: #fecdd3; --accent-subtle: rgba(244, 63, 94, 0.15);
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+:root {
+   /* ==========================================================================
+     1. ACCENT COLOR (Currently: Warm Coral)
+     ========================================================================== */
+   --accent: #ff7a59;
+   /* Primary accent (buttons, scrubbers, active states) */
+   --accent-hover: #ff9478;
+   /* Hover state */
+   --accent-light: #ffb39c;
+   /* Light text / category badges */
+   --accent-dark: #e8603f;
+   /* Active pressed state */
+   --accent-subtle: rgba(255, 122, 89, 0.15);
+   /* Translucent backgrounds (pills, badges, glows) */
+   --accent-glow: rgba(255, 122, 89, 0.25);
+   /* Drop shadow glow */
+
+   /* ==========================================================================
+     2. BACKGROUND & SURFACE COLORS (Currently: Premium Dark)
+     ========================================================================== */
+   --bg-app: #1a1a1c;
+   /* Global app canvas & sidebar background */
+   --bg-surface: #222224;
+   /* Primary cards, playlists, right panel */
+   --bg-surface-elevated: #2c2c2f;
+   /* Elevated buttons, menu items, pills */
+   --bg-surface-hover: #262628;
+   /* Hover state for cards and list rows */
+   --bg-player: #141416;
+   /* Bottom player bar background */
+   --bg-input: #2a2a2d;
+   /* Search and text input fields */
+}
