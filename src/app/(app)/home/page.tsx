@@ -17,7 +17,7 @@ import {
   ArrowRight,
   History,
   Play,
-  Sparkles,
+  Radio,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -538,25 +538,21 @@ export default function HomePage() {
 
       {/* ── Suggested: Because You Listen To {Top Artist} ─────────────────── */}
       {(activeFilter === "all" || activeFilter === "mixes") && becauseYouListenedTo && (
-        <section className="space-y-4 rounded-[32px] border border-white/5 bg-gradient-to-br from-[#1c1a22] via-[#201e26] to-[#16151a] p-5 sm:p-6 shadow-xl">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3.5">
-              <ArtistAvatar
-                name={becauseYouListenedTo.artist.name}
-                imageUrl={becauseYouListenedTo.artist.image_url}
-                sizeClassName="h-12 w-12 ring-2 ring-white/10"
-              />
-              <div>
-                <div className="flex items-center gap-1.5 text-blue-400">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span className="text-[10px] font-extrabold tracking-wider uppercase">
-                    Suggested For You
-                  </span>
-                </div>
-                <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
-                  Because you listen to {becauseYouListenedTo.artist.name}
-                </h2>
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 text-blue-400">
+                <Radio className="h-3.5 w-3.5" />
+                <span className="text-[10px] font-extrabold tracking-wider uppercase">
+                  Suggested For You
+                </span>
               </div>
+              <h2 className="text-xl font-bold tracking-tight text-white">
+                Because you listen to {becauseYouListenedTo.artist.name}
+              </h2>
+              <p className="text-xs text-zinc-400">
+                Songs by and similar to {becauseYouListenedTo.artist.name}
+              </p>
             </div>
 
             <button
@@ -566,39 +562,44 @@ export default function HomePage() {
                   playSong(becauseYouListenedTo.songs[0], becauseYouListenedTo.songs);
                 }
               }}
-              className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition hover:bg-blue-400 hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400 hover:text-white transition"
             >
-              <Play className="h-3.5 w-3.5 fill-current" />
-              <span>Play Selection</span>
+              <Play className="h-3.5 w-3.5 fill-current" /> Play all
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {becauseYouListenedTo.songs.map((song) => {
               const coverUrl = song.cover_url || song.album?.cover_url || song.artist?.image_url;
               return (
                 <div
                   key={song.id}
                   onClick={() => playSong(song, becauseYouListenedTo.songs)}
-                  className="group cursor-pointer select-none rounded-2xl border border-white/5 bg-white/[0.02] p-2.5 transition hover:border-white/15 hover:bg-white/[0.05]"
+                  className="group cursor-pointer select-none"
                 >
-                  <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-[#262529]">
+                  <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[#222126] shadow-md transition-all duration-300 group-hover:shadow-xl">
                     <Cover
                       src={coverUrl}
                       title={song.title}
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition group-hover:opacity-100">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-lg">
-                        <Play className="h-4 w-4 translate-x-0.5 fill-current" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-xl transform scale-90 transition-transform duration-200 group-hover:scale-100">
+                        <Play className="h-5 w-5 translate-x-0.5 fill-current" />
                       </span>
                     </div>
                   </div>
-                  <h4 className="mt-2 truncate text-xs font-bold text-white group-hover:text-blue-400 transition" title={song.title}>
+                  <h3
+                    className="mt-2.5 truncate text-sm font-semibold text-white group-hover:text-blue-400 transition"
+                    title={song.title}
+                  >
                     {song.title}
-                  </h4>
-                  <p className="mt-0.5 truncate text-[11px] text-zinc-400" title={song.artist?.name}>
-                    {song.artist?.name || "Unknown"}
+                  </h3>
+                  <p
+                    className="mt-0.5 truncate text-xs text-zinc-400"
+                    title={song.artist?.name}
+                  >
+                    {song.artist?.name || "Unknown Artist"}
                   </p>
                 </div>
               );

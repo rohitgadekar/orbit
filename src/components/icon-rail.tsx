@@ -1,7 +1,8 @@
 "use client";
 
 import { useMusic } from "@/context/music-context";
-import { getIndividualArtists } from "@/lib/artists";
+import { getIndividualArtists, splitArtistNames } from "@/lib/artists";
+import { initials } from "@/lib/utils";
 import {
   Disc3,
   FolderArchive,
@@ -19,7 +20,7 @@ export function IconRail() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentView = searchParams.get("view");
-  const { songs, artists: catalogArtists } = useMusic();
+  const { songs, artists: catalogArtists, recentlyPlayed, favouriteIds } = useMusic();
 
   // Collapsed state is remembered across sessions
   const [collapsed, setCollapsedRaw] = useState<boolean>(() => {
@@ -50,25 +51,60 @@ export function IconRail() {
 
   type RailItem = { key: string; href: string; title: string; image: string; sub: string; round: boolean };
 
-  // Only artists that actually have a photo, most-played first
-  const artists = useMemo<RailItem[]>(
-    () =>
-      getIndividualArtists(songs, catalogArtists)
-        .filter((a) => Boolean(a.image_url))
-        .sort((a, b) => b.plays - a.plays || b.trackCount - a.trackCount)
-        .slice(0, 8)
-        .map((a) => ({
+  // Compute artist listening affinity from recent plays and favourites
+  const artistAffinity = useMemo(() => {
+    const map = new Map<string, number>();
+    recentlyPlayed.forEach((song, idx) => {
+      const weight = Math.max(1, 20 - idx);
+      for (const name of splitArtistNames(song.artist?.name)) {
+        const key = name.toLowerCase().trim();
+        map.set(key, (map.get(key) ?? 0) + weight);
+      }
+    });
+    favouriteIds.forEach((id) => {
+      const song = songs.find((s) => s.id === id);
+      if (!song) return;
+      for (const name of splitArtistNames(song.artist?.name)) {
+        const key = name.toLowerCase().trim();
+        map.set(key, (map.get(key) ?? 0) + 10);
+      }
+    });
+    return map;
+  }, [recentlyPlayed, favouriteIds, songs]);
+
+  // Suggested / most-listened artists first, filling out the entire sidebar
+  // without empty blank space below
+  const artists = useMemo<RailItem[]>(() => {
+    const all = getIndividualArtists(songs, catalogArtists);
+    return all
+      .map((a) => {
+        const key = a.name.toLowerCase().trim();
+        const affinity = artistAffinity.get(key) ?? 0;
+        // Priority 1: dedicated artist image_url, Priority 2: first track cover, Priority 3: album cover
+        const cover =
+          a.image_url ||
+          a.songs.find((s) => Boolean(s.cover_url || s.album?.cover_url))?.cover_url ||
+          a.songs.find((s) => Boolean(s.album?.cover_url))?.album?.cover_url ||
+          "";
+
+        return {
           key: a.name,
           href: `/artists/${encodeURIComponent(a.name)}`,
           title: a.name,
-          image: a.image_url as string,
+          image: cover,
           sub: `${a.trackCount} track${a.trackCount === 1 ? "" : "s"}`,
           round: true,
-        })),
-    [songs, catalogArtists],
-  );
+          affinity,
+          plays: a.plays,
+          trackCount: a.trackCount,
+        };
+      })
+      // Sort by listening affinity first (suggested/most listened), then total plays, then tracks
+      .sort((a, b) => b.affinity - a.affinity || b.plays - a.plays || b.trackCount - a.trackCount)
+      .slice(0, 40);
+  }, [songs, catalogArtists, artistAffinity]);
 
-  // Fallback when no artist has a photo yet: show album covers from the library instead
+  // Fallback when no songs or artists: show albums from library
   const albums = useMemo<RailItem[]>(() => {
     const map = new Map<string, RailItem>();
     for (const song of songs) {
@@ -83,14 +119,14 @@ export function IconRail() {
         sub: song.artist?.name ?? "Various Artists",
         round: false,
       });
-      if (map.size >= 8) break;
+      if (map.size >= 25) break;
     }
     return Array.from(map.values());
   }, [songs]);
 
   const showingArtists = artists.length > 0;
   const rail = showingArtists ? artists : albums;
-  const railHeading = showingArtists ? "Artists" : "From your library";
+  const railHeading = showingArtists ? "Top Artists" : "From your library";
 
   return (
     <aside
@@ -153,12 +189,21 @@ export function IconRail() {
                 className={`group flex items-center rounded-2xl transition ${collapsed ? "justify-center" : "gap-3 p-2 hover:bg-white/5"
                   }`}
               >
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className={`h-10 w-10 shrink-0 object-cover ring-1 ring-white/10 ${item.round ? "rounded-full" : "rounded-xl"
-                    }`}
-                />
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className={`h-10 w-10 shrink-0 object-cover ring-1 ring-white/10 ${item.round ? "rounded-full" : "rounded-xl"
+                      }`}
+                  />
+                ) : (
+                  <div
+                    className={`grid h-10 w-10 shrink-0 place-items-center bg-[#28272d] text-xs font-bold text-white ring-1 ring-white/10 ${item.round ? "rounded-full" : "rounded-xl"
+                      }`}
+                  >
+                    {initials(item.title)}
+                  </div>
+                )}
                 {!collapsed && (
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold text-zinc-200 group-hover:text-white">{item.title}</p>
