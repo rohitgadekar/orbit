@@ -221,20 +221,11 @@ export function IconRail() {
 
 export function OrbitMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <circle cx="16" cy="16" r="4" fill="var(--accent, #3b82f6)" />
-      <circle cx="16" cy="16" r="8" fill="none" stroke="var(--accent, #3b82f6)" strokeWidth="1.4" opacity="0.6" />
-      <ellipse
-        cx="16"
-        cy="16"
-        rx="13"
-        ry="7"
-        fill="none"
-        stroke="#ffffff"
-        strokeWidth="1.2"
-        opacity="0.8"
-        transform="rotate(-24 16 16)"
-      />
-    </svg>
+    <img
+      src="/orbit-logo.png"
+      alt="Orbit Logo"
+      className={`${className} object-contain rounded-lg shrink-0 select-none`}
+      draggable={false}
+    />
   );
 }

@@ -12,7 +12,9 @@ import { detectAudioMetadata } from "@/lib/audio-metadata";
 import {
   ArrowRight,
   Check,
+  Fingerprint,
   Keyboard,
+  KeyRound,
   Loader2,
   LogOut,
   Pencil,
@@ -20,9 +22,11 @@ import {
   Plus,
   Search,
   RefreshCw,
+  ShieldCheck,
   Trash2,
   Volume2,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -113,6 +117,83 @@ export default function SettingsPage() {
     setPrevProfile(profile);
     setDisplayName(profile?.display_name ?? "");
     setAvatarUrl(profile?.avatar_url ?? "");
+  }
+
+  // Passkeys & Biometric Security state
+  type PasskeyItem = {
+    id: string;
+    friendly_name?: string;
+    created_at: string;
+    last_used_at?: string;
+  };
+
+  const [passkeys, setPasskeys] = useState<PasskeyItem[]>([]);
+  const [loadingPasskeys, setLoadingPasskeys] = useState(false);
+  const [registeringPasskey, setRegisteringPasskey] = useState(false);
+  const [passkeyFeedback, setPasskeyFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (activeTab === "account") {
+      void loadPasskeys();
+    }
+  }, [activeTab]);
+
+  async function loadPasskeys() {
+    setLoadingPasskeys(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.passkey.list();
+      if (!error && Array.isArray(data)) {
+        setPasskeys(data as unknown as PasskeyItem[]);
+      }
+    } catch {
+      // Non-fatal
+    } finally {
+      setLoadingPasskeys(false);
+    }
+  }
+
+  async function handleRegisterPasskey() {
+    setRegisteringPasskey(true);
+    setPasskeyFeedback(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.registerPasskey();
+      if (error) {
+        if (error.message.includes("cancelled") || error.message.includes("abort")) {
+          setPasskeyFeedback({ type: "error", message: "Passkey setup was cancelled." });
+        } else {
+          setPasskeyFeedback({ type: "error", message: error.message || "Failed to register passkey." });
+        }
+        return;
+      }
+      setPasskeyFeedback({
+        type: "success",
+        message: "Passkey registered successfully! You can now sign in with Touch ID / Face ID.",
+      });
+      void loadPasskeys();
+    } catch (err: unknown) {
+      setPasskeyFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Passkey registration failed",
+      });
+    } finally {
+      setRegisteringPasskey(false);
+    }
+  }
+
+  async function handleDeletePasskey(id: string) {
+    try {
+      const supabase = createClient();
+      await supabase.auth.passkey.delete({ passkeyId: id });
+      setPasskeys((prev) => prev.filter((p) => p.id !== id));
+      setPasskeyFeedback({ type: "success", message: "Passkey removed." });
+    } catch {
+      setPasskeyFeedback({ type: "error", message: "Failed to delete passkey." });
+    }
   }
 
   // Single Track Form state
@@ -655,6 +736,97 @@ export default function SettingsPage() {
               </button>
             </div>
           </form>
+
+          {/* Passkeys & Biometric Security Card */}
+          <div className="rounded-[36px] border border-white/5 bg-[#222224] p-6 sm:p-8 lg:col-span-12">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-400">
+                  <Fingerprint className="h-3.5 w-3.5" />
+                  <span>Passkey Biometric Security</span>
+                </div>
+                <h3 className="mt-3 text-lg font-bold text-white">Registered Passkeys</h3>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Authenticate instantly with Touch ID, Face ID, or Windows Hello. No passwords required.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRegisterPasskey}
+                disabled={registeringPasskey}
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-500 active:scale-95 disabled:opacity-50"
+              >
+                {registeringPasskey ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                <span>Register Device Passkey</span>
+              </button>
+            </div>
+
+            {passkeyFeedback && (
+              <div
+                className={`mt-4 rounded-xl p-3 text-xs font-semibold ${
+                  passkeyFeedback.type === "success"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "bg-rose-500/10 text-rose-400"
+                }`}
+              >
+                {passkeyFeedback.message}
+              </div>
+            )}
+
+            <div className="mt-6 space-y-3">
+              {loadingPasskeys ? (
+                <div className="flex items-center gap-2 py-4 text-xs text-zinc-500">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                  <span>Loading registered passkeys...</span>
+                </div>
+              ) : passkeys.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-xs text-zinc-500">
+                  <KeyRound className="mx-auto h-8 w-8 text-zinc-600 mb-2" />
+                  <p className="font-semibold text-zinc-400">No passkeys registered yet</p>
+                  <p className="mt-1">
+                    Click &ldquo;Register Device Passkey&rdquo; above to link your Touch ID, Face ID, or security key.
+                  </p>
+                </div>
+              ) : (
+                passkeys.map((pk) => (
+                  <div
+                    key={pk.id}
+                    className="flex items-center justify-between rounded-2xl border border-white/5 bg-[#1a1a1c] p-4 text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-500/10 text-blue-400">
+                        <Fingerprint className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">
+                          {pk.friendly_name || "Biometric Passkey"}
+                        </p>
+                        <p className="text-[11px] text-zinc-500">
+                          Added: {new Date(pk.created_at).toLocaleDateString()}
+                          {pk.last_used_at &&
+                            ` • Last used: ${new Date(pk.last_used_at).toLocaleDateString()}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePasskey(pk.id)}
+                      className="rounded-full p-2 text-zinc-500 transition hover:bg-rose-500/10 hover:text-rose-400"
+                      title="Delete Passkey"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       ) : null}
 
