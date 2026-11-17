@@ -83,12 +83,11 @@ export async function downloadSongOffline(
 ): Promise<void> {
   const db = await openDB();
 
-  // 1. Fetch the audio stream
-  // const audioResponse = await fetch(song.audio_url, {
-  //   mode: "cors",
-  //   credentials: "omit",
-  // });
-  const audioResponse = await fetchWithProxyFallback(song.audio_url);
+  // 1. Fetch the audio stream through our server-side secure stream endpoint
+  const streamUrl = song.id
+    ? `/api/stream?id=${encodeURIComponent(song.id)}`
+    : `/api/proxy-audio?url=${encodeURIComponent(song.audio_url)}`;
+  const audioResponse = await fetch(streamUrl);
 
   if (!audioResponse.ok) {
     throw new Error(

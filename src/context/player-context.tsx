@@ -70,6 +70,19 @@ function fadeAudio(
   });
 }
 
+function getPlaybackUrl(song: Song): string {
+  // Routes playback through our server-side streaming proxy.
+  // In DevTools inspect, the user only sees `/api/stream?id=...`,
+  // keeping Cloudinary & ImageKit account and bucket URLs completely protected.
+  if (song.id) {
+    return `/api/stream?id=${encodeURIComponent(song.id)}`;
+  }
+  if (song.audio_url) {
+    return `/api/stream?url=${encodeURIComponent(song.audio_url)}`;
+  }
+  return "";
+}
+
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const { recordPlay } = useMusic();
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -128,7 +141,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const audio = new Audio();
     audio.preload = "metadata";
     audioRef.current = audio;
-    audio.setAttribute("referrerpolicy", "no-referrer");
 
     const onTime = () => {
       setProgress(audio.currentTime);
@@ -203,10 +215,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             setIsPlaying(false);
             return;
           }
-          audio.src = song.audio_url;
+          audio.src = getPlaybackUrl(song);
         }
       } catch {
-        audio.src = song.audio_url;
+        audio.src = getPlaybackUrl(song);
       }
 
       if (crossfade > 0) {
