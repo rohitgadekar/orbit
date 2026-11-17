@@ -130,7 +130,7 @@ export function IconRail() {
 
   return (
     <aside
-      className={`hidden h-full shrink-0 flex-col bg-[#1a1a1c] py-7 text-zinc-300 transition-[width] duration-200 md:flex ${collapsed ? "w-[72px] items-center px-3" : "w-56 px-5 lg:w-60"
+      className={`hidden h-full shrink-0 flex-col bg-[var(--bg-app,#080808)] py-7 text-zinc-300 transition-[width] duration-200 md:flex ${collapsed ? "w-[72px] items-center px-3" : "w-56 px-5 lg:w-60"
         }`}
     >
       <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between px-1"}`}>
@@ -157,7 +157,7 @@ export function IconRail() {
               onClick={(e) => {
                 if (item.isActive) e.preventDefault();
               }}
-              className={`group flex items-center rounded-2xl text-[13px] font-semibold transition ${collapsed ? "h-11 w-full justify-center" : "gap-3 px-3 py-2.5"} ${item.isActive ? "bg-[#2c2c2f] text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"
+              className={`group flex items-center rounded-2xl text-[13px] font-semibold transition ${collapsed ? "h-11 w-full justify-center" : "gap-3 px-3 py-2.5"} ${item.isActive ? "bg-[var(--bg-surface-elevated,#1a1a1d)] text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"
                 }`}
             >
               <Icon

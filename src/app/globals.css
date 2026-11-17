@@ -18,6 +18,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-light: var(--accent-light);
   --color-accent-dark: var(--accent-dark);
+  --color-accent-contrast: var(--accent-contrast, #080808);
   --color-accent-subtle: var(--accent-subtle);
   --color-accent-glow: var(--accent-glow);
 
@@ -33,6 +34,17 @@
   --color-blue-400: var(--accent-hover);
   --color-blue-300: var(--accent-light);
   --color-blue-600: var(--accent-dark);
+}
+
+/* Ensure solid accent buttons (play controls, active tabs) maintain high-contrast dark text and icons */
+.bg-blue-500:not([class*="bg-blue-500/"]),
+.bg-accent {
+  color: var(--accent-contrast, #080808) !important;
+}
+.bg-blue-500:not([class*="bg-blue-500/"]) svg,
+.bg-accent svg {
+  fill: currentColor !important;
+  color: currentColor !important;
 }
 
 * {

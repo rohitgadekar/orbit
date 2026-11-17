@@ -4,44 +4,51 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Edit this ONE file to change accent or background colors across the entire app.
  *
- * Examples of accents you can try in the future:
- * - Purple:  --accent: #a855f7; --accent-hover: #c084fc; --accent-light: #e9d5ff; --accent-subtle: rgba(168, 85, 247, 0.15);
- * - Emerald: --accent: #10b981; --accent-hover: #34d399; --accent-light: #a7f3d0; --accent-subtle: rgba(16, 185, 129, 0.15);
- * - Amber:   --accent: #f59e0b; --accent-hover: #fbbf24; --accent-light: #fde68a; --accent-subtle: rgba(245, 158, 11, 0.15);
- * - Rose:    --accent: #f43f5e; --accent-hover: #fb7185; --accent-light: #fecdd3; --accent-subtle: rgba(244, 63, 94, 0.15);
+ * Current Palette: Liquid Titanium & Deep Obsidian
+ * Matched directly to the new Orbit logo and icons (public/orbit-logo.png):
+ * - Canvas & Backgrounds: Pure Deep Space Obsidian (#080808)
+ * - Accent: Polished Titanium Silver (#e8e8ea) with Lunar White highlights (#ffffff)
+ *
+ * Other presets you can try in the future:
+ * - Electric Blue: --accent: #3b82f6; --accent-hover: #60a5fa; --accent-light: #93c5fd; --accent-subtle: rgba(59, 130, 246, 0.15);
+ * - Warm Coral:    --accent: #ff7a59; --accent-hover: #ff9478; --accent-light: #ffb39c; --accent-subtle: rgba(255, 122, 89, 0.15);
+ * - Emerald:      --accent: #10b981; --accent-hover: #34d399; --accent-light: #a7f3d0; --accent-subtle: rgba(16, 185, 129, 0.15);
+ * - Violet:       --accent: #a855f7; --accent-hover: #c084fc; --accent-light: #e9d5ff; --accent-subtle: rgba(168, 85, 247, 0.15);
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 :root {
    /* ==========================================================================
-     1. ACCENT COLOR (Currently: Warm Coral)
+     1. ACCENT COLOR (Titanium Silver / Lunar Platinum - matching Orbit logo mark)
      ========================================================================== */
-   --accent: #ff7a59;
-   /* Primary accent (buttons, scrubbers, active states) */
-   --accent-hover: #ff9478;
+   --accent: #e8e8ea;
+   /* Primary accent (buttons, scrubbers, active states - exact logo emblem) */
+   --accent-hover: #ffffff;
    /* Hover state */
-   --accent-light: #ffb39c;
+   --accent-light: #f4f4f5;
    /* Light text / category badges */
-   --accent-dark: #e8603f;
+   --accent-dark: #d4d4d8;
    /* Active pressed state */
-   --accent-subtle: rgba(255, 122, 89, 0.15);
-   /* Translucent backgrounds (pills, badges, glows) */
-   --accent-glow: rgba(255, 122, 89, 0.25);
+   --accent-contrast: #080808;
+   /* High-contrast text/icon on solid accent buttons (e.g. play controls) */
+   --accent-subtle: rgba(232, 232, 234, 0.12);
+   /* Translucent backgrounds (pills, badges, active backdrops) */
+   --accent-glow: rgba(232, 232, 234, 0.25);
    /* Drop shadow glow */
 
    /* ==========================================================================
-     2. BACKGROUND & SURFACE COLORS (Currently: Premium Dark)
+     2. BACKGROUND & SURFACE COLORS (Obsidian Space Dark - matching Orbit logo canvas)
      ========================================================================== */
-   --bg-app: #1a1a1c;
-   /* Global app canvas & sidebar background */
-   --bg-surface: #222224;
+   --bg-app: #080808;
+   /* Global app canvas & sidebar background (exact logo base) */
+   --bg-surface: #121214;
    /* Primary cards, playlists, right panel */
-   --bg-surface-elevated: #2c2c2f;
+   --bg-surface-elevated: #1a1a1d;
    /* Elevated buttons, menu items, pills */
-   --bg-surface-hover: #262628;
+   --bg-surface-hover: #222226;
    /* Hover state for cards and list rows */
-   --bg-player: #141416;
+   --bg-player: #0c0c0e;
    /* Bottom player bar background */
-   --bg-input: #2a2a2d;
+   --bg-input: #161619;
    /* Search and text input fields */
 }

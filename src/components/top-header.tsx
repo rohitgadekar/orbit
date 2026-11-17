@@ -49,7 +49,7 @@ export function TopHeader() {
   return (
     <>
       <header
-        className={`sticky top-0 z-30 flex items-center gap-3 px-5 pt-[calc(var(--safe-top)+0.75rem)] pb-3 md:gap-4 md:px-8 md:pt-4 backdrop-blur-xl bg-[#1a1a1c]/80  transition-all${fullscreen ? " min-h-[64px]" : ""
+        className={`sticky top-0 z-30 flex items-center gap-3 px-5 pt-[calc(var(--safe-top)+0.75rem)] pb-3 md:gap-4 md:px-8 md:pt-4 backdrop-blur-xl   transition-all${fullscreen ? " min-h-[64px]" : ""
           }`}
       >
         {/* Navigation History Pair */}
