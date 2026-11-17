@@ -717,10 +717,10 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={profileBusy}
-                className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-6 py-3 text-xs font-bold text-white shadow-md transition hover:scale-105 active:scale-95 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-xs font-bold text-black shadow-md transition hover:bg-blue-500 active:scale-95 disabled:opacity-50"
               >
                 {profileBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Save Profile Changes
+                Save Changes
               </button>
 
               <button
@@ -755,24 +755,23 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleRegisterPasskey}
                 disabled={registeringPasskey}
-                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-500 active:scale-95 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-xs font-bold text-black  transition hover:bg-blue-500 active:scale-95 disabled:opacity-50"
               >
                 {registeringPasskey ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                <span>Register Device Passkey</span>
+                <span>Register Passkey</span>
               </button>
             </div>
 
             {passkeyFeedback && (
               <div
-                className={`mt-4 rounded-xl p-3 text-xs font-semibold ${
-                  passkeyFeedback.type === "success"
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : "bg-rose-500/10 text-rose-400"
-                }`}
+                className={`mt-4 rounded-xl p-3 text-xs font-semibold ${passkeyFeedback.type === "success"
+                  ? "bg-emerald-500/10 text-emerald-400"
+                  : "bg-rose-500/10 text-rose-400"
+                  }`}
               >
                 {passkeyFeedback.message}
               </div>

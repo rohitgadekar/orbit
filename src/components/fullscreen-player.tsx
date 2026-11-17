@@ -959,33 +959,15 @@ export function FullscreenPlayer({
             style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom, 0px))" }}
           >
             <div
-              className="mx-auto w-full max-w-2xl rounded-[32px] border border-white/10 shadow-2xl overflow-hidden"
+              className="mx-auto w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden"
               style={{
-                background: "rgba(26, 26, 28, 0.88)",
+                // background: "rgba(26, 26, 28, 0.88)",
                 backdropFilter: "blur(48px) saturate(1.6)",
               }}
             >
               {/* Drag handle pill */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="h-1 w-10 rounded-full bg-white/25" />
-              </div>
-
-              {/* Sheet header */}
-              <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-white/8">
-                <div>
-                  <h3 className="text-[22px] font-bold text-white tracking-tight leading-tight">Next in Queue</h3>
-                  <p className="text-[11px] text-zinc-400 mt-0.5">
-                    Next {Math.max(0, upcomingQueue.length - 1)} songs • {queue.length} total in queue
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowQueue(false)}
-                  className="rounded-full bg-[#2a2a2d] px-3 py-1 text-xs font-semibold text-zinc-300 hover:bg-white/20 hover:text-white transition"
-                  aria-label="Close queue"
-                >
-                  Done
-                </button>
               </div>
 
               {/* Track list — showing only next 10 songs from current for instant performance */}
