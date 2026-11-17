@@ -1,11 +1,13 @@
 "use client";
 
-import { OrbitMark } from "@/components/icon-rail";
 import { createClient } from "@/lib/supabase/client";
 import { isConfigured } from "@/lib/utils";
 import {
   AlertCircle,
+  ArrowRight,
   CheckCircle2,
+  Eye,
+  EyeOff,
   Fingerprint,
   KeyRound,
   Loader2,
@@ -16,8 +18,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
+// Note: text-[16px] is essential for mobile iOS Safari to prevent auto-zooming on input focus.
 const inputClass =
-  "mt-1.5 w-full rounded-full border border-white/10 bg-[#1a1a1c] px-5 py-3 text-sm font-medium text-white outline-none transition placeholder:text-zinc-600 focus:border-blue-500";
+  "mt-1.5 w-full rounded-full border border-white/10 bg-[#161619] px-5 py-3 text-[16px] sm:text-sm font-medium text-white outline-none transition placeholder:text-zinc-600 focus:border-white/30 focus:ring-1 focus:ring-white/15";
 
 function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -26,6 +29,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [inviteCode, setInviteCode] = useState(() => searchParams.get("invite") || "");
   const [inviteVerified, setInviteVerified] = useState(false);
   const [inviteTier, setInviteTier] = useState<string | null>(null);
@@ -177,89 +181,102 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
   }
 
   return (
-    <div className="grid min-h-dvh w-full bg-[#121214] lg:grid-cols-12">
-      {/* Left brand panel */}
-      <aside className="relative hidden overflow-hidden border-r border-white/5 bg-gradient-to-br from-[#121215] via-[#1a1920] to-[#0c0c0e] p-12 text-white lg:col-span-6 lg:flex lg:flex-col lg:justify-between xl:col-span-7">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 bottom-0 h-80 w-80 rounded-full bg-violet-500/10 blur-3xl" />
+    <div className="grid min-h-dvh w-full bg-[#080808] text-[#e8e8ea] lg:grid-cols-12 selection:bg-[#e8e8ea] selection:text-[#080808]">
+      {/* Left brand panel (visible on large displays) */}
+      <aside className="relative hidden overflow-hidden border-r border-white/5 bg-gradient-to-br from-[#0c0c0e] via-[#121215] to-[#080808] p-12 text-white lg:col-span-6 lg:flex lg:flex-col lg:justify-between xl:col-span-7">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white/[0.03] blur-[120px]" />
+        <div className="pointer-events-none absolute -left-20 bottom-0 h-80 w-80 rounded-full bg-white/[0.02] blur-[140px]" />
 
         <div className="relative z-10 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <OrbitMark className="h-8 w-8" />
+          <Link href="/" className="flex items-center gap-3 group">
+            <img
+              src="/orbit-logo.png"
+              alt="Orbit Logo"
+              className="h-8 w-8 object-contain rounded-lg shrink-0 shadow-md transition-transform group-hover:scale-105"
+            />
             <span className="text-2xl font-bold tracking-tight text-white">Orbit</span>
           </Link>
+          <span className="rounded-full border border-white/10 bg-[#161619] px-3 py-1 text-[11px] font-mono font-medium text-zinc-400 uppercase tracking-widest">
+            Private Music
+          </span>
         </div>
 
-        <div className="relative z-10 my-auto py-12">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-400 mb-6">
-            <Fingerprint className="h-3.5 w-3.5" />
-            <span>Biometric Passkeys Enabled</span>
+        <div className="relative z-10 my-auto py-12 max-w-xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#161619] px-3.5 py-1 text-xs font-semibold text-zinc-300 mb-6">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span>100% Ad-Free • Invite Only</span>
           </div>
 
-          <h2 className="max-w-xl text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
-            Pure sound, beautifully in orbit.
+          <h2 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
+            A quiet home for <br />
+            <span className="font-serif italic font-normal text-white/90">your personal sound</span>.
           </h2>
-          <p className="mt-4 max-w-lg text-sm leading-relaxed text-zinc-400">
-            Private bit-perfect lossless audio streaming, ambient full-screen stage, synced lyrics, and offline storage.
+          <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+            Stream uncompressed lossless audio, enjoy full-screen ambient listening, and save your private collection offline anywhere.
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-6 text-xs text-zinc-500">
+        <div className="relative z-10 flex items-center justify-between border-t border-white/5 pt-6 text-xs text-zinc-500">
           <span>© 2026 Orbit Music</span>
           <Link href="/" className="hover:text-white transition">
-            Back to Overview
+            ← Return to Overview
           </Link>
         </div>
       </aside>
 
-      {/* Right form container */}
-      <main className="flex items-center justify-center p-6 lg:col-span-6 xl:col-span-5">
+      {/* Right form container (Mobile & Desktop optimized) */}
+      <main className="flex items-center justify-center p-4 sm:p-6 md:p-8 pt-[calc(env(safe-area-inset-top,0px)+1rem)] pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] lg:col-span-6 xl:col-span-5">
         <form
           onSubmit={onSubmit}
-          className="w-full max-w-md rounded-[36px] border border-white/5 bg-[#1b1b1f] p-8 shadow-2xl sm:p-10"
+          className="w-full max-w-md rounded-[32px] sm:rounded-[36px] border border-white/10 bg-[#121215] p-6 sm:p-10 shadow-2xl"
         >
+          {/* Mobile Header Logo */}
           <div className="mb-6 flex items-center justify-between lg:hidden">
             <Link href="/" className="flex items-center gap-2.5">
-              <OrbitMark className="h-8 w-8" />
-              <span className="text-2xl font-bold text-white">Orbit</span>
+              <img
+                src="/orbit-logo.png"
+                alt="Orbit Logo"
+                className="h-8 w-8 object-contain rounded-lg shrink-0 shadow-md"
+              />
+              <span className="text-2xl font-bold text-white tracking-tight">Orbit</span>
             </Link>
+            <span className="rounded-full border border-white/10 bg-[#18181b] px-2.5 py-1 text-[10px] font-mono text-zinc-400 uppercase">
+              Private
+            </span>
           </div>
 
-          <h1 className="text-3xl font-black tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
             {mode === "login" ? "Welcome back" : "Join Orbit"}
           </h1>
-          <p className="mt-2 text-xs text-zinc-400">
+          <p className="mt-1.5 text-xs text-zinc-400 leading-relaxed">
             {mode === "login"
-              ? "Sign in to access your private library and lossless audio vault."
-              : "Orbit is private and invite-only. Enter your invitation code to register."}
+              ? "Sign in to access your private library and offline music."
+              : "Orbit is invite-only. Enter your invitation code to create your account."}
           </p>
 
-          {/* Passkey Sign In Button (Prominently displayed on login) */}
+          {/* Passkey Sign In Option (on login) */}
           {mode === "login" && hasPasskeySupport && (
             <div className="mt-6">
               <button
                 type="button"
                 onClick={handlePasskeySignIn}
                 disabled={passkeyBusy}
-                className="group relative flex w-full items-center justify-center gap-2.5 rounded-full border border-blue-500/30 bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-blue-600/20 p-3.5 text-xs font-bold text-white shadow-lg shadow-blue-500/10 transition hover:border-blue-400 hover:from-blue-600/30 hover:to-indigo-600/30 active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-2.5 rounded-full border border-white/10 bg-[#161619] p-3.5 text-xs font-semibold text-white shadow-md transition hover:border-white/20 hover:bg-[#1c1c20] active:scale-[0.98]"
               >
                 {passkeyBusy ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                  <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
                 ) : (
-                  <Fingerprint className="h-4 w-4 text-blue-400 transition group-hover:scale-110" />
+                  <Fingerprint className="h-4 w-4 text-zinc-300" />
                 )}
-                <span>Sign in with Passkey</span>
-                <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-300">
-                  Touch ID / Face ID
-                </span>
+                <span>Passkey</span>
               </button>
 
-              <div className="my-6 flex items-center gap-3">
-                <span className="h-px flex-1 bg-white/10" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              <div className="my-5 flex items-center gap-3">
+                <span className="h-px flex-1 bg-white/5" />
+                <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
                   or with password
                 </span>
-                <span className="h-px flex-1 bg-white/10" />
+                <span className="h-px flex-1 bg-white/5" />
               </div>
             </div>
           )}
@@ -288,15 +305,18 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
                     void verifyCode(val);
                   }}
                   placeholder="e.g. ORBIT-VIP"
-                  className={`${inputClass} tracking-wider uppercase pr-10`}
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className={`${inputClass} tracking-widest uppercase pr-10`}
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500">
                   <Ticket className="h-4 w-4" />
                 </div>
               </div>
               {!inviteVerified && inviteCode && (
-                <p className="mt-1.5 text-[11px] text-amber-400">
-                  Checking invitation validity...
+                <p className="mt-1 text-[11px] text-amber-400">
+                  Checking invitation code...
                 </p>
               )}
             </div>
@@ -310,6 +330,9 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder="e.g. Miles Davis"
+                autoComplete="name"
+                autoCapitalize="words"
+                spellCheck={false}
                 className={inputClass}
               />
             </label>
@@ -323,34 +346,52 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@domain.com"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               className={inputClass}
             />
           </label>
 
           <label className="mt-4 block text-xs font-semibold text-zinc-400">
             Password
-            <input
-              required
-              minLength={6}
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                required
+                minLength={6}
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className={`${inputClass} pr-12`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition p-1"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </label>
 
           {message ? (
             <div
               className={`mt-4 flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-medium ${isError
-                ? "border border-red-500/20 bg-red-500/10 text-red-300"
-                : "border border-blue-500/20 bg-blue-500/10 text-blue-300"
+                ? "border border-rose-500/20 bg-rose-500/10 text-rose-300"
+                : "border border-white/10 bg-white/5 text-zinc-300"
                 }`}
             >
               {isError ? (
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
               ) : (
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-400" />
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
               )}
               <span>{message}</span>
             </div>
@@ -358,7 +399,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
 
           <button
             disabled={busy || passkeyBusy}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 py-3.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-500 active:scale-[0.98] disabled:opacity-60"
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e8e8ea] py-3.5 text-xs font-bold text-[#080808] transition hover:bg-white active:scale-[0.98] disabled:opacity-50 shadow-lg"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             <span>{mode === "login" ? "Sign In" : "Unlock & Register"}</span>
@@ -368,7 +409,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
             <p>
               {mode === "login" ? (
                 <>
-                  Have an invite code?{"  "}
+                  Have an invite code?{" "}
                   <Link href="/signup" className="font-bold text-white hover:underline">
                     Create an account
                   </Link>
@@ -398,8 +439,8 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
   return (
     <Suspense
       fallback={
-        <div className="grid min-h-dvh place-items-center bg-[#121214] text-white">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+        <div className="grid min-h-dvh place-items-center bg-[#080808] text-white">
+          <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
         </div>
       }
     >
