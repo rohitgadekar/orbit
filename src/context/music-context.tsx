@@ -313,9 +313,15 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         throw new Error(songsRes.error.message);
       }
 
-      const catalog = (songsRes.data ?? []).map((row) =>
-        normalizeSong(row as Record<string, unknown>),
-      );
+      const seenCatalogIds = new Set<string>();
+      const catalog: Song[] = [];
+      for (const row of songsRes.data ?? []) {
+        const s = normalizeSong(row as Record<string, unknown>);
+        if (s?.id && !seenCatalogIds.has(s.id)) {
+          seenCatalogIds.add(s.id);
+          catalog.push(s);
+        }
+      }
       const artistsList = (artistsRes.data ?? []) as Artist[];
       const playlistsList = (playlistsRes.data ?? []) as Playlist[];
       const favRows = favRes.data ?? [];

@@ -22,7 +22,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Velar — Hi-Res 24-Bit FLAC Music Sanctuary",
+  title: "Velar - Web Player",
   description: "Experience bit-perfect 24-bit FLAC audio. Hear every detail at no cost. 100% ad-free, private, and invite only.",
   appleWebApp: {
     capable: true,

@@ -333,6 +333,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [isPlaying]);
 
+  // Sync document tab title with playback state
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (current && isPlaying) {
+      document.title = `${current.title} • ${current.artist?.name || "Unknown Artist"} | Velar - Web Player`;
+    } else {
+      document.title = "Velar - Web Player";
+    }
+  }, [current, isPlaying]);
+
   // Sync position state (progress scrubber) with iOS & Android lock screen
   useEffect(() => {
     if (

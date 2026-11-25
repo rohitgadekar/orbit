@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function IconRail() {
   const pathname = usePathname();
@@ -23,14 +23,16 @@ export function IconRail() {
   const { songs, artists: catalogArtists, recentlyPlayed, favouriteIds } = useMusic();
 
   // Collapsed state is remembered across sessions
-  const [collapsed, setCollapsedRaw] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
+  const [collapsed, setCollapsedRaw] = useState<boolean>(false);
+
+  useEffect(() => {
     try {
-      return localStorage.getItem("orbit_sidebar_collapsed") === "true";
-    } catch {
-      return false;
-    }
-  });
+      const saved = localStorage.getItem("orbit_sidebar_collapsed");
+      if (saved !== null) {
+        setCollapsedRaw(saved === "true");
+      }
+    } catch { }
+  }, []);
   function toggleCollapsed() {
     setCollapsedRaw((prev) => {
       const next = !prev;

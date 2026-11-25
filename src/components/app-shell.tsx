@@ -35,18 +35,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [editingSong, setEditingSong] = useState<Song | null>(null);
-  const [fullscreen, setFullscreenRaw] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("orbit_fullscreen") === "true";
-  });
-  const [sidebarCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
+  const [fullscreen, setFullscreenRaw] = useState<boolean>(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+
+  useEffect(() => {
     try {
-      return localStorage.getItem("orbit_sidebar_collapsed") === "true";
-    } catch {
-      return false;
-    }
-  });
+      const savedCollapsed = localStorage.getItem("orbit_sidebar_collapsed");
+      if (savedCollapsed !== null) {
+        setSidebarCollapsed(savedCollapsed === "true");
+      }
+      const savedFullscreen = localStorage.getItem("orbit_fullscreen");
+      if (savedFullscreen !== null) {
+        setFullscreenRaw(savedFullscreen === "true");
+      }
+    } catch { }
+  }, []);
   const mainRef = useRef<HTMLElement | null>(null);
 
   function setFullscreen(v: boolean) {

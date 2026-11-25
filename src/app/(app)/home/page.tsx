@@ -78,11 +78,15 @@ export default function HomePage() {
 
   // 1. Jump back in: deduplicated recently played, 6 most recent
   const jumpBackIn = useMemo(() => {
-    const seen = new Set<string>();
+    const seenIds = new Set<string>();
+    const seenTitles = new Set<string>();
     const result: Song[] = [];
     for (const song of recentlyPlayed) {
-      if (!seen.has(song.id)) {
-        seen.add(song.id);
+      if (!song || !song.id) continue;
+      const titleKey = (song.title || "").toLowerCase().trim();
+      if (!seenIds.has(song.id) && !seenTitles.has(titleKey)) {
+        seenIds.add(song.id);
+        if (titleKey) seenTitles.add(titleKey);
         result.push(song);
         if (result.length >= 6) break;
       }
@@ -127,28 +131,56 @@ export default function HomePage() {
       .slice(0, 8);
   }, [individualArtists, artistAffinity]);
 
-  // 4. Loved tracks — most recently favourited first
+  // 4. Loved tracks — most recently favourited first, deduplicated
   const lovedTracks = useMemo(() => {
     const lovedInOrder = recentFavouriteIds
       .map((id) => songs.find((s) => s.id === id))
       .filter((s): s is Song => !!s);
-    // Fallback: alphabetically from favouriteIds if no history
-    if (lovedInOrder.length === 0) {
-      return songs.filter((s) => favouriteIds.has(s.id)).slice(0, 8);
+    const source = lovedInOrder.length > 0
+      ? lovedInOrder
+      : songs.filter((s) => favouriteIds.has(s.id));
+
+    const seenIds = new Set<string>();
+    const seenTitles = new Set<string>();
+    const result: Song[] = [];
+
+    for (const song of source) {
+      if (!song || !song.id) continue;
+      const titleKey = (song.title || "").toLowerCase().trim();
+      if (!seenIds.has(song.id) && !seenTitles.has(titleKey)) {
+        seenIds.add(song.id);
+        if (titleKey) seenTitles.add(titleKey);
+        result.push(song);
+        if (result.length >= 8) break;
+      }
     }
-    return lovedInOrder.slice(0, 8);
+    return result;
   }, [recentFavouriteIds, songs, favouriteIds]);
 
-  // 5. Heavy Rotation: personal replay first, then by global play_count
+  // 5. Heavy Rotation: personal replay first, then by global play_count, deduplicated
   const heavyRotation = useMemo(() => {
-    return [...songs]
-      .sort((a, b) => {
-        const pa = personalPlayCounts.get(a.id) ?? 0;
-        const pb = personalPlayCounts.get(b.id) ?? 0;
-        if (pb !== pa) return pb - pa;
-        return (b.play_count ?? 0) - (a.play_count ?? 0);
-      })
-      .slice(0, 8);
+    const sorted = [...songs].sort((a, b) => {
+      const pa = personalPlayCounts.get(a.id) ?? 0;
+      const pb = personalPlayCounts.get(b.id) ?? 0;
+      if (pb !== pa) return pb - pa;
+      return (b.play_count ?? 0) - (a.play_count ?? 0);
+    });
+
+    const seenIds = new Set<string>();
+    const seenTitles = new Set<string>();
+    const result: Song[] = [];
+
+    for (const song of sorted) {
+      if (!song || !song.id) continue;
+      const titleKey = (song.title || "").toLowerCase().trim();
+      if (!seenIds.has(song.id) && !seenTitles.has(titleKey)) {
+        seenIds.add(song.id);
+        if (titleKey) seenTitles.add(titleKey);
+        result.push(song);
+        if (result.length >= 8) break;
+      }
+    }
+    return result;
   }, [songs, personalPlayCounts]);
 
   // 6. Recommended albums: prefer albums that contain user's favourited/played artists
@@ -177,44 +209,103 @@ export default function HomePage() {
       .slice(0, 8);
   }, [songs, artistAffinity]);
 
-  // 7. Suggested because you listen to your top artist
+  // 7. Suggested because you listen to your top artist (strictly deduplicated)
   const becauseYouListenedTo = useMemo(() => {
     if (topArtists.length === 0) return null;
-    const top = topArtists[0];
-    if (!top) return null;
 
-    const artistNameLower = top.name.toLowerCase().trim();
-    // Songs by this artist or featuring this artist
-    const matches = songs.filter((s) => {
-      const names = splitArtistNames(s.artist?.name).map((n) => n.toLowerCase().trim());
-      return names.includes(artistNameLower);
-    });
+    // Scan top artists until we find one with distinct matching songs
+    for (const top of topArtists) {
+      if (!top || !top.name) continue;
+      const artistNameLower = top.name.toLowerCase().trim();
 
-    if (matches.length === 0) return null;
+      // Songs by this artist or featuring this artist
+      const matches = songs.filter((s) => {
+        const names = splitArtistNames(s.artist?.name).map((n) => n.toLowerCase().trim());
+        return names.includes(artistNameLower);
+      });
 
-    return {
-      artist: top,
-      songs: matches.slice(0, 5),
-    };
+      if (matches.length === 0) continue;
+
+      // Deduplicate songs by ID, audio URL, and canonical normalized title
+      const seenIds = new Set<string>();
+      const seenUrls = new Set<string>();
+      const seenTitles = new Set<string>();
+      const uniqueSongs: Song[] = [];
+
+      for (const song of matches) {
+        if (!song || !song.id) continue;
+
+        // Clean normalized title key (e.g. "what lovers do" regardless of casing/spacing)
+        const canonicalTitle = (song.title || "")
+          .toLowerCase()
+          .trim()
+          .replace(/\s*\(feat\.[^)]*\)/gi, "")
+          .replace(/\s*\[feat\.[^\]]*\]/gi, "")
+          .replace(/\s*\(with[^)]*\)/gi, "")
+          .trim();
+
+        const audioUrl = (song.audio_url || "").trim().toLowerCase();
+
+        if (seenIds.has(song.id)) continue;
+        if (canonicalTitle && seenTitles.has(canonicalTitle)) continue;
+        if (audioUrl && seenUrls.has(audioUrl)) continue;
+
+        seenIds.add(song.id);
+        if (canonicalTitle) seenTitles.add(canonicalTitle);
+        if (audioUrl) seenUrls.add(audioUrl);
+
+        uniqueSongs.push(song);
+
+        if (uniqueSongs.length >= 10) break;
+      }
+
+      if (uniqueSongs.length > 0) {
+        return {
+          artist: top,
+          songs: uniqueSongs.slice(0, 5),
+        };
+      }
+    }
+
+    return null;
   }, [topArtists, songs]);
 
-  // 8. Rediscover: songs favourited or with history that haven't spun in the last 10 plays
+  // 8. Rediscover: songs favourited or with history that haven't spun in the last 10 plays (deduplicated)
   const rediscover = useMemo(() => {
     const recentSongIds = new Set(recentlyPlayed.slice(0, 10).map((s) => s.id));
+    const recentTitles = new Set(
+      recentlyPlayed.slice(0, 10).map((s) => (s.title || "").toLowerCase().trim()),
+    );
     const candidates = songs.filter(
       (s) =>
         !recentSongIds.has(s.id) &&
+        !recentTitles.has((s.title || "").toLowerCase().trim()) &&
         (favouriteIds.has(s.id) || (s.play_count ?? 0) > 0 || personalPlayCounts.has(s.id)),
     );
 
-    return candidates
-      .sort((a, b) => {
-        const aFav = favouriteIds.has(a.id) ? 1 : 0;
-        const bFav = favouriteIds.has(b.id) ? 1 : 0;
-        if (bFav !== aFav) return bFav - aFav;
-        return (b.play_count ?? 0) - (a.play_count ?? 0);
-      })
-      .slice(0, 5);
+    const sorted = candidates.sort((a, b) => {
+      const aFav = favouriteIds.has(a.id) ? 1 : 0;
+      const bFav = favouriteIds.has(b.id) ? 1 : 0;
+      if (bFav !== aFav) return bFav - aFav;
+      return (b.play_count ?? 0) - (a.play_count ?? 0);
+    });
+
+    const seenIds = new Set<string>();
+    const seenTitles = new Set<string>();
+    const uniqueCandidates: Song[] = [];
+
+    for (const s of sorted) {
+      if (!s || !s.id) continue;
+      const titleKey = (s.title || "").toLowerCase().trim();
+      if (!seenIds.has(s.id) && !seenTitles.has(titleKey)) {
+        seenIds.add(s.id);
+        if (titleKey) seenTitles.add(titleKey);
+        uniqueCandidates.push(s);
+        if (uniqueCandidates.length >= 5) break;
+      }
+    }
+
+    return uniqueCandidates;
   }, [songs, recentlyPlayed, favouriteIds, personalPlayCounts]);
 
   // ─── Loading / empty ───────────────────────────────────────────────────────
