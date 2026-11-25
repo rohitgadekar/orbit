@@ -246,12 +246,14 @@ export async function GET(request: Request) {
             id3Duration = Math.round(meta.format.duration);
           }
 
-          // Embedded cover artwork extraction
+          // Embedded cover artwork extraction (omit oversized base64 to prevent database bloat)
           if (meta.common.picture && meta.common.picture.length > 0) {
             const pic = meta.common.picture[0];
-            const base64 = Buffer.from(pic.data).toString("base64");
-            const mime = pic.format || "image/jpeg";
-            id3Cover = `data:${mime};base64,${base64}`;
+            if (pic.data && pic.data.length <= 40000) {
+              const base64 = Buffer.from(pic.data).toString("base64");
+              const mime = pic.format || "image/jpeg";
+              id3Cover = `data:${mime};base64,${base64}`;
+            }
           }
         } catch {
           // Stream parsing error; fallback to URL parser
@@ -274,6 +276,25 @@ export async function GET(request: Request) {
 
   // Normalize artists (comma separated) and clean title
   const { artistString, cleanedTitle } = normalizeArtists(rawArtistList, rawTitle);
+
+  // Search high-res CDN cover artwork from iTunes (avoids storing massive base64 in Supabase)
+  if (cleanedTitle || rawTitle) {
+    try {
+      const searchTerm = encodeURIComponent(`${cleanedTitle || rawTitle} ${artistString || ""}`.trim());
+      const itunesRes = await fetch(
+        `https://itunes.apple.com/search?term=${searchTerm}&entity=song&limit=1`,
+        { signal: AbortSignal.timeout(3500) },
+      );
+      if (itunesRes.ok) {
+        const itunesData = await itunesRes.json();
+        if (itunesData.results?.[0]?.artworkUrl100) {
+          id3Cover = itunesData.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
+        }
+      }
+    } catch {
+      // Non-fatal fallback
+    }
+  }
 
   return NextResponse.json({
     title: cleanedTitle || rawTitle || undefined,

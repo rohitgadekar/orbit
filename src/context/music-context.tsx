@@ -2,11 +2,13 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { splitArtistNames } from "@/lib/artists";
+import { getCachedCatalog, setCachedCatalog, clearCachedCatalog } from "@/lib/catalog-cache";
 import type { Album, Artist, BatchAlbumInput, Playlist, Song } from "@/lib/types";
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -33,7 +35,7 @@ type MusicContextValue = {
   favouriteIds: Set<string>;
   recentFavouriteIds: string[];
   recentlyPlayed: Song[];
-  refresh: () => Promise<void>;
+  refresh: (force?: boolean) => Promise<void>;
   toggleFavourite: (songId: string) => Promise<void>;
   createPlaylist: (name: string) => Promise<Playlist | null>;
   createPlaylistWithSongs: (
@@ -70,8 +72,8 @@ const MusicContext = createContext<MusicContextValue | null>(null);
 
 const songSelect = `
   id, title, artist_id, album_id, audio_url, cover_url, duration_seconds, play_count, created_at,
-  artist:artists!artist_id (*),
-  album:albums!album_id (*)
+  artist:artists!artist_id (id, name, image_url),
+  album:albums!album_id (id, title)
 `;
 
 function one<T>(value: T | T[] | null | undefined): T | null {
@@ -189,20 +191,106 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const [recentFavouriteIds, setRecentFavouriteIds] = useState<string[]>([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState<Song[]>([]);
 
-  const refresh = useCallback(async () => {
+  // 1. Instant Cache Hydration on mount (0ms delay, 0 Supabase calls)
+  useEffect(() => {
+    let mounted = true;
+    getCachedCatalog().then((cached) => {
+      if (mounted && cached && cached.songs.length > 0) {
+        setSongs(cached.songs);
+        setArtists(cached.artists);
+        setPlaylists(cached.playlists);
+        setFavouriteIds(new Set(cached.favouriteIds));
+        setRecentFavouriteIds(cached.favouriteIds);
+        setRecentlyPlayed(cached.recentlyPlayed);
+        setLoading(false);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const refresh = useCallback(async (force = false) => {
     if (!configured || !user) return;
-    setLoading(true);
     setError(null);
     const supabase = createClient();
 
     try {
+      // 2. Intelligent SWR Cache Check
+      const cached = await getCachedCatalog();
+      const now = Date.now();
+      const isCacheFresh = !force && cached && cached.songs.length > 0 && now - cached.cachedAt < 20 * 60 * 1000;
+
+      let shouldFetchCatalog = true;
+
+      if (isCacheFresh) {
+        // Lightweight 0-row HEAD count check: consumes only ~150 bytes of HTTP headers!
+        const { count, error: countErr } = await supabase
+          .from("songs")
+          .select("id", { count: "exact", head: true });
+
+        if (!countErr && typeof count === "number" && count === cached.songCount) {
+          shouldFetchCatalog = false;
+        }
+      }
+
+      if (!shouldFetchCatalog && cached) {
+        // Songs have not changed! Only fetch user-specific personal data (tiny, a few bytes)
+        const [playlistsRes, favRes, historyRes] = await Promise.all([
+          supabase
+            .from("playlists")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("favourites")
+            .select("song_id, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("play_history")
+            .select("song_id, played_at")
+            .eq("user_id", user.id)
+            .order("played_at", { ascending: false })
+            .limit(24),
+        ]);
+
+        const playlistsList = (playlistsRes.data ?? []) as Playlist[];
+        const favRows = favRes.data ?? [];
+        const favIdList = favRows.map((row) => row.song_id as string);
+
+        const byId = new Map(cached.songs.map((song) => [song.id, song]));
+        const played: Song[] = [];
+        const seen = new Set<string>();
+        for (const row of historyRes.data ?? []) {
+          const song = byId.get(row.song_id as string);
+          if (song && !seen.has(song.id)) {
+            seen.add(song.id);
+            played.push(song);
+          }
+        }
+
+        setSongs(cached.songs);
+        setArtists(cached.artists);
+        setPlaylists(playlistsList);
+        setFavouriteIds(new Set(favIdList));
+        setRecentFavouriteIds(favIdList);
+        setRecentlyPlayed(played);
+        setLoading(false);
+        return;
+      }
+
+      // If songs are not yet displayed, set loading
+      if (songs.length === 0) setLoading(true);
+
+      // 3. Optimized Catalog Query: Only essential columns, no over-fetching
       const [songsRes, artistsRes, playlistsRes, favRes, historyRes] =
         await Promise.all([
           supabase
             .from("songs")
             .select(songSelect)
             .order("created_at", { ascending: false }),
-          supabase.from("artists").select("*").order("name"),
+          supabase.from("artists").select("id, name, image_url").order("name"),
           supabase
             .from("playlists")
             .select("*")
@@ -250,13 +338,24 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       setFavouriteIds(new Set(favIdList));
       setRecentFavouriteIds(favIdList);
       setRecentlyPlayed(played);
+
+      // Save to IndexedDB cache
+      void setCachedCatalog({
+        songs: catalog,
+        artists: artistsList,
+        playlists: playlistsList,
+        favouriteIds: favIdList,
+        recentlyPlayed: played,
+        songCount: catalog.length,
+        cachedAt: Date.now(),
+      });
     } catch (err) {
       console.error("Catalog fetch failed:", err);
       setError(err instanceof Error ? err.message : "Failed to load music catalog");
     } finally {
       setLoading(false);
     }
-  }, [configured, user]);
+  }, [configured, user, songs.length]);
 
   const toggleFavourite = useCallback(
     async (songId: string) => {
@@ -640,7 +739,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         created_by: user.id,
       });
       if (songError) throw songError;
-      await refresh();
+      await refresh(true);
     },
     [isAdmin, refresh, user],
   );
@@ -715,7 +814,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         if (songError) throw songError;
       }
 
-      await refresh();
+      await refresh(true);
       return albumTitle;
     },
     [isAdmin, refresh, user],
@@ -802,7 +901,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         }),
       );
 
-      await refresh();
+      await refresh(true);
     },
     [isAdmin, refresh, songs],
   );
@@ -860,7 +959,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         ),
       );
 
-      await refresh();
+      await refresh(true);
     },
     [isAdmin, refresh],
   );
@@ -949,7 +1048,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         }),
       );
 
-      await refresh();
+      await refresh(true);
     },
     [isAdmin, refresh],
   );
@@ -990,7 +1089,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       const supabase = createClient();
       const { error: deleteError } = await supabase.from("songs").delete().eq("id", songId);
       if (deleteError) throw deleteError;
-      await refresh();
+      await refresh(true);
     },
     [isAdmin, refresh],
   );
