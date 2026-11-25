@@ -843,7 +843,7 @@ export default function SettingsPage() {
                 Keyboard Shortcuts
               </h2>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400 sm:text-sm">
-                Control playback, scrub tracks, and navigate your Orbit library without leaving your keyboard.
+                Control playback, scrub tracks, and navigate your Velar library without leaving your keyboard.
                 Shortcuts are enabled anywhere on desktop when you are not typing into a search or text field.
               </p>
             </div>

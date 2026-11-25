@@ -297,7 +297,7 @@ export default function HomePage() {
   if (songs.length === 0) {
     return (
       <EmptyState
-        title="Your Orbit library is empty"
+        title="Your Velar library is empty"
         body="Add tracks in Settings to start listening."
         action={
           <Link

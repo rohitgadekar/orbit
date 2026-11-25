@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   };
 
   const headers = {
-    "User-Agent": "OrbitMusicApp/1.0 (https://orbitmusic.app; hello@orbitmusic.app)",
+    "User-Agent": "VelarMusicApp/1.0 (https://velarmusic.app; hello@velarmusic.app)",
     Accept: "application/json",
   };
 

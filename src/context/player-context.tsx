@@ -315,7 +315,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: current.title,
         artist: current.artist?.name || "Unknown Artist",
-        album: current.album?.title || "Orbit Music",
+        album: current.album?.title || "Velar Music",
         artwork,
       });
     } catch {

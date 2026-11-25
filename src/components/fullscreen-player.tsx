@@ -334,7 +334,7 @@ export function FullscreenPlayer({
 
   // Dynamic colors strictly extracted from album/track cover image
   const [colors, setColors] = useState<ExtractedColors>(() =>
-    getFallbackColors(current?.title || "Orbit")
+    getFallbackColors(current?.title || "Velar")
   );
 
   // Dual-buffered backdrop image for flicker-free cross-fade transitions
@@ -404,7 +404,7 @@ export function FullscreenPlayer({
   useEffect(() => {
     if (!current) return;
     let isCancelled = false;
-    const seed = current.title || "Orbit";
+    const seed = current.title || "Velar";
 
     if (!cover) {
       queueMicrotask(() => {
@@ -544,7 +544,7 @@ export function FullscreenPlayer({
         <div className="absolute top-2.5 left-1/2 -translate-x-1/2 h-1 w-9 rounded-full bg-white/30 md:hidden pointer-events-none" />
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-zinc-400/80">ORBIT</span>
+          <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-zinc-400/80">VELAR</span>
         </div>
 
         {/* <div className="hidden md:inline flex flex-col items-center text-center">
@@ -561,7 +561,7 @@ export function FullscreenPlayer({
               {current.album.title}
             </Link>
           ) : (
-            <span className="text-xs font-medium text-zinc-400">Orbit Studio Catalog</span>
+            <span className="text-xs font-medium text-zinc-400">Velar Studio Catalog</span>
           )}
         </div> */}
 
@@ -827,12 +827,15 @@ export function FullscreenPlayer({
                     onClick={() => void toggleFavourite(current.id)}
                     className={`rounded-full ${showLyrics ? "p-2.5 sm:p-3" : "p-3.5"
                       } backdrop-blur-md transition-all active:scale-75 ${isFav
-                        ? "border-rose-500/50 bg-rose-500/20 text-rose-400"
+                        ? "border-blue-500/50 bg-blue-500/20 text-blue-400"
                         : "text-zinc-300 hover:border-white/30 hover:text-white"
                       }`}
-                    aria-label={isFav ? "Favorited" : "Add to favorites"}
+                    aria-label={isFav ? "Remove favorite" : "Add to favorites"}
                   >
-                    <Heart className={`${showLyrics ? "h-4 w-4" : "h-5 w-5"} transition-transform duration-200 ${isFav ? "fill-rose-400 scale-110" : ""}`} />
+                    <Heart
+                      className={`${showLyrics ? "h-4 w-4" : "h-5 w-5"} transition-all duration-200 ${isFav ? "fill-blue-500 text-blue-500 scale-110" : "hover:scale-110"
+                        }`}
+                    />
                   </button>
                 </div>
               </div>
@@ -1041,7 +1044,7 @@ export function FullscreenPlayer({
               {current.album.title}
             </Link>
           ) : (
-            <span className="text-xs font-medium text-zinc-400">Orbit Studio Catalog</span>
+            <span className="text-xs font-medium text-zinc-400">Velar Studio Catalog</span>
           )}
         </div>
       </footer>

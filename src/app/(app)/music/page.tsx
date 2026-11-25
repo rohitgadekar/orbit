@@ -554,7 +554,7 @@ export default function MusicPage() {
                   Catalog Highlights
                 </h2>
                 <p className="text-xs text-zinc-500">
-                  Popular tracks across Orbit
+                  Popular tracks across Velar
                 </p>
               </div>
 

@@ -113,7 +113,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
       }
 
       if (data?.session) {
-        setMessage("Passkey authenticated! Loading Orbit...");
+        setMessage("Passkey authenticated! Loading Velar...");
         router.replace("/home");
         router.refresh();
       }
@@ -140,7 +140,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
     if (mode === "signup") {
       const valid = await verifyCode(inviteCode);
       if (!valid) {
-        setMessage("A valid invitation code is required to register. Orbit is currently invite-only.");
+        setMessage("A valid invitation code is required to register. Velar is currently invite-only.");
         setIsError(true);
         return;
       }
@@ -163,7 +163,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
         });
         if (error) throw error;
 
-        setMessage("Account created! Welcome to Orbit.");
+        setMessage("Account created! Welcome to Velar.");
         router.replace("/home");
         router.refresh();
       } else {
@@ -191,10 +191,10 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
           <Link href="/" className="flex items-center gap-3 group">
             <img
               src="/orbit-logo.png"
-              alt="Orbit Logo"
+              alt="Velar Logo"
               className="h-8 w-8 object-contain rounded-lg shrink-0 shadow-md transition-transform group-hover:scale-105"
             />
-            <span className="text-2xl font-bold tracking-tight text-white">Orbit</span>
+            <span className="text-2xl font-bold tracking-tight text-white">Velar</span>
           </Link>
           <span className="rounded-full border border-white/10 bg-[#161619] px-3 py-1 text-[11px] font-mono font-medium text-zinc-400 uppercase tracking-widest">
             Private Music
@@ -217,7 +217,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
         </div>
 
         <div className="relative z-10 flex items-center justify-between border-t border-white/5 pt-6 text-xs text-zinc-500">
-          <span>© 2026 Orbit Music</span>
+          <span>© 2026 Velar Music</span>
           <Link href="/" className="hover:text-white transition">
             ← Return to Overview
           </Link>
@@ -235,10 +235,10 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
             <Link href="/" className="flex items-center gap-2.5">
               <img
                 src="/orbit-logo.png"
-                alt="Orbit Logo"
+                alt="Velar Logo"
                 className="h-8 w-8 object-contain rounded-lg shrink-0 shadow-md"
               />
-              <span className="text-2xl font-bold text-white tracking-tight">Orbit</span>
+              <span className="text-2xl font-bold text-white tracking-tight">Velar</span>
             </Link>
             <span className="rounded-full border border-white/10 bg-[#18181b] px-2.5 py-1 text-[10px] font-mono text-zinc-400 uppercase">
               Private
@@ -246,12 +246,12 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            {mode === "login" ? "Welcome back" : "Join Orbit"}
+            {mode === "login" ? "Welcome back" : "Join Velar"}
           </h1>
           <p className="mt-1.5 text-xs text-zinc-400 leading-relaxed">
             {mode === "login"
               ? "Sign in to access your private library and offline music."
-              : "Orbit is invite-only. Enter your invitation code to create your account."}
+              : "Velar is invite-only. Enter your invitation code to create your account."}
           </p>
 
           {/* Passkey Sign In Option (on login) */}
@@ -304,7 +304,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
                     setInviteCode(val);
                     void verifyCode(val);
                   }}
-                  placeholder="e.g. ORBIT-VIP"
+                  placeholder="e.g. VELAR-VIP"
                   autoCapitalize="characters"
                   autoCorrect="off"
                   spellCheck={false}

@@ -223,9 +223,10 @@ export function OrbitMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <img
       src="/orbit-logo.png"
-      alt="Orbit Logo"
+      alt="Velar Logo"
       className={`${className} object-contain rounded-lg shrink-0 select-none`}
       draggable={false}
     />
   );
 }
+export const VelarMark = OrbitMark;

@@ -2,14 +2,13 @@
 
 import { createClient } from "@/lib/supabase/client";
 import {
+  Activity,
   AlertCircle,
   ArrowRight,
   CheckCircle2,
   ChevronDown,
-  Compass,
+  Disc,
   Download,
-  FolderHeart,
-  HardDrive,
   Headphones,
   Keyboard,
   Layers,
@@ -20,7 +19,6 @@ import {
   Mic2,
   Music,
   Radio,
-  Shield,
   ShieldCheck,
   Sliders,
   Sparkles,
@@ -93,7 +91,7 @@ export default function LandingPage() {
       if (res.ok && data.valid) {
         setCodeFeedback({
           valid: true,
-          message: data.message || "Invitation verified! Welcome to Orbit.",
+          message: data.message || "Invitation verified! Welcome to Velar.",
           tier: data.tier,
         });
         setTimeout(() => {
@@ -150,8 +148,8 @@ export default function LandingPage() {
     <div className="relative min-h-dvh overflow-x-hidden bg-[#080808] text-[#e8e8ea] selection:bg-[#e8e8ea] selection:text-[#080808]">
       {/* Subtle deep ambient glow */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full bg-white/[0.025] blur-[150px]" />
-        <div className="absolute -right-40 top-1/3 h-[500px] w-[500px] rounded-full bg-white/[0.02] blur-[140px]" />
+        <div className="absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full bg-blue-500/[0.03] blur-[150px]" />
+        <div className="absolute -right-40 top-1/3 h-[500px] w-[500px] rounded-full bg-indigo-500/[0.025] blur-[140px]" />
         <div className="absolute bottom-10 left-1/4 h-[550px] w-[550px] rounded-full bg-white/[0.02] blur-[160px]" />
       </div>
 
@@ -161,27 +159,27 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-3 group">
             <img
               src="/orbit-logo.png"
-              alt="Orbit Logo"
+              alt="Velar Logo"
               className="h-8 w-8 object-contain rounded-lg shrink-0 shadow-md transition-transform duration-500 group-hover:scale-105"
             />
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold tracking-tight text-white">Orbit</span>
+              <span className="text-xl font-bold tracking-tight text-white">Velar</span>
               <span className="hidden text-[10px] font-semibold uppercase tracking-widest text-zinc-500 sm:inline-block">
-                Private Music
+                24-Bit FLAC Studio
               </span>
             </div>
           </Link>
 
           {/* Navigation Links */}
           <nav className="hidden items-center gap-8 text-xs font-medium text-zinc-400 md:flex">
-            <a href="#about" className="transition hover:text-white">
-              About
+            <a href="#fidelity" className="transition hover:text-white">
+              24-Bit Audio
+            </a>
+            <a href="#why-flac" className="transition hover:text-white">
+              Why FLAC
             </a>
             <a href="#features" className="transition hover:text-white">
-              Features
-            </a>
-            <a href="#how-it-works" className="transition hover:text-white">
-              How It Works
+              Capabilities
             </a>
             <a href="#formats" className="transition hover:text-white">
               Formats
@@ -237,42 +235,49 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-20 md:px-10 md:pt-24 lg:pt-32">
         <div className="flex flex-col items-center text-center">
-          {/* Exclusivity Badge */}
+          {/* Exclusivity & Audio Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-4 py-1.5 text-xs font-semibold text-zinc-300 shadow-sm backdrop-blur-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-400">
-              100% Ad-Free
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+            <span className="font-mono text-[11px] uppercase tracking-wider text-blue-400 font-bold">
+              Hi-Res FLAC 24-Bit Audio
             </span>
             <span className="text-zinc-600">•</span>
-            <span className="text-xs font-medium text-white">Private & Invite Only</span>
+            <span className="text-zinc-400 font-medium">Hear Every Detail</span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-xs font-semibold text-white">At No Cost</span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-[11px] font-mono text-amber-300">Invite Only</span>
           </div>
 
           {/* Main Editorial Headline */}
           <h1 className="mt-8 max-w-4xl text-5xl font-bold tracking-tight text-white sm:text-6xl md:text-7xl lg:text-[76px] lg:leading-[1.1]">
-            A Private Sanctuary for <br />
-            <span className="font-serif italic font-normal text-white/90">Your Music</span>.
+            Hi-Res 24-Bit FLAC Audio. <br />
+            <span className="font-serif italic font-normal text-white/90">Hear Every Detail at No Cost</span>.
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-            Orbit is a quiet, personal music streaming app built exclusively for a private circle of listeners. No ads, no commercial tracking, no algorithmic noise. Just your personal library streaming seamlessly to all your devices.
+            Velar is a private, uncompressed audio streaming sanctuary built exclusively for purists. No lossy compression, no volume smearing, no commercial tracking, and zero ads. Hear delicate room reverbs, vocal transients, and sub-bass harmonics exactly as mastered in the studio.
           </p>
 
-          {/* Feature Badges Row */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs font-medium text-zinc-400">
-            <span className="rounded-full border border-white/5 bg-[#121214] px-3.5 py-1.5">
+          {/* Audiophile Specs Quick Bar */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-xs font-medium text-zinc-400">
+            <span className="rounded-full border border-white/10 bg-[#121214] px-3.5 py-1.5 text-zinc-200">
+              <span className="text-blue-400 font-mono font-bold mr-1.5">24-Bit</span> / 192kHz Master
+            </span>
+            <span className="rounded-full border border-white/10 bg-[#121214] px-3.5 py-1.5 text-zinc-200">
+              Bit-Perfect FLAC & ALAC
+            </span>
+            <span className="rounded-full border border-white/10 bg-[#121214] px-3.5 py-1.5 text-zinc-200">
+              100% Free Forever
+            </span>
+            <span className="rounded-full border border-white/10 bg-[#121214] px-3.5 py-1.5 text-zinc-200">
               Zero Ads Ever
             </span>
-            <span className="rounded-full border border-white/5 bg-[#121214] px-3.5 py-1.5">
-              Invite Only
+            <span className="rounded-full border border-white/10 bg-[#121214] px-3.5 py-1.5 text-zinc-200">
+              True Offline Cache
             </span>
-            <span className="rounded-full border border-white/5 bg-[#121214] px-3.5 py-1.5">
-              Lossless High Fidelity
-            </span>
-            <span className="rounded-full border border-white/5 bg-[#121214] px-3.5 py-1.5">
-              Offline Storage
-            </span>
-            <span className="rounded-full border border-white/5 bg-[#121214] px-3.5 py-1.5">
-              Synced Lyrics
+            <span className="rounded-full border border-white/10 bg-[#121214] px-3.5 py-1.5 text-zinc-200">
+              Private Cohort
             </span>
           </div>
 
@@ -304,7 +309,7 @@ export default function LandingPage() {
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <>
-                    <span>Unlock</span>
+                    <span>Unlock Studio</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </>
                 )}
@@ -324,7 +329,7 @@ export default function LandingPage() {
                   <>
                     <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                     <span>
-                      {codeFeedback.message} {codeFeedback.tier && `(${codeFeedback.tier})`} — Redirecting to registration...
+                      {codeFeedback.message} {codeFeedback.tier && `(${codeFeedback.tier})`} — Opening registration...
                     </span>
                   </>
                 ) : (
@@ -354,18 +359,111 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Section 1: The Private Music Experience */}
-      <section id="about" className="relative z-10 border-t border-white/5 bg-[#0a0a0d] py-24 scroll-mt-20">
+      {/* Section 1: The 24-Bit FLAC Audiophile Difference */}
+      <section id="why-flac" className="relative z-10 border-t border-white/5 bg-[#0a0a0d] py-24 scroll-mt-20">
+        <div className="mx-auto max-w-7xl px-6 md:px-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="text-xs font-mono uppercase tracking-widest text-blue-400">
+              The Acoustic Reality
+            </span>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+              Commercial Streaming vs. Velar 24-Bit FLAC
+            </h2>
+            <p className="mt-6 text-sm leading-relaxed text-zinc-400 sm:text-base">
+              Standard commercial platforms aggressively compress audio down to lossy 160–320 kbps MP3/AAC to cut server bandwidth, stripping away subtle micro-harmonics, ambient air, and instrument separation. Velar delivers native, uncompressed 24-bit master recordings with zero dynamic loss.
+            </p>
+          </div>
+
+          <div className="mt-16 grid gap-8 md:grid-cols-2">
+            {/* Standard Compressed Streaming */}
+            <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 md:p-10 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase tracking-wider text-zinc-500">
+                    Conventional Streaming
+                  </span>
+                  <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-[11px] font-mono font-semibold text-rose-400">
+                    Lossy 160–320 kbps
+                  </span>
+                </div>
+                <h3 className="mt-6 text-2xl font-bold text-zinc-300">Compressed & Smeared</h3>
+                <ul className="mt-6 space-y-4 text-xs sm:text-sm text-zinc-400">
+                  <li className="flex items-start gap-3">
+                    <span className="text-rose-400 mt-0.5">✕</span>
+                    <span>High frequencies clipped above 16kHz to reduce bandwidth</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-rose-400 mt-0.5">✕</span>
+                    <span>Dynamic range squashed through aggressive loudness normalization</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-rose-400 mt-0.5">✕</span>
+                    <span>Acoustic room reflections and vocal breath flattened into digital noise</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-rose-400 mt-0.5">✕</span>
+                    <span>Monthly recurring subscription paywalls and promotional interruptions</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-8 border-t border-white/5 pt-4 text-xs font-mono text-zinc-600">
+                16-Bit Capped • Lossy Compression
+              </div>
+            </div>
+
+            {/* Velar 24-Bit FLAC */}
+            <div className="rounded-[32px] border border-blue-500/20 bg-gradient-to-b from-[#121624] to-[#0c0e17] p-8 md:p-10 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase tracking-wider text-blue-400 font-bold">
+                    Velar Studio Master
+                  </span>
+                  <span className="rounded-full border border-blue-500/30 bg-blue-500/20 px-3 py-1 text-[11px] font-mono font-bold text-blue-300">
+                    24-Bit / 96–192 kHz FLAC
+                  </span>
+                </div>
+                <h3 className="mt-6 text-2xl font-bold text-white">Hear Every Subtle Detail</h3>
+                <ul className="mt-6 space-y-4 text-xs sm:text-sm text-zinc-300">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                    <span><strong>144 dB Dynamic Range:</strong> From faint acoustic whispers to thunderous orchestral crests with zero distortion</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                    <span><strong>Bit-Perfect DAC Output:</strong> Exact studio master waveform streamed with native HTTP 206 range seeking</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                    <span><strong>Razor-Sharp Transients:</strong> Pinpoint instrument placement, string vibrations, and authentic room acoustics</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                    <span><strong>100% At No Cost:</strong> Zero subscription fees, zero ads, and zero credit cards required</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-8 border-t border-white/10 pt-4 flex items-center justify-between text-xs font-mono text-blue-300">
+                <span>Bit-Perfect Studio Master</span>
+                <span>Up to 9,216 kbps</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 2: Core Audiophile Pillars */}
+      <section id="fidelity" className="relative z-10 border-t border-white/5 py-24 scroll-mt-20">
         <div className="mx-auto max-w-7xl px-6 md:px-10">
           <div className="mx-auto max-w-3xl text-center">
             <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-              Personal & Quiet
+              The Velar Ethos
             </span>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
-              Why We Built a Private Music App
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Engineered For True Purists
             </h2>
-            <p className="mt-6 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              Music listening was meant to be intimate and uninterrupted. Orbit is designed from the ground up as a private home for music collectors and listeners who value quiet focus, uncompressed audio quality, and zero advertising.
+            <p className="mt-4 text-sm text-zinc-400 leading-relaxed">
+              Three founding principles guide every line of code inside Velar.
             </p>
           </div>
 
@@ -373,16 +471,16 @@ export default function LandingPage() {
             {/* Pillar 1 */}
             <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 flex flex-col justify-between">
               <div>
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-white">
-                  <Volume2 className="h-6 w-6" />
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-500/10 text-blue-400">
+                  <Activity className="h-6 w-6" />
                 </div>
-                <h3 className="mt-6 text-xl font-bold text-white">100% Ad-Free, Forever</h3>
+                <h3 className="mt-6 text-xl font-bold text-white">Hear Every Micro-Detail</h3>
                 <p className="mt-3 text-xs leading-relaxed text-zinc-400 sm:text-sm">
-                  No promotional audio ads interrupting between tracks, no sponsored banner feeds, and no marketing popups. You press play, and your music simply plays.
+                  Experience acoustic nuances you never knew existed in your favorite tracks. Delicate guitar fret slides, decay of cymbal overtones, room acoustics, and intimate vocal air render with lifelike presence.
                 </p>
               </div>
               <div className="mt-8 border-t border-white/5 pt-4 text-xs font-mono text-zinc-500">
-                Pure listening focus
+                24-bit studio precision
               </div>
             </div>
 
@@ -392,47 +490,47 @@ export default function LandingPage() {
                 <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-white">
                   <ShieldCheck className="h-6 w-6" />
                 </div>
-                <h3 className="mt-6 text-xl font-bold text-white">Invite-Only Access</h3>
+                <h3 className="mt-6 text-xl font-bold text-white">At No Cost, Without Catch</h3>
                 <p className="mt-3 text-xs leading-relaxed text-zinc-400 sm:text-sm">
-                  We maintain a capped, private cohort. Keeping the service invite-only ensures dedicated server resources, instant streaming with no buffering, and complete privacy for our members.
+                  Velar is not a commercial product. There are no paid tiers, no upsells, no feature restrictions, and no advertising. High-fidelity audio is preserved as a private, uncompromised craft for our community.
                 </p>
               </div>
               <div className="mt-8 border-t border-white/5 pt-4 text-xs font-mono text-zinc-500">
-                Dedicated streaming edge
+                Zero fees • 100% free
               </div>
             </div>
 
             {/* Pillar 3 */}
             <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 flex flex-col justify-between">
               <div>
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-white">
-                  <FolderHeart className="h-6 w-6" />
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-400/10 text-amber-300">
+                  <Ticket className="h-6 w-6" />
                 </div>
-                <h3 className="mt-6 text-xl font-bold text-white">Your Personal Collection</h3>
+                <h3 className="mt-6 text-xl font-bold text-white">Private & Invite Only</h3>
                 <p className="mt-3 text-xs leading-relaxed text-zinc-400 sm:text-sm">
-                  Organize albums, artists, custom playlists, and favourite tracks in a clean, elegant library. Your collection belongs to you, accessible from any browser or mobile device.
+                  We purposefully limit membership to a curated cohort. Keeping the network invite-only protects dedicated cloud audio egress, eliminates bandwidth throttling, and prevents commercial bloat.
                 </p>
               </div>
               <div className="mt-8 border-t border-white/5 pt-4 text-xs font-mono text-zinc-500">
-                Personal cloud catalog
+                Dedicated unthrottled edge
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 2: Core Capabilities Grid */}
-      <section id="features" className="relative z-10 border-t border-white/5 py-24 scroll-mt-20">
+      {/* Section 3: Core Audio Capabilities */}
+      <section id="features" className="relative z-10 border-t border-white/5 bg-[#0a0a0d] py-24 scroll-mt-20">
         <div className="mx-auto max-w-7xl px-6 md:px-10">
           <div className="text-center">
             <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-              Designed For Listening
+              Modern Listening Suite
             </span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Everything You Need in a Music Player
+              Everything An Audiophile Demands
             </h2>
             <p className="mt-4 mx-auto max-w-xl text-sm text-zinc-400">
-              Thoughtfully built features crafted specifically for music lovers.
+              Crafted from scratch for uncompromised playback quality and elegant minimalism.
             </p>
           </div>
 
@@ -442,9 +540,9 @@ export default function LandingPage() {
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-white">
                 <Headphones className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 text-lg font-bold text-white">High Fidelity Streaming</h3>
+              <h3 className="mt-5 text-lg font-bold text-white">Bit-Perfect Audio Engine</h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Support for 24-bit FLAC, ALAC, WAV, and high-bitrate AAC/MP3. Stream with native HTTP 206 Range seeking for instant scrub.
+                Native HTTP 206 Range seeking ensures instant scrubbing without re-downloading audio chunks. Unaltered FLAC decoded straight to your audio output device.
               </p>
             </div>
 
@@ -455,7 +553,7 @@ export default function LandingPage() {
               </div>
               <h3 className="mt-5 text-lg font-bold text-white">Ambient Full-Screen Stage</h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Turn your laptop or monitor into an ambient vinyl display with album-matching glow, beautiful typography, and lyrics.
+                Transforms your laptop or studio monitor into an ambient vinyl display with album-matching backlight glow, custom typography, and real-time lyric projection.
               </p>
             </div>
 
@@ -464,9 +562,9 @@ export default function LandingPage() {
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-white">
                 <Mic2 className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 text-lg font-bold text-white">Synchronized Lyrics</h3>
+              <h3 className="mt-5 text-lg font-bold text-white">Synchronized Millisecond Lyrics</h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Follow along with line-by-line synchronized LRC lyrics that highlight smoothly in real time as the song plays.
+                Sing along or follow the poetic phrasing with line-by-line synchronized LRC lyrics that highlight smoothly in real time with the artist&apos;s cadence.
               </p>
             </div>
 
@@ -475,9 +573,9 @@ export default function LandingPage() {
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-white">
                 <Download className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 text-lg font-bold text-white">True Offline Storage</h3>
+              <h3 className="mt-5 text-lg font-bold text-white">Lossless Offline Cache</h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Download tracks and albums directly into your browser via IndexedDB. Play songs on flights or road trips with no cellular signal.
+                Save complete albums and tracks locally into browser IndexedDB storage. Experience bit-perfect playback on flights, subways, or remote listening spots.
               </p>
             </div>
 
@@ -486,9 +584,9 @@ export default function LandingPage() {
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-white">
                 <Keyboard className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 text-lg font-bold text-white">Keyboard Shortcuts & Mini-Player</h3>
+              <h3 className="mt-5 text-lg font-bold text-white">Keyboard Control & Floating PiP</h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Full desktop keyboard control (Space to toggle, arrows to seek/volume) plus Picture-in-Picture floating audio controls.
+                Instant desktop hotkeys (Space to toggle, arrows to seek/volume) plus Picture-in-Picture floating audio controls while working in other apps.
               </p>
             </div>
 
@@ -497,61 +595,9 @@ export default function LandingPage() {
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-white">
                 <ListMusic className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 text-lg font-bold text-white">Playlists & Personal Curation</h3>
+              <h3 className="mt-5 text-lg font-bold text-white">Personal Library Curation</h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Create unlimited custom playlists with custom artwork, reorder tracks, and quickly access recently played history.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 3: How It Works */}
-      <section id="how-it-works" className="relative z-10 border-t border-white/5 bg-[#0a0a0d] py-24 scroll-mt-20">
-        <div className="mx-auto max-w-7xl px-6 md:px-10">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-              Simple & Private
-            </span>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              How Orbit Works
-            </h2>
-            <p className="mt-3 text-sm text-zinc-400">
-              Getting started is straightforward once you have an invitation.
-            </p>
-          </div>
-
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            {/* Step 1 */}
-            <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 text-center">
-              <span className="inline-block rounded-full bg-white/5 px-4 py-1 text-xs font-mono font-bold text-zinc-400">
-                Step 01
-              </span>
-              <h3 className="mt-5 text-lg font-bold text-white">Receive an Invitation</h3>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Existing members share private invitation codes with trusted friends and purists, or you can join our private waitlist.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 text-center">
-              <span className="inline-block rounded-full bg-white/5 px-4 py-1 text-xs font-mono font-bold text-zinc-400">
-                Step 02
-              </span>
-              <h3 className="mt-5 text-lg font-bold text-white">Unlock Your Account</h3>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Enter your code in the unlock box above. Once verified, set up your display name and sign in credentials.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 text-center">
-              <span className="inline-block rounded-full bg-white/5 px-4 py-1 text-xs font-mono font-bold text-zinc-400">
-                Step 03
-              </span>
-              <h3 className="mt-5 text-lg font-bold text-white">Stream Anywhere</h3>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                Listen ad-free on your laptop, phone, or tablet. Install Orbit as a native app on iOS and Android with offline caching.
+                Build custom folders, tag favorites, view high-res artist portraits, and re-listen to your tailored listening mix without algorithmic clutter.
               </p>
             </div>
           </div>
@@ -563,33 +609,33 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl px-6 md:px-10">
           <div className="text-center">
             <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-              Audio Fidelity
+              Uncompressed Fidelity
             </span>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
               Supported Audio Formats
             </h2>
             <p className="mt-3 text-sm text-zinc-400">
-              Orbit plays your files directly without transcoding or quality loss.
+              Velar plays your studio master files directly without transcoding or compression.
             </p>
           </div>
 
           <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 text-center">
-            <div className="rounded-2xl border border-white/5 bg-[#111114] p-5">
+            <div className="rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5">
               <span className="text-xl font-bold text-white">FLAC</span>
-              <p className="mt-1 text-[11px] font-mono text-zinc-500">24-bit / 192kHz</p>
-              <p className="mt-2 text-[10px] text-zinc-400">Lossless Master</p>
+              <p className="mt-1 text-[11px] font-mono text-blue-400 font-semibold">24-bit / 192kHz</p>
+              <p className="mt-2 text-[10px] text-zinc-300">Studio Master</p>
             </div>
 
             <div className="rounded-2xl border border-white/5 bg-[#111114] p-5">
               <span className="text-xl font-bold text-white">ALAC</span>
               <p className="mt-1 text-[11px] font-mono text-zinc-500">Apple Lossless</p>
-              <p className="mt-2 text-[10px] text-zinc-400">Bit-Perfect</p>
+              <p className="mt-2 text-[10px] text-zinc-400">Bit-Perfect M4A</p>
             </div>
 
             <div className="rounded-2xl border border-white/5 bg-[#111114] p-5">
               <span className="text-xl font-bold text-white">WAV</span>
               <p className="mt-1 text-[11px] font-mono text-zinc-500">Linear PCM</p>
-              <p className="mt-2 text-[10px] text-zinc-400">Uncompressed</p>
+              <p className="mt-2 text-[10px] text-zinc-400">Uncompressed Raw</p>
             </div>
 
             <div className="rounded-2xl border border-white/5 bg-[#111114] p-5">
@@ -601,13 +647,65 @@ export default function LandingPage() {
             <div className="rounded-2xl border border-white/5 bg-[#111114] p-5">
               <span className="text-xl font-bold text-white">MP3</span>
               <p className="mt-1 text-[11px] font-mono text-zinc-500">320kbps CBR</p>
-              <p className="mt-2 text-[10px] text-zinc-400">Universal</p>
+              <p className="mt-2 text-[10px] text-zinc-400">Universal Legacy</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 5: FAQ */}
+      {/* Section 5: How It Works */}
+      <section id="how-it-works" className="relative z-10 border-t border-white/5 bg-[#0a0a0d] py-24 scroll-mt-20">
+        <div className="mx-auto max-w-7xl px-6 md:px-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
+              Simple & Private
+            </span>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              How Velar Works
+            </h2>
+            <p className="mt-3 text-sm text-zinc-400">
+              Access is straightforward once you have an invitation code.
+            </p>
+          </div>
+
+          <div className="mt-16 grid gap-8 md:grid-cols-3">
+            {/* Step 1 */}
+            <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 text-center">
+              <span className="inline-block rounded-full bg-white/5 px-4 py-1 text-xs font-mono font-bold text-zinc-400">
+                Step 01
+              </span>
+              <h3 className="mt-5 text-lg font-bold text-white">Receive an Invitation</h3>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                Existing members share private invitation codes with trusted friends and audiophiles, or you can join our private waitlist.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 text-center">
+              <span className="inline-block rounded-full bg-white/5 px-4 py-1 text-xs font-mono font-bold text-zinc-400">
+                Step 02
+              </span>
+              <h3 className="mt-5 text-lg font-bold text-white">Unlock Your Station</h3>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                Enter your code in the unlock box above. Once verified, choose your display name and set up your private account credentials.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="rounded-[32px] border border-white/5 bg-[#101013] p-8 text-center">
+              <span className="inline-block rounded-full bg-white/5 px-4 py-1 text-xs font-mono font-bold text-zinc-400">
+                Step 03
+              </span>
+              <h3 className="mt-5 text-lg font-bold text-white">Stream at Zero Cost</h3>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                Listen ad-free on your laptop, DAC system, phone, or tablet. Install Velar as a native PWA on iOS and Android with offline caching.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 6: FAQ */}
       <section id="faq" className="relative z-10 border-t border-white/5 bg-[#0a0a0d] py-24 scroll-mt-20">
         <div className="mx-auto max-w-4xl px-6 md:px-10">
           <div className="text-center">
@@ -622,28 +720,32 @@ export default function LandingPage() {
           <div className="mt-12 space-y-4">
             {[
               {
-                q: "What is Orbit?",
-                a: "Orbit is a private, invite-only personal music streaming app. It gives you a clean, ad-free listening experience with high-fidelity audio playback, synchronized lyrics, offline downloads, and an ambient player.",
+                q: "What is Velar?",
+                a: "Velar is an invite-only personal music streaming sanctuary engineered for high-resolution 24-bit FLAC audio playback. It gives you a clean, 100% ad-free listening experience with synchronized lyrics, offline downloads, and an ambient player.",
               },
               {
-                q: "Are there any ads on Orbit?",
-                a: "Never. Orbit is 100% ad-free. There are no audio commercials, banner ads, tracking scripts, or promoted recommendations.",
+                q: "Why 24-bit FLAC audio?",
+                a: "24-bit audio provides up to 144 dB of dynamic range, capturing micro-details such as acoustic instrument reverberations, vocal transients, and room dimensions that commercial 160-320 kbps streaming platforms destroy through lossy compression.",
               },
               {
-                q: "Why is Orbit invite-only?",
-                a: "We choose to keep Orbit private and small to ensure dedicated streaming bandwidth, zero congestion, fast playback, and a quiet, distraction-free environment for our members.",
+                q: "Is Velar really at no cost?",
+                a: "Yes. Velar is completely free for members. There are no monthly subscription fees, no in-app purchases, and no advertisements.",
+              },
+              {
+                q: "Why is Velar invite-only?",
+                a: "Uncompressed 24-bit FLAC files require substantial bandwidth. Keeping Velar invite-only ensures our streaming edge stays lightning fast, non-congested, and buffered-free for every member.",
               },
               {
                 q: "How can I get an invite code?",
-                a: "Invite codes are shared by existing members. If you do not have one, you can join our private waitlist using the form on this page.",
+                a: "Invite codes are distributed by existing members. If you don't have one, submit your details through the 'Join Private Waitlist' button on this page.",
               },
               {
                 q: "Does offline mode work on mobile phones?",
-                a: "Yes. When you download tracks in Orbit, they are saved locally into your device's browser storage using IndexedDB. You can play downloaded songs completely offline without an internet connection.",
+                a: "Yes. When you download tracks in Velar, they are saved locally into your device's browser storage using IndexedDB. You can play downloaded songs completely offline without an internet connection.",
               },
               {
-                q: "Can I install Orbit as an app on my phone?",
-                a: "Yes. Orbit is a Progressive Web App (PWA). On iPhone/iOS, tap 'Share' -> 'Add to Home Screen'. On Android, tap the three dots in Chrome -> 'Install app'. It will launch like a native application with lock-screen media controls.",
+                q: "Can I install Velar as an app on my phone?",
+                a: "Yes. Velar is a Progressive Web App (PWA). On iPhone/iOS, tap 'Share' -> 'Add to Home Screen'. On Android, tap the three dots in Chrome -> 'Install app'. It will launch like a native application with lock-screen media controls.",
               },
             ].map((faq, idx) => (
               <div
@@ -673,20 +775,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Section 6: Final Invitation CTA Banner */}
+      {/* Section 7: Final Invitation CTA Banner */}
       <section className="relative z-10 border-t border-white/5 py-24">
         <div className="mx-auto max-w-5xl px-6 md:px-10">
           <div className="rounded-[40px] border border-white/10 bg-gradient-to-b from-[#141418] to-[#0c0c0e] p-10 text-center sm:p-16 shadow-2xl">
             <img
               src="/orbit-logo.png"
-              alt="Orbit"
+              alt="Velar"
               className="mx-auto h-12 w-12 rounded-xl object-contain drop-shadow-xl"
             />
             <h2 className="mt-6 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Have an Invitation Code?
+              Ready to Hear Every Detail?
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-400">
-              Enter your code to unlock your private station and begin listening.
+              Enter your invitation code to unlock your private 24-bit FLAC audio station.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
@@ -717,10 +819,10 @@ export default function LandingPage() {
       <footer className="relative z-10 border-t border-white/5 bg-[#080808] py-12 text-xs text-zinc-500">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row md:px-10">
           <div className="flex items-center gap-3">
-            <img src="/orbit-logo.png" alt="Orbit Logo" className="h-6 w-6 rounded object-contain" />
-            <span className="font-bold text-white">Orbit</span>
+            <img src="/orbit-logo.png" alt="Velar Logo" className="h-6 w-6 rounded object-contain" />
+            <span className="font-bold text-white">Velar</span>
             <span className="text-zinc-600">•</span>
-            <span>Private Ad-Free Music</span>
+            <span>Hi-Res 24-Bit FLAC Audio • At No Cost • Invite Only</span>
           </div>
 
           <div className="flex items-center gap-6">
@@ -734,7 +836,7 @@ export default function LandingPage() {
             >
               Request Access
             </button>
-            <span>© 2026 Orbit</span>
+            <span>© 2026 Velar</span>
           </div>
         </div>
       </footer>
@@ -785,7 +887,7 @@ export default function LandingPage() {
             ) : (
               <form onSubmit={handleWaitlistSubmit} className="mt-6 space-y-4">
                 <p className="text-xs text-zinc-400">
-                  Orbit is currently invitation-only to maintain ad-free, unthrottled streaming. Please enter your email to request access.
+                  Velar is invitation-only to maintain ad-free, unthrottled 24-bit FLAC streaming at no cost. Enter your email to request access.
                 </p>
 
                 {waitlistError && (
@@ -824,13 +926,13 @@ export default function LandingPage() {
 
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Note / Referral (Optional)
+                    Note / Audio Setup (Optional)
                   </label>
                   <input
                     type="text"
                     value={waitlistNote}
                     onChange={(e) => setWaitlistNote(e.target.value)}
-                    placeholder="e.g. Referred by Miles, audiophile listener"
+                    placeholder="e.g. Sennheiser HD650, Schiit DAC, audiophile listener"
                     className="mt-1.5 w-full rounded-full border border-white/10 bg-[#0c0c0e] px-5 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
                   />
                 </div>

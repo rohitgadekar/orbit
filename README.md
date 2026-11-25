@@ -1,7 +1,7 @@
-# 🪐 Orbit
+# 🪐 Velar
 
 <p align="center">
-  <strong>A modern, full-screen music streaming app & audio workstation built with Next.js 16, React 19, Supabase, and Tailwind CSS v4.</strong>
+  <strong>A modern, full-screen 24-bit FLAC music streaming sanctuary & audio workstation built with Next.js 16, React 19, Supabase, and Tailwind CSS v4.</strong>
 </p>
 
 <p align="center">

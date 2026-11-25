@@ -131,7 +131,7 @@ function EditArtistForm({
             />
             <div className="flex min-w-0 flex-1 flex-col gap-2.5 sm:w-full sm:flex-none">
               <p className="text-[11px] text-zinc-400">
-                {artist.trackCount} track{artist.trackCount === 1 ? "" : "s"} in Orbit library
+                {artist.trackCount} track{artist.trackCount === 1 ? "" : "s"} in Velar library
               </p>
               <button
                 type="button"

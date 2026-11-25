@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
   const artist = rawArtist || "";
 
   const headers = {
-    "Lrclib-Client": "Orbit/1.0 (https://github.com/rohitgadekar/orbit)",
-    "User-Agent": "Orbit/1.0",
+    "Lrclib-Client": "Velar/1.0 (https://github.com/rohitgadekar/velar)",
+    "User-Agent": "Velar/1.0",
   };
 
   try {

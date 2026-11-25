@@ -215,7 +215,7 @@ export async function GET(req: NextRequest) {
 
   // Forward Range header if requested by audio player
   const upstreamHeaders: HeadersInit = {
-    "User-Agent": "Orbit-Streamer/1.0",
+    "User-Agent": "Velar-Streamer/1.0",
     Referer: `${parsed.origin}/`,
   };
 
@@ -298,7 +298,7 @@ export async function HEAD(req: NextRequest) {
     const upstream = await fetch(parsed.toString(), {
       method: "HEAD",
       headers: {
-        "User-Agent": "Orbit-Streamer/1.0",
+        "User-Agent": "Velar-Streamer/1.0",
         Referer: `${parsed.origin}/`,
       },
     });

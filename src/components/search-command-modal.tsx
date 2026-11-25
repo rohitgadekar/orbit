@@ -189,7 +189,7 @@ export function SearchCommandModal({
                 Type song title, artist, or album name
               </p>
               <p className="mt-1 text-[11px] text-zinc-400">
-                Quickly search across your entire Orbit music library
+                Quickly search across your entire Velar music library
               </p>
             </div>
           ) : !hasResults ? (

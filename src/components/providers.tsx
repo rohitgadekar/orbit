@@ -13,7 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         navigator.serviceWorker
           .register("/sw.js")
           .then((registration) => {
-            console.log("Orbit Service Worker registered:", registration.scope);
+            console.log("Velar Service Worker registered:", registration.scope);
           })
           .catch((error) => {
             console.warn("Service Worker registration failed:", error);

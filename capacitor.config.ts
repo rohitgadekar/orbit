@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.orbit.music',
-  appName: 'Orbit',
+  appId: 'com.velar.music',
+  appName: 'Velar',
   webDir: 'public'
 };
 

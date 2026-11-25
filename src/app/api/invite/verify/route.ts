@@ -3,6 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 
 // Master invite codes available out of the box
 const MASTER_INVITE_CODES = [
+  "VELAR-VIP",
+  "VELAR-2026",
+  "VELAR-FLAC",
+  "VELAR-PASSKEY",
+  "HI-RES-24BIT",
   "ORBIT-VIP",
   "ORBIT-2026",
   "ORBIT-PASSKEY",
@@ -35,12 +40,12 @@ export async function POST(req: NextRequest) {
         valid: true,
         code: rawCode,
         tier: "VIP Member",
-        message: "Invitation code verified. Welcome to Orbit.",
+        message: "Invitation code verified. Welcome to Velar.",
       });
     }
 
     // 2. Check environment variable codes (comma-separated if provided)
-    const envCodes = (process.env.ORBIT_INVITE_CODES || "")
+    const envCodes = (process.env.VELAR_INVITE_CODES || process.env.ORBIT_INVITE_CODES || "")
       .split(",")
       .map((c) => c.trim().toUpperCase())
       .filter(Boolean);
@@ -50,7 +55,7 @@ export async function POST(req: NextRequest) {
         valid: true,
         code: rawCode,
         tier: "Private Beta",
-        message: "Invitation code verified. Welcome to Orbit.",
+        message: "Invitation code verified. Welcome to Velar.",
       });
     }
 
@@ -72,7 +77,7 @@ export async function POST(req: NextRequest) {
             valid: true,
             code: data.code,
             tier: data.tier || "VIP Member",
-            message: "Invitation code verified. Welcome to Orbit.",
+            message: "Invitation code verified. Welcome to Velar.",
           });
         }
       } catch {

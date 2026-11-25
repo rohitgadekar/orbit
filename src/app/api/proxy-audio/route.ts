@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
   }
 
   const upstreamHeaders: HeadersInit = {
-    "User-Agent": "Orbit-Proxy/1.0",
+    "User-Agent": "Velar-Proxy/1.0",
     Referer: `${url.origin}/`,
   };
 

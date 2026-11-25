@@ -218,7 +218,7 @@ export async function GET(request: Request) {
     const audioResp = await fetch(targetUrl, {
       headers: {
         Range: "bytes=0-524287",
-        "User-Agent": "OrbitMusicStreamDetector/1.0",
+        "User-Agent": "VelarMusicStreamDetector/1.0",
       },
       signal: controller.signal,
     }).finally(() => clearTimeout(timer));

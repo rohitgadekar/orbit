@@ -188,7 +188,7 @@ export function generateSmartMixes(
     mostListenedArtists
       .filter((n) => n.toLowerCase() !== mix3Primary?.toLowerCase())
       .slice(0, 6)
-      .join(", ") || "Your most played tracks on Orbit";
+      .join(", ") || "Your most played tracks on Velar";
 
   // --- MIX 4: Loved Rewind (Curated from user's favourites) ---
   const lovedSongs = catalogSongs.filter((s) => favouriteIds.has(s.id));

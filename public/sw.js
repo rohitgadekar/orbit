@@ -1,4 +1,4 @@
-// Orbit Luxury Audio PWA Service Worker — Offline & Shell Caching
+// Velar Luxury Audio PWA Service Worker — Offline & Shell Caching
 const CACHE_NAME = "orbit-app-cache-v4";
 
 const APP_SHELL_URLS = [
@@ -96,7 +96,7 @@ self.addEventListener("fetch", (event) => {
           if (rootFallback) return rootFallback;
 
           return new Response(
-            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Orbit Offline</title></head><body style='background:#18171a;color:#fff;font-family:sans-serif;padding:2rem;text-align:center;'><h2>Orbit is Offline</h2><p>Please connect to the internet or reopen the app.</p></body></html>",
+            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Velar Offline</title></head><body style='background:#18171a;color:#fff;font-family:sans-serif;padding:2rem;text-align:center;'><h2>Velar is Offline</h2><p>Please connect to the internet or reopen the app.</p></body></html>",
             { headers: { "Content-Type": "text/html" } }
           );
         })
