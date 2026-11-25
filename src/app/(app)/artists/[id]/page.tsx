@@ -10,6 +10,7 @@ import { useMusic } from "@/context/music-context";
 import { usePlayer } from "@/context/player-context";
 import { getIndividualArtists, songCreditsArtist, type ParsedArtist } from "@/lib/artists";
 import type { Song } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
 import {
   AlertCircle,
   CheckCircle2,
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function ArtistDetailPage() {
   const params = useParams<{ id: string }>();
@@ -40,6 +41,43 @@ export default function ArtistDetailPage() {
   const [isFetchingInternet, setIsFetchingInternet] = useState(false);
   const [initialModalStatus, setInitialModalStatus] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [directArtistData, setDirectArtistData] = useState<{
+    id?: string;
+    bio?: string | null;
+    image_url?: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!rawId) return;
+    const supabase = createClient();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId);
+    const searchName = rawId.startsWith("artist-")
+      ? decodeURIComponent(rawId.slice(7)).trim()
+      : rawId.trim();
+
+    async function fetchDirect() {
+      try {
+        let query = supabase.from("artists").select("id, name, image_url, bio");
+        if (isUuid) {
+          query = query.eq("id", rawId);
+        } else {
+          query = query.ilike("name", searchName);
+        }
+        const { data, error } = await query.maybeSingle();
+        if (!error && data) {
+          setDirectArtistData({
+            id: data.id,
+            bio: data.bio,
+            image_url: data.image_url,
+          });
+        }
+      } catch {
+        // Ignore fallback fetch error
+      }
+    }
+
+    fetchDirect();
+  }, [rawId]);
 
   async function handleFetchArtistInfo() {
     if (!artist || !isAdmin) return;
@@ -80,6 +118,13 @@ export default function ArtistDetailPage() {
   const artist = useMemo(() => {
     if (!rawId) return null;
     const lower = rawId.toLowerCase().trim();
+    const dbArtist = artists.find(
+      (a) =>
+        a.id === rawId ||
+        a.name.toLowerCase().trim() === lower ||
+        encodeURIComponent(a.name).toLowerCase() === lower,
+    );
+
     const matched =
       individualArtists.find(
         (a) =>
@@ -92,13 +137,12 @@ export default function ArtistDetailPage() {
       // Check if rawId matches an artist name directly from catalog or song credits
       const nameMatch = rawId.trim();
       const songsForArtist = songs.filter((s) => songCreditsArtist(s, nameMatch));
-      if (songsForArtist.length > 0) {
-        const dbArtist = artists.find((a) => a.name.toLowerCase().trim() === lower);
+      if (songsForArtist.length > 0 || dbArtist) {
         return {
-          id: dbArtist?.id || `artist-${encodeURIComponent(lower)}`,
+          id: directArtistData?.id || dbArtist?.id || `artist-${encodeURIComponent(lower)}`,
           name: dbArtist?.name || nameMatch,
-          image_url: dbArtist?.image_url || null,
-          bio: dbArtist?.bio || null,
+          image_url: directArtistData?.image_url ?? dbArtist?.image_url ?? null,
+          bio: directArtistData?.bio ?? dbArtist?.bio ?? null,
           songs: songsForArtist,
           plays: songsForArtist.reduce((sum, s) => sum + (s.play_count || 0), 0),
           trackCount: songsForArtist.length,
@@ -113,11 +157,14 @@ export default function ArtistDetailPage() {
 
     return {
       ...matched,
+      id: directArtistData?.id || matched.id || dbArtist?.id || matched.id,
+      image_url: directArtistData?.image_url ?? matched.image_url ?? dbArtist?.image_url ?? null,
+      bio: directArtistData?.bio ?? matched.bio ?? dbArtist?.bio ?? null,
       songs: finalSongs,
       plays: finalSongs.reduce((sum, s) => sum + (s.play_count || 0), 0),
       trackCount: finalSongs.length,
     };
-  }, [rawId, individualArtists, songs, artists]);
+  }, [rawId, individualArtists, songs, artists, directArtistData]);
 
   if (loading && !artist) {
     return (

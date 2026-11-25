@@ -229,7 +229,12 @@ export function MusicProvider({ children }: { children: ReactNode }) {
           .from("songs")
           .select("id", { count: "exact", head: true });
 
-        if (!countErr && typeof count === "number" && count === cached.songCount) {
+        const hasArtistBios =
+          cached.artists &&
+          cached.artists.length > 0 &&
+          !cached.artists.some((a) => a.bio === undefined);
+
+        if (!countErr && typeof count === "number" && count === cached.songCount && hasArtistBios) {
           shouldFetchCatalog = false;
         }
       }
@@ -290,7 +295,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
             .from("songs")
             .select(songSelect)
             .order("created_at", { ascending: false }),
-          supabase.from("artists").select("id, name, image_url").order("name"),
+          supabase.from("artists").select("id, name, image_url, bio").order("name"),
           supabase
             .from("playlists")
             .select("*")

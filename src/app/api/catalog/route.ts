@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     const [songsRes, artistsRes] = await Promise.all([
       supabase.from("songs").select(songSelect).order("created_at", { ascending: false }),
-      supabase.from("artists").select("id, name, image_url").order("name"),
+      supabase.from("artists").select("id, name, image_url, bio").order("name"),
     ]);
 
     if (songsRes.error) {

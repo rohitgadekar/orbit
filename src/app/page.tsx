@@ -346,6 +346,23 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
+
+          {/* ── Web Music Player Window (Deck) ────────────────────────────── */}
+          <div className="relative mt-16 sm:mt-24 w-full max-w-6xl">
+
+
+
+            {/* Deck Window Screenshot */}
+            <div className="relative aspect-[3164/1904] w-full overflow-hidden">
+              <img
+                src="/deck.png"
+                alt="Velar Deck — Web Music Player Window"
+                className="h-full w-full object-cover object-top select-none"
+                loading="eager"
+              />
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -805,7 +822,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 bg-[#080808] py-12 text-xs text-zinc-500">
+      < footer className="relative z-10 border-t border-white/5 bg-[#080808] py-12 text-xs text-zinc-500" >
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row md:px-10">
           <div className="flex items-center gap-3">
             <img src="/orbit-logo.png" alt="Velar Logo" className="h-6 w-6 rounded object-contain" />
@@ -828,122 +845,124 @@ export default function LandingPage() {
             <span>© 2026 Velar</span>
           </div>
         </div>
-      </footer>
+      </footer >
 
       {/* Request Invite Modal */}
-      {showWaitlistModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-[36px] border border-white/10 bg-[#121215] p-8 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Ticket className="h-5 w-5 text-amber-300" />
-                <h3 className="text-lg font-bold text-white">Join Private Waitlist</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowWaitlistModal(false);
-                  setWaitlistError(null);
-                }}
-                className="rounded-full bg-white/5 p-1.5 text-zinc-400 hover:text-white transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            {waitlistSuccess ? (
-              <div className="mt-6 text-center py-6">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
-                <h4 className="mt-4 text-lg font-bold text-white">You&apos;re on the Private Waitlist</h4>
-                <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                  Your request has been saved. We will email an invitation code to{" "}
-                  <span className="font-semibold text-white">{waitlistEmail}</span> when a slot opens.
-                </p>
+      {
+        showWaitlistModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="w-full max-w-md rounded-[36px] border border-white/10 bg-[#121215] p-8 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Ticket className="h-5 w-5 text-amber-300" />
+                  <h3 className="text-lg font-bold text-white">Join Private Waitlist</h3>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
                     setShowWaitlistModal(false);
-                    setWaitlistSuccess(false);
-                    setWaitlistEmail("");
-                    setWaitlistName("");
-                    setWaitlistNote("");
+                    setWaitlistError(null);
                   }}
-                  className="mt-6 rounded-full bg-[#e8e8ea] px-6 py-2.5 text-xs font-bold text-[#080808]"
+                  className="rounded-full bg-white/5 p-1.5 text-zinc-400 hover:text-white transition"
                 >
-                  Done
+                  ✕
                 </button>
               </div>
-            ) : (
-              <form onSubmit={handleWaitlistSubmit} className="mt-6 space-y-4">
-                <p className="text-xs text-zinc-400">
-                  Velar is invitation-only to maintain ad-free, unthrottled 24-bit FLAC streaming at no cost. Enter your email to request access.
-                </p>
 
-                {waitlistError && (
-                  <div className="flex items-start gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-300">
-                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-400" />
-                    <span>{waitlistError}</span>
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    value={waitlistName}
-                    onChange={(e) => setWaitlistName(e.target.value)}
-                    placeholder="e.g. John Coltrane"
-                    className="mt-1.5 w-full rounded-full border border-white/10 bg-[#0c0c0e] px-5 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Email Address *
-                  </label>
-                  <input
-                    required
-                    type="email"
-                    value={waitlistEmail}
-                    onChange={(e) => setWaitlistEmail(e.target.value)}
-                    placeholder="you@domain.com"
-                    className="mt-1.5 w-full rounded-full border border-white/10 bg-[#0c0c0e] px-5 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Note / Audio Setup (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={waitlistNote}
-                    onChange={(e) => setWaitlistNote(e.target.value)}
-                    placeholder="e.g. Sennheiser HD650, Schiit DAC, audiophile listener"
-                    className="mt-1.5 w-full rounded-full border border-white/10 bg-[#0c0c0e] px-5 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
-                  />
-                </div>
-
-                <div className="pt-2">
+              {waitlistSuccess ? (
+                <div className="mt-6 text-center py-6">
+                  <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
+                  <h4 className="mt-4 text-lg font-bold text-white">You&apos;re on the Private Waitlist</h4>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                    Your request has been saved. We will email an invitation code to{" "}
+                    <span className="font-semibold text-white">{waitlistEmail}</span> when a slot opens.
+                  </p>
                   <button
-                    type="submit"
-                    disabled={waitlistBusy || !waitlistEmail}
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#e8e8ea] py-3.5 text-xs font-bold text-[#080808] transition hover:bg-white active:scale-95 disabled:opacity-50"
+                    type="button"
+                    onClick={() => {
+                      setShowWaitlistModal(false);
+                      setWaitlistSuccess(false);
+                      setWaitlistEmail("");
+                      setWaitlistName("");
+                      setWaitlistNote("");
+                    }}
+                    className="mt-6 rounded-full bg-[#e8e8ea] px-6 py-2.5 text-xs font-bold text-[#080808]"
                   >
-                    {waitlistBusy ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <span>Submit Request</span>
-                    )}
+                    Done
                   </button>
                 </div>
-              </form>
-            )}
+              ) : (
+                <form onSubmit={handleWaitlistSubmit} className="mt-6 space-y-4">
+                  <p className="text-xs text-zinc-400">
+                    Velar is invitation-only to maintain ad-free, unthrottled 24-bit FLAC streaming at no cost. Enter your email to request access.
+                  </p>
+
+                  {waitlistError && (
+                    <div className="flex items-start gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-300">
+                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-400" />
+                      <span>{waitlistError}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                      Your Name
+                    </label>
+                    <input
+                      type="text"
+                      value={waitlistName}
+                      onChange={(e) => setWaitlistName(e.target.value)}
+                      placeholder="e.g. John Coltrane"
+                      className="mt-1.5 w-full rounded-full border border-white/10 bg-[#0c0c0e] px-5 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                      Email Address *
+                    </label>
+                    <input
+                      required
+                      type="email"
+                      value={waitlistEmail}
+                      onChange={(e) => setWaitlistEmail(e.target.value)}
+                      placeholder="you@domain.com"
+                      className="mt-1.5 w-full rounded-full border border-white/10 bg-[#0c0c0e] px-5 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                      Note / Audio Setup (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={waitlistNote}
+                      onChange={(e) => setWaitlistNote(e.target.value)}
+                      placeholder="e.g. Sennheiser HD650, Schiit DAC, audiophile listener"
+                      className="mt-1.5 w-full rounded-full border border-white/10 bg-[#0c0c0e] px-5 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={waitlistBusy || !waitlistEmail}
+                      className="flex w-full items-center justify-center gap-2 rounded-full bg-[#e8e8ea] py-3.5 text-xs font-bold text-[#080808] transition hover:bg-white active:scale-95 disabled:opacity-50"
+                    >
+                      {waitlistBusy ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <span>Submit Request</span>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </div>
   );
 }
