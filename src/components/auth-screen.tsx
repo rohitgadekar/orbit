@@ -184,8 +184,8 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
     <div className="grid min-h-dvh w-full bg-[#080808] text-[#e8e8ea] lg:grid-cols-12 selection:bg-[#e8e8ea] selection:text-[#080808]">
       {/* Left brand panel (visible on large displays) */}
       <aside className="relative hidden overflow-hidden border-r border-white/5 bg-gradient-to-br from-[#0c0c0e] via-[#121215] to-[#080808] p-12 text-white lg:col-span-6 lg:flex lg:flex-col lg:justify-between xl:col-span-7">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white/[0.03] blur-[120px]" />
-        <div className="pointer-events-none absolute -left-20 bottom-0 h-80 w-80 rounded-full bg-white/[0.02] blur-[140px]" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-500/[0.035] blur-[140px]" />
+        <div className="pointer-events-none absolute -left-20 bottom-0 h-80 w-80 rounded-full bg-indigo-500/[0.03] blur-[150px]" />
 
         <div className="relative z-10 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
@@ -196,28 +196,45 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
             />
             <span className="text-2xl font-bold tracking-tight text-white">Velar</span>
           </Link>
-          <span className="rounded-full border border-white/10 bg-[#161619] px-3 py-1 text-[11px] font-mono font-medium text-zinc-400 uppercase tracking-widest">
-            Private Music
+          <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3.5 py-1 text-[11px] font-mono font-bold text-blue-400 uppercase tracking-widest">
+            24-Bit FLAC Studio
           </span>
         </div>
 
-        <div className="relative z-10 my-auto py-12 max-w-xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#161619] px-3.5 py-1 text-xs font-semibold text-zinc-300 mb-6">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span>100% Ad-Free • Invite Only</span>
-          </div>
+        <div className="relative z-10 my-auto py-10 max-w-xl">
+
 
           <h2 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
-            A quiet home for <br />
-            <span className="font-serif italic font-normal text-white/90">your personal sound</span>.
+            Hi-Res 24-Bit Audio. <br />
+            <span className="font-serif italic font-normal text-white/90">Hear every detail at no cost</span>.
           </h2>
-          <p className="mt-4 text-sm leading-relaxed text-zinc-400">
-            Stream uncompressed lossless audio, enjoy full-screen ambient listening, and save your private collection offline anywhere.
+          <p className="mt-4 text-sm leading-relaxed text-zinc-400 max-w-lg">
+            Velar is a private streaming sanctuary for purists. Stream bit-perfect 24-bit FLAC audio up to 192kHz with zero advertising, zero monthly fees, and unthrottled dedicated bandwidth.
           </p>
+
+          {/* Audiophile Specs Quick Cards matching landing page */}
+          <div className="mt-8 grid grid-cols-2 gap-3 text-xs">
+            <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 backdrop-blur-sm">
+              <span className="text-white font-mono font-bold block text-sm">24-Bit / 192kHz</span>
+              <span className="text-zinc-400 text-xs mt-0.5 block">Bit-perfect studio FLAC</span>
+            </div>
+            <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 backdrop-blur-sm">
+              <span className="text-white font-bold block text-sm">144 dB Range</span>
+              <span className="text-zinc-400 text-xs mt-0.5 block">Zero dynamic compression</span>
+            </div>
+            <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 backdrop-blur-sm">
+              <span className="text-white font-bold block text-sm">100% Free Forever</span>
+              <span className="text-zinc-400 text-xs mt-0.5 block">No subscription fees</span>
+            </div>
+            <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 backdrop-blur-sm">
+              <span className="text-white font-mono font-bold block text-sm">Invite Only</span>
+              <span className="text-zinc-400 text-xs mt-0.5 block">Dedicated streaming edge</span>
+            </div>
+          </div>
         </div>
 
         <div className="relative z-10 flex items-center justify-between border-t border-white/5 pt-6 text-xs text-zinc-500">
-          <span>© 2026 Velar Music</span>
+          <span>© 2026 Velar Music • Private Sanctuary</span>
           <Link href="/" className="hover:text-white transition">
             ← Return to Overview
           </Link>
@@ -240,8 +257,8 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
               />
               <span className="text-2xl font-bold text-white tracking-tight">Velar</span>
             </Link>
-            <span className="rounded-full border border-white/10 bg-[#18181b] px-2.5 py-1 text-[10px] font-mono text-zinc-400 uppercase">
-              Private
+            <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[10px] font-mono text-blue-400 uppercase font-semibold">
+              24-Bit FLAC
             </span>
           </div>
 
@@ -250,8 +267,8 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
           </h1>
           <p className="mt-1.5 text-xs text-zinc-400 leading-relaxed">
             {mode === "login"
-              ? "Sign in to access your private library and offline music."
-              : "Velar is invite-only. Enter your invitation code to create your account."}
+              ? "Sign in to access your bit-perfect 24-bit library and offline music."
+              : "Velar is invite-only. Enter your invitation code to unlock your 24-bit FLAC station at no cost."}
           </p>
 
           {/* Passkey Sign In Option (on login) */}
@@ -402,7 +419,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
             className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e8e8ea] py-3.5 text-xs font-bold text-[#080808] transition hover:bg-white active:scale-[0.98] disabled:opacity-50 shadow-lg"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            <span>{mode === "login" ? "Sign In" : "Unlock & Register"}</span>
+            <span>{mode === "login" ? "Sign In to Station" : "Unlock Station & Register"}</span>
           </button>
 
           <div className="mt-6 text-center text-xs text-zinc-400 space-y-2">
@@ -425,7 +442,7 @@ function AuthScreenContent({ mode }: { mode: "login" | "signup" }) {
             </p>
             <p>
               <Link href="/" className="text-zinc-500 hover:text-zinc-300 transition">
-                ← Return to Invitation Overview
+                ← Return to Velar Overview
               </Link>
             </p>
           </div>

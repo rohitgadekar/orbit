@@ -12,6 +12,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "./auth-context";
 import { useMusic } from "./music-context";
 
 type PlayerContextValue = {
@@ -29,6 +30,7 @@ type PlayerContextValue = {
   setExpanded: (value: boolean) => void;
   playSong: (song: Song, queue?: Song[]) => void;
   toggle: () => void;
+  stop: () => void;
   next: () => void;
   prev: () => void;
   seek: (time: number) => void;
@@ -84,6 +86,7 @@ function getPlaybackUrl(song: Song): string {
 }
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const { recordPlay } = useMusic();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const blobUrlRef = useRef<string | null>(null);
@@ -97,6 +100,56 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [repeat, setRepeat] = useState<RepeatMode>("off");
   const [expanded, setExpanded] = useState(false);
   const recordedRef = useRef<string | null>(null);
+
+  const stop = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = "";
+    }
+    if (blobUrlRef.current) {
+      try {
+        URL.revokeObjectURL(blobUrlRef.current);
+      } catch {}
+      blobUrlRef.current = null;
+    }
+    setIsPlaying(false);
+    setCurrent(null);
+    setQueue([]);
+    setProgress(0);
+    setDuration(0);
+    setExpanded(false);
+
+    if (typeof window !== "undefined" && "mediaSession" in navigator) {
+      try {
+        navigator.mediaSession.playbackState = "none";
+        navigator.mediaSession.metadata = null;
+      } catch {}
+    }
+    if (typeof document !== "undefined") {
+      document.title = "Velar - Web Player";
+    }
+  }, []);
+
+  // Stop playback immediately when user signs out or has no active session
+  useEffect(() => {
+    if (!authLoading && !user) {
+      stop();
+    }
+  }, [authLoading, user, stop]);
+
+  // Listen for global signout events
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleSignOut = () => stop();
+    window.addEventListener("velar:signout", handleSignOut);
+    window.addEventListener("orbit:signout", handleSignOut);
+    return () => {
+      window.removeEventListener("velar:signout", handleSignOut);
+      window.removeEventListener("orbit:signout", handleSignOut);
+    };
+  }, [stop]);
 
   const [crossfade, setCrossfadeState] = useState<number>(() => {
     if (typeof window === "undefined") return 2;
@@ -570,6 +623,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (audio.paused) void audio.play();
         else audio.pause();
       },
+      stop,
       next,
       prev,
       seek: (time) => {
@@ -605,6 +659,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playAtIndex,
       next,
       prev,
+      stop,
       toggleMute,
     ],
   );

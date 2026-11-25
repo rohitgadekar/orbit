@@ -164,9 +164,6 @@ export default function LandingPage() {
             />
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-bold tracking-tight text-white">Velar</span>
-              <span className="hidden text-[10px] font-semibold uppercase tracking-widest text-zinc-500 sm:inline-block">
-                24-Bit FLAC Studio
-              </span>
             </div>
           </Link>
 
@@ -211,7 +208,7 @@ export default function LandingPage() {
 
                 <Link
                   href="/login"
-                  className="rounded-full border border-white/10 bg-[#121214] px-4 py-2 text-xs font-semibold text-zinc-300 transition hover:border-white/20 hover:bg-[#1a1a1d] hover:text-white"
+                  className="rounded-full border border-white/10 bg-[#121214] px-4 py-1 text-xs font-semibold text-zinc-300 transition hover:border-white/20 hover:bg-[#1a1a1d] hover:text-white"
                 >
                   Sign In
                 </Link>
@@ -222,7 +219,7 @@ export default function LandingPage() {
                     const el = document.getElementById("invite-box");
                     el?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="rounded-full bg-[#e8e8ea] px-4 py-2 text-xs font-bold text-[#080808] transition hover:bg-white active:scale-95 shadow-md"
+                  className="rounded-full bg-[#e8e8ea] px-4 py-1 text-xs font-bold text-[#080808] transition hover:bg-white active:scale-95 shadow-md"
                 >
                   Enter Code
                 </button>
@@ -239,14 +236,8 @@ export default function LandingPage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#121214] px-4 py-1.5 text-xs font-semibold text-zinc-300 shadow-sm backdrop-blur-md">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
             <span className="font-mono text-[11px] uppercase tracking-wider text-blue-400 font-bold">
-              Hi-Res FLAC 24-Bit Audio
+              Hi-Res Audio
             </span>
-            <span className="text-zinc-600">•</span>
-            <span className="text-zinc-400 font-medium">Hear Every Detail</span>
-            <span className="text-zinc-600">•</span>
-            <span className="text-xs font-semibold text-white">At No Cost</span>
-            <span className="text-zinc-600">•</span>
-            <span className="text-[11px] font-mono text-amber-300">Invite Only</span>
           </div>
 
           {/* Main Editorial Headline */}
@@ -256,7 +247,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-            Velar is a private, uncompressed audio streaming sanctuary built exclusively for purists. No lossy compression, no volume smearing, no commercial tracking, and zero ads. Hear delicate room reverbs, vocal transients, and sub-bass harmonics exactly as mastered in the studio.
+            Velar is a private, uncompressed audio streaming website built exclusively for purists. No lossy compression, no volume smearing, no commercial tracking, and zero ads. Hear delicate room reverbs, vocal transients, and sub-bass harmonics exactly as mastered in the studio.
           </p>
 
           {/* Audiophile Specs Quick Bar */}
@@ -319,11 +310,10 @@ export default function LandingPage() {
             {/* Verification Feedback Message */}
             {codeFeedback && (
               <div
-                className={`mt-3 flex items-center justify-center gap-2 rounded-2xl p-3 text-xs font-semibold ${
-                  codeFeedback.valid
-                    ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                    : "border border-rose-500/20 bg-rose-500/10 text-rose-300"
-                }`}
+                className={`mt-3 flex items-center justify-center gap-2 rounded-2xl p-3 text-xs font-semibold ${codeFeedback.valid
+                  ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                  : "border border-rose-500/20 bg-rose-500/10 text-rose-300"
+                  }`}
               >
                 {codeFeedback.valid ? (
                   <>
@@ -759,9 +749,8 @@ export default function LandingPage() {
                 >
                   <span>{faq.q}</span>
                   <ChevronDown
-                    className={`h-4 w-4 text-zinc-400 transition-transform duration-300 ${
-                      openFaq === idx ? "rotate-180" : ""
-                    }`}
+                    className={`h-4 w-4 text-zinc-400 transition-transform duration-300 ${openFaq === idx ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
                 {openFaq === idx && (

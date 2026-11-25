@@ -309,6 +309,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (user) {
           localStorage.removeItem(`orbit_profile_${user.id}`);
         }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("velar:signout"));
+          window.dispatchEvent(new Event("orbit:signout"));
+        }
         const supabase = createClient();
         await supabase.auth.signOut();
       },

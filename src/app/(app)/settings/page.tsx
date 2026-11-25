@@ -6,6 +6,7 @@ import { useTrackEditor } from "@/components/app-shell";
 import { Cover } from "@/components/cover";
 import { useAuth } from "@/context/auth-context";
 import { useMusic } from "@/context/music-context";
+import { usePlayer } from "@/context/player-context";
 import { getIndividualArtists, type ParsedArtist } from "@/lib/artists";
 import { formatTime, initials } from "@/lib/utils";
 import { detectAudioMetadata } from "@/lib/audio-metadata";
@@ -53,6 +54,7 @@ export default function SettingsPage() {
 
   const { profile, user, updateProfile, signOut, isAdmin, role } = useAuth();
   const { songs, artists, addTrack, addAlbum } = useMusic();
+  const { stop } = usePlayer();
   const { editSong } = useTrackEditor();
 
   const [activeTab, setActiveTab] = useState<
@@ -726,6 +728,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={async () => {
+                  stop();
                   await signOut();
                   router.replace("/login");
                 }}
